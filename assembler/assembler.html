@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" type="text/css" href="../assets/lib.css"/>
+    <link  rel="stylesheet" type="text/css" href="../assets/jquery-linedtextarea.css"/>
+    <link rel="stylesheet" type="text/css" href="style.css"/>
+    <script src="../assets/jquery.min.js"></script>
+    <script src="../assets/jquery-linedtextarea.js"></script>
+    <script src="../assets/FileSaver.min.js"></script>
+    <script src="../assets/fill.js"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+    <div id="main">
+        <div class="card">
+            <div style="margin-bottom: 4px;"><div class="title" style="display: inline;">In (assembly)</div><input style="display: inline;" type="text" id="name" placeholder="program name"></div>
+            <form><textarea spellcheck="false" class="lined" style="width: 350px; height: 328px;" id="in"></textarea></form>
+            <table style="padding-top: 4px;"><tr>
+                <td style="padding: 0;"><div style="width: 159px; margin-left: 0;" id="save_in" class="button">Save</div></td>
+                <td style="padding: 0;"><div style="width: 159px; overflow: hidden;" class="button"><input type="file" id="load_in"/></div></td>
+            </tr></table>
+        </div>
+
+        <div style="float: left;">
+            <div class="card" style="width: 160px; float: none;">
+                <div class="title">Settings</div>
+                <div class="paper-toggle" style="margin: 15px 2px;"><input id="auto" class="switch" type="checkbox" checked/><label for="auto">Realtime</label></div>
+                <div class="button" id="cmp">Assemble</div>
+            </div>
+
+            <div class="card" style="width: 160px; float: none; margin-top: 8px;">
+				<div class="title">Info</div>
+				<div id="size">----</div>
+            </div>
+
+
+
+        </div>
+
+        <div class="card">
+            <div style="margin-bottom: 4px;" class="title">Out (machine code)</div>
+            <form><textarea readonly spellcheck="false" class="lined" style="width: 350px; height: 328px;" id="out"></textarea></form>
+            <table style="padding-top: 4px;"><tr>
+                <td style="padding: 0;"><div style="width: 159px; margin-left: 0;" id="save_out" class="button">Save</div></td>
+                <td style="padding: 0;"><div style="width: 159px;" class="button" id="run">Run</div></td>
+            </tr></table>
+        </div>
+    </div>
+</body>
+</html>

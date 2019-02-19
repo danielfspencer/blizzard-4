@@ -1,0 +1,135 @@
+#main {
+    margin-left: auto;
+    margin-right: auto;
+    width: 1500px;
+}
+
+/*
+progress::progress-value {
+  transition: width 0.4s linear;
+}
+
+progress::-webkit-progress-value {
+  transition: width 0.4s linear;
+}
+*/
+.ram-bar {
+    height: 11px;
+    width: 95%;
+}
+
+.ram-bar, progress[role][aria-valuenow] {
+    background: #fafafa
+}
+
+.item,src {
+    margin-left: 19px;
+    display: block;
+}
+
+#log {
+    border: 1px solid #C0C0C0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 302px;
+    width: 397px;
+}
+
+#assemble {
+    background-color: #009688;
+    color: #fff;
+}
+
+#cmp {
+    background-color: #607DB8;
+    color: #fff;
+}
+
+#bench {
+    background-color: #717171;
+    color: #fff;
+    width: 150px;
+    float: right;
+    margin-top: 2px;
+    display: inline;
+}
+
+#name {
+    border: 1px solid #C0C0C0;
+    float: right;
+}
+
+#toggles {
+    float: left;
+    display: inline;
+    clear: none;
+}
+
+#auto {
+    margin-top: 3px;
+}
+
+#debug {
+    margin-top: 5px;
+}
+
+.item {
+    font-family: robotomono;
+    font-size: 10pt;
+    border-bottom: 1px solid grey;
+    padding-bottom: 4px;
+    padding-top: 4px;
+    padding-left: 4px;
+    margin-left: 0px;
+}
+
+.debug {
+    opacity: 0.6;
+}
+
+.info {
+    background: #EAEAEA;
+}
+
+.warn {
+    background: #FFE271;
+}
+
+.error {
+    color: #FFFFFF;
+    background: #8C1E1E;
+}
+
+.img {
+    margin-top: 0px;
+    margin-right: 4px;
+    margin-left: -3px;
+    float: left;
+    width: 18px;
+    height: 18px;
+}
+
+progress, progress[role] {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border: none;
+	width: 400px;
+	height: 4px;
+}
+
+progress[value]::-webkit-progress-value {
+  background-color: #3787f0;
+}
+
+progress[value]::-moz-progress-bar {
+  background-color: #3787f0;
+}
+
+progress, progress[role][aria-valuenow] {
+   background: #b4cceb !important;
+}
+
+progress::-webkit-progress-bar {
+    background: #b4cceb;
+}

@@ -1,0 +1,192 @@
+@font-face {
+    font-family: 'robotoregular';
+    src: url('fonts/Roboto-Regular-webfont.woff') format('woff');
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: 'robotomedium';
+    src: url('fonts/Roboto-Medium-webfont.woff') format('woff');
+
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: 'robotomono';
+    src: url('fonts/Roboto-Mono-webfont.woff') format('woff');
+    font-weight: normal;
+}
+
+textarea:focus {
+    outline: 0;
+}
+
+.button {
+    cursor:default;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    font-family: "robotomedium";
+    text-transform: uppercase;
+    line-height: 36px;
+    text-align: center;
+    min-width: 88px;
+    padding: 0 8px;
+    border-radius: 2px;
+    height: 36px;
+    margin: 2px;
+    font-size: 0.9em;
+    background: #EEEEEE;
+    box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.37);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button:active {
+    transition-delay: 0s;
+    box-shadow: 0px 6px 10px 0px rgba(0, 0, 0, 0.3);
+}
+body, html {
+    font-size: 16px;
+    font-family: "robotoregular";
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.card {
+    border-radius: 2px;
+    float:left;
+    background: #FAFAFA;
+    padding: 14px;
+    margin: 4px;
+    box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.37);
+}
+
+
+.paper-toggle{
+  clear: both;
+}
+
+.paper-toggle input:empty
+{
+	margin-left: -9999px;
+}
+
+.paper-toggle input:empty ~ label
+{
+	position: relative;
+	float: left;
+	line-height: 1em;
+	width: 150px;
+	cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.paper-toggle input:empty ~ label:before,
+.paper-toggle input:empty ~ label:after
+{
+    position: absolute;
+	display: block;
+    content: ' ';
+    -webkit-transition: all 200ms ease-in;
+    transition: all 200ms ease-in;
+}
+
+.paper-toggle input:empty ~ label:before
+{
+    top: 8px;
+    left: 115px;
+    width: 32px;
+    height: 1px;
+    background-color: #5a5a5a;
+}
+
+input.switch:empty ~ label:after
+{
+    top: 0px;
+    left: 100px;
+    width: 1.4em;
+    height: 8px;
+    bottom: 0.1em;
+    margin-left: 0.1em;
+    background-color: #fff;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: solid 2px;
+    border-color: #5a5a5a;
+}
+
+.paper-toggle input:checked ~ label:before
+{
+	background-color: #0f9d58;
+}
+
+.paper-toggle input:checked ~ label:after
+{
+	left: 140px;
+  background-color: #0f9d58;
+  border-color: #0f9d58;
+}
+
+.title {
+    margin-bottom: 2px;
+    margin-left: 3px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.loader {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.circular {
+  margin: 0 50px 20px;
+  position: relative;
+  -webkit-animation: rotate 2s linear infinite;
+          animation: rotate 2s linear infinite;
+  height: 100px;
+  width: 100px;
+}
+
+.path {
+  stroke-dasharray: 1,200;
+  stroke-dashoffset: 0;
+  -webkit-animation: dash 1.5s ease-in-out infinite, color 6s ease-in-out infinite;
+          animation: dash 1.5s ease-in-out infinite, color 6s ease-in-out infinite;
+  stroke-linecap: round;
+}
+
+
+@keyframes rotate {
+  100% {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1,200;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 89,200;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 89,200;
+    stroke-dashoffset: -124;
+  }
+}
+
+@keyframes color {
+  100%, 0% {
+    stroke: #4289E8;
+  }
+
+}

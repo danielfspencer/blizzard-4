@@ -1,0 +1,16 @@
+{
+  "name": "Blizzard 4",
+  "version": "0.40",
+  "description": "Emulator and toolset for the Blizzard 4 16-bit computer.",
+  "manifest_version": 2,
+  "app": {
+    "background": {
+      "scripts": ["background.js"]
+    }
+  },
+  "icons": {
+    "128": "assets/icon_128.png",
+    "512": "assets/icon_512.png"
+  },
+  "permissions": []
+}

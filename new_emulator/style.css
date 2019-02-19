@@ -1,0 +1,114 @@
+body, html{
+  margin:0;
+  padding:0;
+}
+
+table {
+  padding: 0;
+}
+
+#main {
+  width: 1518px;
+  padding-left: 4px;
+  padding-right: 4px;
+  margin: 0 auto;
+}
+
+#screen_container {
+  padding-top: 4px;
+  float: right;
+}
+
+#screen {
+  width: 512px;
+  height: 512px;
+  background: #000;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+}
+
+#front_panel {
+  padding-top: 4px;
+  width: 970px;
+  display: inline-block;
+}
+
+#front_panel > .card {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+#controls > .button {
+  display: inline-block;
+}
+
+#clock-target {
+  width: 80px;
+}
+
+#clock-actual {
+  width: 80px;
+}
+
+input {
+  width: 65px;
+  height: 12px;
+}
+
+.led_row {
+  height: 18px;
+  display: inline-block;
+  float: left;
+}
+
+.tooltip_enabled .tooltip_content {
+  visibility: hidden;
+  border-radius: 2px;
+  background: #FAFAFA;
+  padding: 14px;
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.37);
+  position: absolute;
+  z-index: 1;
+}
+
+.tooltip_content {
+  font-family: robotomono;
+}
+
+.tooltip_enabled:hover .tooltip_content {
+  visibility: visible;
+}
+
+.led {
+  float: left; /* removes the spaces between elements caused by newlines in html*/
+  display: inline-block;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  opacity: 0.2;
+  margin-right: 4px;
+}
+
+.on {
+  opacity: 1;
+}
+
+.red {
+  background: red;
+}
+
+.green {
+  background: green;
+}
+
+.blue {
+  background: blue;
+}
+
+.blank {
+  background: #b0b0b0;
+}
+
+.blank.on {
+  opacity: 0.2;
+}
