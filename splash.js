@@ -1,7 +1,7 @@
 $( document ).ready(function() {
     $( "#licence" ).click(function() {
       if (!window.chrome) {
-        window.open("licence.html",'Licence','height=680,width=480');
+        window.open("licence.html",'Licence','height=800,width=600');
       } else {
           chrome.app.window.create('licence.html', {
             "resizable": true,
@@ -11,7 +11,6 @@ $( document ).ready(function() {
             }
           });
         }
-        window.close();
     });
 
     $( "#close" ).click(function() {
