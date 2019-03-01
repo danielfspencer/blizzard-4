@@ -5,97 +5,16 @@ body, html {
     -webkit-user-select: text;
 }
 
-#popup {
-    display: none;
-    z-index: 1;
-    position: fixed;
-    width: 96.6%;
-    height: 78%;
-    padding: 14px;
-    overflow-y: scroll;
-}
-
-#popup img {
-    width: 80%;
-    height: auto;
-    margin: 0 auto;
-    display: block;
-}
-
-#exit {
-    z-index: 2;
-    position: fixed;
-    right: 9px;
-    top: 7px;
-}
-
 #main {
-    margin-left: 8px;
+    /* margin-left: 8px; */
     margin-top: 2px;
-    width: 1504px;
-    margin: 0 auto;
-}
-
-h1, h2, h3, h4, h5, h6 {
-    margin-top: 10px;
-    margin-bottom: 6px;
-}
-
-.banner {
-    margin-top: 6px;
-}
-
-.banner img {
-    cursor: zoom-in;
-    width: 196px;
-    height: 142px;
-    display: inline-block;
-    margin-right: 3px;
-    margin-bottom: -2px;
+    width: 100%;
 }
 
 #content {
     width: 996px;
-    margin-left: 140px;
-}
-
-#changelog {
-    float: right;
-    width: 300px;
-    font-size: 11pt;
-}
-
-#version {
-    width: 300px;
-    margin-bottom: 7px;
-}
-
-#version_content {
-    text-align: center;
-    margin-top: 12px;
-    width: 100%;
-}
-
-#status {
-    font-size: 14px;
-    width: 130px;
-}
-
-#menu {
-    width: 100px;
+    margin: 0 auto;
     float: none;
-    position: fixed;
-}
-
-#menu-list {
-    margin-top: 0px;
-    padding-left: 16px;
-    list-style-type: decimal;
-}
-
-.card {
-    margin-top: 1px;
-    padding-top: 0;
 }
 
 #ops {
