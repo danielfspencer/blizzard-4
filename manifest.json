@@ -1,7 +1,7 @@
 {
   "name": "Blizzard 4",
-  "version": "0.40",
-  "description": "Emulator and toolset for the Blizzard 4 16-bit computer.",
+  "version": "0.41",
+  "description": "Emulator & toolchain for the Blizzard 4 16-bit computer.",
   "manifest_version": 2,
   "app": {
     "background": {
