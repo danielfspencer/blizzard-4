@@ -1,9 +1,9 @@
 $( document ).ready(function() {
     $( "#licence" ).click(function() {
       if (!window.chrome) {
-        window.open("licence.html",'Licence','height=800,width=600');
+        window.open("../licence.html",'Licence','height=800,width=600');
       } else {
-          chrome.app.window.create('licence.html', {
+          chrome.app.window.create('../licence.html', {
             "resizable": true,
             "bounds": {
               width: 462,

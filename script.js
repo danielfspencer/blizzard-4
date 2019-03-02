@@ -77,9 +77,9 @@ $( document ).ready(function() { //connect all the butons to their actions!
     $( "#about" ).click(function() {
       toggle_hamburger();
       if (!window.chrome) {
-        window.open("splash.html",'About','height=218,width=734');
+        window.open("about/about.html",'About','height=218,width=734');
       } else {
-          chrome.app.window.create('splash.html', {
+          chrome.app.window.create('about/about.html', {
             "frame": "none",
             "resizable": false,
             "bounds": {
