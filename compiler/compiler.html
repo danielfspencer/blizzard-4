@@ -5,32 +5,28 @@
     <link rel="stylesheet" type="text/css" href="../assets/lib.css"/>
     <link rel="stylesheet" type="text/css" href="../assets/jquery-linedtextarea.css"/>
     <link rel="stylesheet" type="text/css" href="style.css"/>
-    <script src="../assets/jquery.min.js"></script> 
+    <script src="../assets/jquery.min.js"></script>
     <script src="../assets/jquery-linedtextarea.js"></script>
-    <script src="../assets/FileSaver.min.js"></script>
-    <script src="../assets/fill.js"></script>
+    <script src="../assets/file.js"></script>
     <script src="script.js"></script>
     <script src="libraries.js"></script>
 </head>
 <body>
-    
+
     <div id="main">
-        
+
         <div class="card">
             <div style="margin-bottom: 4px;"><div class="title" style="display: inline;">In (high-level)</div><input style="display: inline;" type="text" id="name" placeholder="program name"></div>
             <form><textarea spellcheck="false" class="lined-dec" style="width: 490px; height: 415px;" id="in"></textarea></form>
-            <table style="padding-top: 4px;"><tr>
-                <td style="padding: 0;"><div style="width: 159px; margin-left: 64px;" id="save_in" class="button">Save</div></td>
-                <td style="padding: 0;"><div style="width: 159px; overflow: hidden;" class="button"><input type="file" id="load_in"/></div></td>
-            </tr></table>         
+            <div class="button" id="load"><input type="file" id="load_in"/></div>
         </div>
-        
+
         <div style="float: left">
             <div class="card" style="float: none;">
                 <div class="button" id="cmp">Compile</div>
                 <progress id="progress" max=100 value=0></progress>
             </div>
-            
+
             <div class="card" style="float: none; margin-top: 8px;">
                 <div class="title">Log</div>
                 <div id="log"></div>
@@ -44,17 +40,13 @@
                 <div class="button" id="bench">Benchmark</div>
             </div>
         </div>
-        
+
         <div class="card">
             <div style="margin-bottom: 4px;"><div class="title" style="display: inline;">Out (assembly)</div></div>
             <form><textarea spellcheck="false" class="lined" style="width: 490px; height: 415px;" id="out"></textarea></form>
-            <table style="padding-top: 4px;"><tr>
-                <td style="padding: 0;"><div style="width: 159px; margin-left: 64px;" id="save_out" class="button">Save</div></td>
-                <td style="padding: 0;"><div style="width: 159px;" class="button" id="assemble">Assemble</div></td>
-            </tr></table>         
-        
+            <div class="button" id="assemble">Assemble</div>
         </div>
     </div>
-    
+
 </body>
 </html>

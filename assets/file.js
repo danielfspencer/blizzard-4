@@ -1,8 +1,3 @@
-function saveFile(text, name) {
-    var blob = new Blob([text], {type: "text/plain;charset=utf-8"});
-    saveAs(blob, name);
-}
-
 function loadFile(e, target) {
     var file = e.target.files[0];
     if (!file) {
