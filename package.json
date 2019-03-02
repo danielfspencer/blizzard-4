@@ -12,6 +12,7 @@
   },
   "build": {
     "productName": "Blizzard 4",
+    "artifactName": "${productName} [${os}-${arch}, ver. ${version}].${ext}",
     "directories": {
       "output": "electron_dist"
     },
