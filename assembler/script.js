@@ -13,7 +13,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
 
     $("#cmp").click(function() {
         $("#out").val(assemble($("#in").val()));
-        $("#size").html($("#out").val().lineCount()*2+"B");
+        $("#size").html($("#out").val().lineCount()*2+" B");
     });
 
     $("#run").click(function() {
@@ -22,7 +22,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
 
     $("#auto").change(function() {
         if(this.checked) {
-            $("#in").on( "keyup", function() { $("#out").val(assemble($("#in").val())); $("#size").html($("#out").val().lineCount()*2+"B"); });
+            $("#in").on( "keyup", function() { $("#out").val(assemble($("#in").val())); $("#size").html($("#out").val().lineCount()*2+" B"); });
         } else {
             $("#in").off()
         }
@@ -42,7 +42,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
 
 
     $("out").val("");
-    $("#in").on( "keyup", function() { $("#out").val(assemble($("#in").val())); $("#size").html($("#out").val().lineCount()*2+"B"); });
+    $("#in").on( "keyup", function() { $("#out").val(assemble($("#in").val())); $("#size").html($("#out").val().lineCount()*2+" B"); });
 
     $("#in").on("keydown", function (e) {
     var keyCode = e.keyCode || e.which;
@@ -80,47 +80,49 @@ opDefs = {
 }
 
 defs = {
-    "alu.1" : 16385,
-    "alu.2" : 16386,
-    "alu.+" : 16387,
-    "alu.-" : 16388,
-    "alu.>>" : 16389,
-    "alu.<<" : 16390,
-    "alu.&" : 16391,
-    "alu.|" : 16392,
-    "alu.!" : 16393,
-    "alu.>" : 16394,
-    "alu.<" : 16395,
-    "alu.=" : 16396,
-    "alu.ov" : 16397,
-    "usr.1" : 20480,
-    "usr.2" : 20481,
-    "dcm.1" : 20482,
-    "dcm.2" : 20483,
-    "dcm.3" : 20484,
-    "kbd": 20485,
-    "cnd" : 32767
+    "alu.1" : 2048,
+    "alu.2" : 2049,
+    "alu.+" : 2050,
+    "alu.-" : 2051,
+    "alu.>>" : 2052,
+    "alu.<<" : 2053,
+    "alu.&" : 2054,
+    "alu.|" : 2055,
+    "alu.!" : 2056,
+    "alu.>" : 2057,
+    "alu.<" : 2058,
+    "alu.=" : 2059,
+    "alu.ov" : 2060,
+    "usrio.inp1" : 4096,
+    "usrio.inp2" : 4097,
+    "usrio.inp3" : 4098,
+    "usrio.out1" : 4099,
+    "usrio.out2" : 4100,
+    "usrio.out3" : 4101,
+    "kbd.pop": 8192,
+    "kbd.len": 8193,
+    "cnd" : 1
 }
 
 function regToCode(id) {
     if (id.toLowerCase().startsWith("ram-.")) { //it's a ram address (lower)
         var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
-        if ( number >= 0 && number <= 511) {
-            return number+4096;//it's valid
+        if ( number >= 0 && number <= 1023) {
+            return number+16384;//it's valid
         } else {
             return false;
         }
     } else if (id.toLowerCase().startsWith("ram.")) { //it's a ram address (current)
         var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
-        if ( number >= 0 && number <= 511) {
-            return number+8192;//it's valid
+        if ( number >= 0 && number <= 1023) {
+            return number+20480;//it's valid
         } else {
             return false;
         }
     } else if (id.toLowerCase().startsWith("ram+.")) { //it's a ram address (upper)
         var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
-        if ( number >= 0 && number <= 511) {
-            return number+12288;//it's valid
+        if ( number >= 0 && number <= 1023) {
+            return number+24576;//it's valid
         } else {
             return false;
         }
@@ -134,7 +136,7 @@ function regToCode(id) {
     } else if (id.toLowerCase().startsWith("vram.")) { //it's vram
         var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
         if ( number >= 0 && number <= 1023) {
-            return number + 24576; //it's valid
+            return number + 6144; //it's valid
         } else {
             return false;
         }
@@ -188,7 +190,8 @@ function assemble(code) {
 
     //1st pass
     for (var i = 0; i < lines.length; i++) {
-        if (lines[i] == "" || lines[i].startsWith("//")) {continue;} // skip empty lines
+        if (lines[i] == "" ) {continue;} // skip empty lines
+        if (/\s*\/\//.test(lines[i])) {continue;} // skip comments
         var line = lines[i].trim();
         line = line.split(" "); // turns "copy ram1" into ["copy", "ram1"]
         line.map(function(str){str.replace(/(\r|\n)/g,"")}); // strips trailing whitespace

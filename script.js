@@ -15,15 +15,15 @@ function menu(item) {  //called when a user selects a menu item
 	    $("#toolbar-title").html("Emulator");
 	    $("#content").attr("src","emulator/emulator.html");
 	    break;
-  case "new":
-      $("#toolbar-title").html("Emulator (new version)");
-      $("#content").attr("src","new_emulator/emulator.html");
+  case "ole":
+      $("#toolbar-title").html("Emulator (old version)");
+      $("#content").attr("src","old_emulator/emulator.html");
       break;
-  case "as2":
-      $("#toolbar-title").html("Assembler (new version)");
-      $("#content").attr("src","new_assembler/assembler.html");
+  case "ola":
+      $("#toolbar-title").html("Assembler (old version)");
+      $("#content").attr("src","old_assembler/assembler.html");
       break;
-	case "doc":
+	case "man":
 	    $("#toolbar-title").html("Manual");
 	    $("#content").attr("src","manual/manual.html");
 	    break;

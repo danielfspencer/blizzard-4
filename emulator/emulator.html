@@ -1,127 +1,402 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Blizzard 4 : Emulator</title>
-    <link  rel="stylesheet" type="text/css" href="style.css"/>
-    <link  rel="stylesheet" type="text/css" href="../assets/lib.css"/>
-    <link  rel="stylesheet" type="text/css" href="../assets/jquery-linedtextarea.css"/>
-    <script src="../assets/jquery.min.js"></script> 
-    <script src="../assets/jquery-linedtextarea.js"></script>
-    <script src="../assets/segment-display.js"></script>
-    <script src="script.js"></script>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>Blizzard 4 : Emulator</title>
+  <link  rel="stylesheet" type="text/css" href="style.css"/>
+  <link  rel="stylesheet" type="text/css" href="../assets/lib.css"/>
+  <link  rel="stylesheet" type="text/css" href="../assets/jquery-linedtextarea.css"/>
+  <script src="../assets/jquery.min.js"></script>
+  <script src="../assets/jquery-linedtextarea.js"></script>
+  <script src="scancodes.js"></script>
+  <script src="script.js"></script>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
-
 <div id="main">
-        <div class="card" style="float:left; height: 110px; width: 140px;">
-           <pre style="margin: -13px 0 -12px 0;"> ____  _  _   
-| __ )| || |  
-|  _ \| || |_ 
-| |_) |__   _|
-|____/   |_| 
-           </pre>
-           <a>Emulator</a>
-        </div>
 
-        <div class="card" style="float:right;">
-            <canvas id="screen" height="128" width="128"></canvas>
-        </div>
-
-       <div class="card" style="height: 110px; width: 122px;">
-            <div class="title">Display Mode</div>
-                <div id="scr-type" class="button" style="margin-top:6px;">w on b</div>
-            </tr></table>
-        </div>
-
-        <div class="card" style="width: 398px; height: 110px;">
-            <div class="title">Clock</div>
-            <table style="width:100%;"><tr>
-                <td><input id="speed" style="width: 100px" type="number" name="quantity" min="100" value="1000" step="100"> Hz </td>
-                <td><div id="step" class="button">Step</div></td>
-                <td><div id="start" class="button">Start</div></td>
+  <div id="front_panel">
+    <div id="control_panel" class="panel card">
+      <table><tr>
+        <td>
+          <table>
+            <tr>
+              <td></td>
+              <td>-s---r---g---c---w---c</td>
             </tr><tr>
-                <td><div id="load">Act: - Hz</div></td>
-                <td><div id="reset" class="button">Reset</div></td>
-                <td><div id="stop" class="button">Stop</div></td>
-            </tr></table>
-        </div>
-
-        <div class="card" style="width: 152px; height: 110px;">
-            <div class="title">State</div>
-            <table style="width: 100%;"><tr>
-                <td>program counter:</td>
-                <td id="pc">0x----</td>
+              <td>opcode</td>
+              <td>
+                <div id="opcode_leds" class="led_row">
+                  <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                  <div class="led blue"></div><div class="led blue"></div>
+                </div>
+              </td>
             </tr><tr>
-				<td>execution mode:</td>
-				<td id="mode">----</td>
-            </tr></table>
-        </div>
-
-        <div class="card" style="width: 152px; height: 157px; float: right;">
-            <div class="title">Keyboard Buffer</div>
-            <textarea readonly style="width: 144px; height: 112px; resize: none;"id="buffer"></textarea>
-            <div id="bufferInfo">-/256</div>
-        </div>
-
-        <div class="card" style="float:left; width: 298px; height: 366px;">
-            <div class="title">ROM</div>
-            <form><textarea style="width: 289px; height: 328px;" class="lined" id="rom"></textarea></form>
-        </div>      
-
-        <div class="card" style="width: 398px; height: 80px; float:left;">
-            <div class="title">Current Command</div>
-            <table style="width: 100%; text-align: center;"><tr style="font-family: monospace; font-size: 20px; font-weight: bold;">
-                <td><div id="curr-op">---</div></td>
-                <td><div id="curr-arg-info">-------</div></td>
-                <td><div id="curr-arg-no">---</div></td>
-                <td><div id="curr-unused">--</div></td>
-                <td><div id="curr-cnd">-</div></td>
-           </tr><tr>
-                <td style="width: 75px;"><div id="curr-op-desc">---</div></td>
-                <td>arg info</td>
-                <td><div id="curr-arg-no-desc">---</div></td>
-                <td></td>
-                <td><div id="curr-cnd-desc">-</div></td>
+              <td>cmd. word</td>
+              <td>
+                <div id="cmd_word_1st_part_leds" class="led_row">
+                  <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+                  <div class="led red"></div>
+                </div>
+                <div id="cmd_blank_leds" class="led_row">
+                  <div class="led blank"></div><div class="led blank"></div><div class="led blank"></div><div class="led blank"></div>
+                  <div class="led blank"></div><div class="led blank"></div><div class="led blank"></div><div class="led blank"></div>
+                  <div class="led blank"></div><div class="led blank"></div>
+                </div>
+                <div id="cmd_word_2nd_part_leds" class="led_row">
+                  <div class="led red"></div>
+                </div>
+              </td>
+            </tr><tr>
+              <td>arg. #1</td>
+              <td>
+                <div id="arg1_leds" class="led_row tooltip_enabled">
+                  <div id="arg1_leds_tooltip" class="tooltip_content">-----</div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                </div>
+              </td>
+            </tr><tr>
+              <td>arg. #2</td>
+              <td>
+                <div id="arg2_leds" class="led_row tooltip_enabled">
+                  <div id="arg2_leds_tooltip" class="tooltip_content">-----</div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                </div>
+              </td>
+            </tr><tr>
+              <td>temp arg.</td>
+              <td>
+                <div id="arg3_leds" class="led_row tooltip_enabled">
+                  <div id="arg3_leds_tooltip" class="tooltip_content">-----</div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                  <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+                </div>
+              </td>
             </tr>
+          </table>
+        </td>
+        <td>
+          <table>
+            <tr>
+              <td></td>
+              <td>fetch load exe</td>
+            </tr><tr>
+              <td>proc. mode</td>
+              <td>
+                <div id="proc_mode_leds" class="led_row">
+                  <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                </div>
+              </td>
+              <td>args. remaining</td>
+              <td>
+                <div id="arg_num_leds" class="led_row tooltip_enabled">
+                  <div id="arg_num_leds_tooltip" class="tooltip_content">-----</div>
+                  <div class="led blue"></div><div class="led blue"></div>
+                </div>
+              </td>
+            </tr><tr>
+              <td>prgm count.</td>
+              <td colspan="3">
+                <div id="pc_leds" class="led_row tooltip_enabled">
+                  <div id="pc_leds_tooltip" class="tooltip_content">-----</div>
+                  <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+                  <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+                  <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+                  <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+                </div>
+              </td>
+            </tr><tr>
+              <td>frame #</td>
+              <td>
+                <div id="frame_num_leds" class="led_row tooltip_enabled">
+                  <div id="frame_num_leds_tooltip" class="tooltip_content">-----</div>
+                  <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                </div>
+              </td>
+              <td>
+                <a>clock set</a>
+              </td>
+              <td>
+                <input id="clock-target" type="number" name="quantity" min="100" value="1000" step="100"><a> Hz</a>
+              </td>
+            </tr><tr>
+              <td>cnd. reg</td>
+              <td>
+                <div id="cnd_reg_leds" class="led_row tooltip_enabled">
+                  <div id="cnd_reg_leds_tooltip" class="tooltip_content">-----</div>
+                  <div class="led green"></div>
+                </div>
+              </td>
+              <td>
+                <a>actual</a>
+              </td>
+              <td>
+                <input id="clock-actual" type="number" value="0" readonly><a> Hz</a>
+              </td>
+            </tr><tr>
+              <td colspan="4">
+                <div id="controls">
+                  <div id="start" class="button">start</div>
+                  <div id="stop" class="button">stop</div>
+                  <div id="step" class="button">step</div>
+                  <div id="reset" class="button">reset</div>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </table>
+    </div>
+
+    <div id="bus_panel" class="panel card">
+      <table>
+        <tr>
+          <td>in #1</td>
+          <td>
+            <div id="inp1_leds" class="led_row tooltip_enabled">
+              <div id="write_bus_leds_tooltip" class="tooltip_content">-----</div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+            </div>
+          </td>
+          <td><input id="usr1_input" type="number" value="0" min="0" max="65535"></td>
+          <td>write</td>
+          <td>
+            <div id="write_bus_leds" class="led_row tooltip_enabled">
+              <div id="write_bus_leds_tooltip" class="tooltip_content">-----</div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+            </div>
+          </td>
+          <td>write</td>
+        </tr><tr>
+          <td>in #2</td>
+          <td>
+            <div id="inp2_leds" class="led_row tooltip_enabled">
+              <div id="write_bus_leds_tooltip" class="tooltip_content">-----</div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+            </div>
+          </td>
+          <td><input id="usr2_input" type="number" value="0" min="0" max="65535"></td>
+          <td>data</td>
+          <td>
+            <div id="data_bus_leds" class="led_row tooltip_enabled">
+              <div id="data_bus_leds_tooltip" class="tooltip_content">-----</div>
+              <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+              <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+              <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+              <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+            </div>
+          </td>
+          <td>data</td>
+        </tr><tr>
+          <td>in #3</td>
+          <td>
+            <div id="inp3_leds" class="led_row tooltip_enabled">
+              <div id="write_bus_leds_tooltip" class="tooltip_content">-----</div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+              <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
+            </div>
+          </td>
+          <td><input id="usr3_input" type="number" value="0" min="0" max="65535"></td>
+          <td>read</td>
+          <td>
+            <div id="read_bus_leds" class="led_row tooltip_enabled">
+              <div id="read_bus_leds_tooltip" class="tooltip_content">-----</div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+            </div>
+          </td>
+          <td>read</td>
+        </tr><tr>
+          <td>out #1</td>
+          <td>
+            <div id="out1_leds" class="led_row tooltip_enabled">
+              <div id="out1_leds_tooltip" class="tooltip_content">-----</div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+            </div>
+          </td>
+        </tr><tr>
+          <td>out #2</td>
+          <td>
+            <div id="out2_leds" class="led_row tooltip_enabled">
+              <div id="out2_leds_tooltip" class="tooltip_content">-----</div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+            </div>
+          </td>
+        </tr><tr>
+          <td>out #3</td>
+          <td>
+            <div id="out3_leds" class="led_row tooltip_enabled">
+              <div id="out3_leds_tooltip" class="tooltip_content">-----</div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+              <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+            </div>
+          </td>
+        </tr><tr>
+      </table>
+    </div>
+
+    <div id="memory_panel" class="panel card">
+      <table>
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <td>addr.</td>
+                <td colspan="5">
+                  <div id="ram_addr_leds" class="led_row tooltip_enabled">
+                    <div id="ram_addr_leds_tooltip" class="tooltip_content">-----</div>
+                    <div class="led blank"></div><div class="led blank"></div><div class="led blue"></div><div class="led blue"></div>
+                    <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                    <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                    <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                  </div>
+                </td>
+              </tr><tr>
+                <td>read</td>
+                <td>
+                  <div id="ram_read_leds" class="led_row">
+                    <div class="led green"></div>
+                  </div>
+                </td>
+                <td>
+                  offset
+                </td>
+                <td>
+                  <div id="ram_offset_leds" class="led_row">
+                    <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                  </div>
+                </td>
+                <td rowspan="2">
+                  16-way split <input id="16-way-split" type="checkbox" checked>
+                </td>
+              </tr><tr>
+                <td>write</td>
+                <td>
+                  <div id="ram_write_leds" class="led_row">
+                    <div class="led red"></div>
+                  </div>
+                </td>
+                <td></td>
+                <td>+1 0 -1</td>
+              </tr>
             </table>
-        </div>
-        
-        <div style="float: left; width: 398px; height: 24px;" class="card">
-                <div  style="display: inline; margin-right: 32px;" class="title">User Input </div>
-                1: <input style="width: 100px; margin-right: 20px;" type="number" min="0" step="1" value="0" max="65535" id="usr1" />
-                2: <input style="width: 100px" type="number" min="0" step="1" value="0" max="65535" id="usr2" />
-        </div> 
-        
-        <div class="card" style="float: left; height: 190px; width: 181px;">
-			<div class="title">Argument Registers</div>
-			<table><tr>
-				<td>1: </td><td><div id="args-1">0000000000000000</div></td>
-			</tr><tr>
-				<td>2: </td><td><div id="args-2">0000000000000000</div></td>
-			</tr></table>
-        </div>
-        
-        <div class="card" style="float: left; height: 190px; width: 181px;">
-			<div id="frame">0</div>
+          </td>
+          <td>
+            <table>
+              <tr>
+                <td>addr.</td>
+                <td colspan="2">
+                  <div id="rom_addr_leds" class="led_row tooltip_enabled">
+                    <div id="rom_addr_leds_tooltip" class="tooltip_content">-----</div>
+                    <div class="led blank"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                    <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                    <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                    <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                  </div>
+                </td>
+              </tr><tr>
+                <td>read</td>
+                <td>
+                  <div id="rom_read_leds" class="led_row">
+                    <div class="led green"></div>
+                  </div>
+                </td>
+                <td rowspan="2">
+                  write protect <input id="rom_write_protect" type="checkbox" checked>
+                </td>
+              </tr><tr>
+                <td>write</td>
+                <td>
+                  <div id="rom_write_leds" class="led_row">
+                    <div class="led red"></div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
 
-        </div>
+    <div id="alu_panel" class="panel card">
+      <table><tr>
+        <td>alu #1</td>
+        <td>
+          <div id="alu1_leds" class="led_row tooltip_enabled">
+            <div id="alu1_leds_tooltip" class="tooltip_content">-----</div>
+            <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+            <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+            <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+            <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+          </div>
+        </td>
+        <td></td>
+        <td>#1 #2</td>
+        <td></td>
+        <td>+ - >> << AND OR NOT > < = ov.</td>
+      </tr><tr>
+        <td>alu #2</td>
+        <td>
+          <div id="alu2_leds" class="led_row tooltip_enabled">
+            <div id="alu2_leds_tooltip" class="tooltip_content">-----</div>
+            <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+            <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+            <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+            <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
+          </div>
+        </td>
+        <td>write</td>
+        <td>
+          <div id="alu_write_leds" class="led_row">
+            <div class="led red"></div><div class="led red"></div>
+          </div>
+        </td>
+        <td>read</td>
+        <td>
+          <div id="alu_read_leds" class="led_row">
+            <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+            <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+            <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+          </div>
+        </td>
+      </tr></table>
+    </div>
+  </div>
 
-
-        <div class="card" style="height: 173px; width: 152px;">
-			<table><tr>
-				<td>1: </td>
-			    <td><canvas id="dcm1" width="120px" height="50px"></canvas></td>
-			</tr><tr>
-				<td>2: </td>				
-				<td><canvas id="dcm2" width="120px" height="50px"></canvas></td>
-			</tr><tr>
-                <td>3: </td>
-				<td><canvas id="dcm3" width="120px" height="50px"></canvas></td>
-			</tr></table>
-        </div>
+  <div id="screen_container">
+    <div class="card" id="screen_card">
+      <canvas id="screen" height="128" width="128"></canvas>
+    </div>
+  </div>
 
 </div>
-
 </body>
 </html>

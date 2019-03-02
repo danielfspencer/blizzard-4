@@ -113,7 +113,7 @@ $( document ).ready(function() {
     });
 
     $("#assemble").click(function() {
-        parent.postMessage(["as2",$("#out").val()],"*");
+        parent.postMessage(["asm",$("#out").val()],"*");
     });
 
     $("#in").on( "keyup", function(e) {

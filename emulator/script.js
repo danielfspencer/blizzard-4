@@ -1,224 +1,440 @@
-ops = [
-    "stop",
-    "copy",
-    "write",
-    "goto",
-    "call",
-    "return"
-];
+$(document).ready(init);
 
-g_data = {};
-var g_screen_updates = [];
-var high_colour = 255;
-var low_colour = 0;
+function init() {
+  worker = new Worker("engine.js");
+  worker.onmessage = function(event) {
+    handle_message(event.data);
+  }
 
-function toggleScreenMode() {
-    var screen = document.getElementById("screen");
-    var div = document.getElementById("scr-type");
+  document.addEventListener("keydown", on_key_down);
+  document.addEventListener("keyup", on_key_up);
 
-    if (screen.style.background == "rgb(255, 255, 255)") { // is white background
-        div.innerHTML = "W on B";
-        screen.style.background = "rgb(0, 0, 0)";
-        high_colour = 255;
-        low_colour = 0;
-    } else {
-        div.innerHTML = "B on W"
-        screen.style.background = "rgb(255, 255, 255)";
-        high_colour = 0;
-        low_colour = 255;
-    }
-}
+  vram_changes_buffer = [];
+  pixel_on_colour = 255;
+  pixel_off_colour = 0;
+  front_panel_info = {};
 
-function msg(data) {
-    worker.postMessage(data);
-}
+  updates_running = false;
 
-function formatRom(string) {
-	var newlines = "";
-	string = string.replace(/^\s+|\s+$/g, "");
-    for (var i=0; i<21; i++) { newlines += String.fromCharCode(13, 10);}
-	return string+newlines;
+  canvas = document.getElementById("screen");
+  canvas_context = canvas.getContext("2d", { alpha: false });
+
+  led_strips = {
+    "alu1_leds":null,
+    "alu2_leds":null,
+    "alu_write_leds":null,
+    "alu_read_leds":null,
+    "read_bus_leds":null,
+    "write_bus_leds":null,
+    "data_bus_leds":null,
+    "out1_leds":null,
+    "out2_leds":null,
+    "out3_leds":null,
+    "arg1_leds":null,
+    "arg2_leds":null,
+    "arg3_leds":null,
+    "pc_leds":null,
+    "ram_addr_leds":null,
+    "rom_addr_leds": null,
+    "opcode_leds": null,
+    "cmd_word_1st_part_leds":null,
+    "cmd_word_2nd_part_leds":null,
+    "proc_mode_leds":null,
+    "arg_num_leds":null,
+    "frame_num_leds":null,
+    "cnd_reg_leds":null,
+    "ram_read_leds":null,
+    "ram_offset_leds":null,
+    "ram_write_leds":null,
+    "rom_read_leds":null,
+    "rom_write_leds":null,
+    "inp1_leds":null,
+    "inp2_leds":null,
+    "inp3_leds":null
+  }
+
+  for (var name in led_strips) {
+    led_strips[name] = get_led_references(name);
+  }
+
+  $("#start").click(function() {
+    send_user_input();
+    worker.postMessage(["start"]);
+  });
+
+  $("#stop").click(function() {
+    worker.postMessage(["stop"]);
+  });
+
+  $("#reset").click(function() {
+    worker.postMessage(["reset"]);
+    worker.postMessage(["set_clock",$("#clock-target").val()]);
+    setTimeout(clear_screen, 150);
+  });
+
+  $("#step").mousedown(function() {
+    worker.postMessage(["clock_high"]);
+  });
+
+  $("#step").mouseup(function() {
+    worker.postMessage(["clock_low"]);
+  });
+
+  $("#clock-target").change(function(event){
+    worker.postMessage(["set_clock",$("#clock-target").val()]);
+  });
+
+  $("#usr1_input, #usr2_input, #usr3_input").change(send_user_input);
+
+  worker.postMessage(["request_front_panel_info"]);
+  worker.postMessage(["set_clock",1000]);
+  parent.input_data = set_rom;
+  parent.child_page_loaded();
 }
 
 function set_rom(string) {
-	$("#rom").val(string);
-	msg(["rom",$("#rom").val().split("\n")]);
-	$("#rom").val(formatRom($("#rom").val()));
+  worker.postMessage(["set_rom",string]);
 }
 
-function draw(data) {
-    $("#buffer").html( data.buffer );
-    $("#bufferInfo").html( data.buffer.length + "/256" );
-    $("#pc").html( "0x" + ("0000" + data.progCount.toString(16)).substr(-4,4) );
-    $("#mode").html( data.mode );
-    $("#curr-op").html( data.cmdRegs.word.substr(0,3) );
-    $("#curr-arg-info").html( data.cmdRegs.word.substr(3,7) );
-    $("#curr-arg-no").html( data.cmdRegs.word.substr(10,3) );
-    $("#curr-unused").html( data.cmdRegs.word.substr(13,2) );
-    $("#curr-cnd").html( data.cmdRegs.word.substr(15) );
+function send_user_input(event){
+    var inputs = [$("#usr1_input").val(),$("#usr2_input").val(),$("#usr3_input").val()];
+    var formatted_inputs = [0,0,0];
+    for (var i = 0; i < 3; i++) {
+      var integer = parseInt(inputs[i]);
+      if (integer > 65535) {
+          integer = 65535;
+      } else if (integer < 0) {
+          integer = 0;
+      }
+      formatted_inputs[i] = integer;
+    }
 
-    $("#curr-op-desc").html( ops[parseInt(data.cmdRegs.word.substr(0,3),2)] )
-    $("#curr-arg-no-desc").html( parseInt(data.cmdRegs.word.substr(10,3),2) + " arg(s)" );
+    display_number_on_leds("inp1_leds", formatted_inputs[0]);
+    display_number_on_leds("inp2_leds", formatted_inputs[1]);
+    display_number_on_leds("inp3_leds", formatted_inputs[2]);
+    worker.postMessage(["user_input_update",formatted_inputs]);
+}
 
-    if ( data.cmdRegs.word.substr(15) == "1") {
-        $("#curr-cnd-desc").html("conditional");
+function handle_message(message) {
+  switch(message[0]) {
+    case "front_panel_info":
+      front_panel_info = message[1];
+      break;
+    case "vram_changes":
+      vram_changes_buffer.push.apply(vram_changes_buffer,message[1]);
+      break;
+    case "started":
+      //start drawing updates
+      start_updates();
+      break;
+    case "stopped":
+      //stop drawing updates
+      setTimeout(stop_updates, 100);
+      break;
+    case "changed":
+      //draw updates (the worker will have already sent them before responding changed)
+      if (!updates_running) {
+        draw_all();
+      }
+      break;
+    case "stop":
+      stop_slow_step();
+      break;
+    default:
+      console.error("Unknown command '"+ message[0] +"'")
+      break;
+    }
+}
+
+function start_updates() {
+  if (!updates_running) {
+    updates_running = true;
+    requestAnimationFrame(animation_frame_handler);
+  }
+}
+
+function stop_updates() {
+  if (updates_running) {
+    updates_running = false;
+    cancelAnimationFrame(animation_frame);
+  }
+}
+
+function start_slow_step(delay) {
+  if (! updates_running) {
+    start_updates();
+    step_timer = setInterval(function() { slow_step(delay); }, delay);
+  }
+}
+
+function stop_slow_step() {
+  clearInterval(step_timer);
+  stop_updates();
+}
+
+function slow_step(delay) {
+  worker.postMessage(["clock_high"]);
+  setTimeout(function() { worker.postMessage(["clock_low"]); }, delay/2);
+}
+
+function benchmark() {
+  console.time("leds");
+  for (var i = 0; i < 50000; i++) {
+    display_number_on_leds("data_bus_leds",i % 65535);
+  }
+  console.timeEnd("leds");
+}
+
+function clear_screen() {
+  canvas_context.clearRect(0,0,128,128);
+}
+
+function get_led_references(id) {
+  var element = document.getElementById(id);
+  var references = {};
+
+  var has_tooltip = element.children[0].className == "tooltip_content";
+  references.leds = Array.prototype.slice.call(element.children);
+  references.tooltip = null;
+  references.tooltip_visible = false;
+
+  if (has_tooltip) {
+    references.leds = references.leds.slice(1);
+    references.tooltip = element.children[0];
+    element.addEventListener("mouseover", mouseover_tooltip);
+    element.addEventListener("mouseout", mouseoff_tooltip);
+  }
+
+  var log10_of_leds_squared = Math.log10(Math.pow(2, references.leds.length));
+  references.num_dec_digits = Math.ceil(log10_of_leds_squared);
+  references.num_hex_digits = Math.ceil(log10_of_leds_squared / Math.log10(16));
+  references.value = 0;
+
+  return references;
+}
+
+function display_number_on_leds(id, number) {
+  var references = led_strips[id];
+  var leds = references.leds;
+
+  for (var i = 0; i < leds.length; i++) {
+    var mask = 1 << (leds.length - i - 1);
+    if ((number & mask) != 0) {
+      if (!leds[i].classList.contains("on")) {
+        leds[i].classList.add("on");
+      }
     } else {
-        $("#curr-cnd-desc").html("not condit_");
+      if (leds[i].classList.contains("on")) {
+        leds[i].classList.remove("on");
+      }
+    }
+  }
+
+  references.value = number;
+
+  if (references.tooltip_visible) {
+    update_tool_tip(id);
+  }
+}
+
+function update_tool_tip(id) {
+  var references = led_strips[id];
+  var dec = get_padded_num(references.value, references.num_dec_digits,10);
+  var hex = get_padded_num(references.value , references.num_hex_digits,16);
+
+  var text = "dec " + dec + " hex " + hex;
+  references.tooltip.childNodes[0].nodeValue = text;
+}
+
+function mouseover_tooltip() {
+  var references = led_strips[this.id];
+  if (updates_running) {
+    references.tooltip_visible = true;
+  } else {
+    update_tool_tip(this.id);
+  }
+}
+
+function mouseoff_tooltip() {
+  var references = led_strips[this.id];
+  references.tooltip_visible = false;
+}
+
+function get_padded_num(number,num_zeroes,base) {
+  var string = number.toString(base);
+
+  while (num_zeroes > string.length) {
+    string = "0" + string;
+  }
+
+  return string;
+}
+
+function animation_frame_handler() {
+  worker.postMessage(["request_front_panel_info"]);
+  worker.postMessage(["request_vram_changes"]);
+  draw_all();
+  animation_frame = requestAnimationFrame(animation_frame_handler);
+}
+
+function draw_all() {
+  draw_front_panel();
+  draw_screen_updates();
+}
+
+function draw_front_panel() {
+  $("#clock-actual").val(front_panel_info["clock_speed"]);
+
+  display_number_on_leds("alu1_leds", front_panel_info["alu_operands"][0]);
+  display_number_on_leds("alu2_leds", front_panel_info["alu_operands"][1]);
+  display_number_on_leds("read_bus_leds", front_panel_info["read_bus"]);
+  display_number_on_leds("data_bus_leds", front_panel_info["data_bus"]);
+  display_number_on_leds("write_bus_leds", front_panel_info["write_bus"]);
+  display_number_on_leds("cnd_reg_leds", front_panel_info["conditional_bit"]);
+
+  display_number_on_leds("pc_leds", front_panel_info["program_counter"]);
+  display_number_on_leds("frame_num_leds", front_panel_info["frame_number"]);
+
+  var command_string = get_padded_num(front_panel_info["command_word"],16,2);
+  var first_part = parseInt(command_string.slice(0,5),2);
+  var second_part = parseInt(command_string.slice(15,16),2);
+  display_number_on_leds("cmd_word_1st_part_leds", first_part);
+  display_number_on_leds("cmd_word_2nd_part_leds", second_part);
+  display_number_on_leds("arg_num_leds", front_panel_info["args_remaining"]);
+
+  switch (front_panel_info["control_mode"]) {
+    case 0:
+      display_number_on_leds("proc_mode_leds", 0b100);
+      break;
+    case 1:
+      display_number_on_leds("proc_mode_leds", 0b010);
+      break;
+    case 2:
+      display_number_on_leds("proc_mode_leds", 0b001);
+      break;
+    default:
+      break;
+  }
+
+  switch (command_string.slice(0,3)) {
+    case "000":
+      display_number_on_leds("opcode_leds", 0b100000);
+      break;
+    case "001":
+      display_number_on_leds("opcode_leds", 0b010000);
+      break;
+    case "010":
+      display_number_on_leds("opcode_leds", 0b001000);
+      break;
+    case "011":
+      display_number_on_leds("opcode_leds", 0b000100);
+      break;
+    case "100":
+      display_number_on_leds("opcode_leds", 0b000010);
+      break;
+    case "101":
+      display_number_on_leds("opcode_leds", 0b000001);
+      break;
+    default:
+      break;
+  }
+
+  display_number_on_leds("arg1_leds", front_panel_info["arg_regs"][0]);
+  display_number_on_leds("arg3_leds", front_panel_info["arg_regs"][2]);
+  display_number_on_leds("arg2_leds", front_panel_info["arg_regs"][1]);
+  display_number_on_leds("out1_leds", front_panel_info["user_output"][0]);
+  display_number_on_leds("out2_leds", front_panel_info["user_output"][1]);
+  display_number_on_leds("out3_leds", front_panel_info["user_output"][2]);
+
+  if (front_panel_info["activity_indicators"]["alu1_write"]) {
+    display_number_on_leds("alu_write_leds",2);
+  } else if (front_panel_info["activity_indicators"]["alu2_write"]) {
+    display_number_on_leds("alu_write_leds",1);
+  } else {
+    display_number_on_leds("alu_write_leds",0);
+  }
+
+  display_number_on_leds("alu_read_leds",front_panel_info["activity_indicators"]["alu_read"]);
+
+  display_number_on_leds("ram_addr_leds", front_panel_info["activity_indicators"]["ram_address"]);
+  display_number_on_leds("ram_write_leds", front_panel_info["activity_indicators"]["ram_write"]);
+  display_number_on_leds("ram_read_leds", front_panel_info["activity_indicators"]["ram_read"]);
+  display_number_on_leds("ram_offset_leds", front_panel_info["activity_indicators"]["ram_frame_offset"]);
+
+  display_number_on_leds("rom_addr_leds", front_panel_info["activity_indicators"]["rom_address"]);
+  display_number_on_leds("rom_read_leds", front_panel_info["activity_indicators"]["rom_read"]);
+  display_number_on_leds("rom_write_leds", front_panel_info["activity_indicators"]["rom_write"]);
+}
+
+function draw_screen_updates() {
+  var img_data = canvas_context.createImageData(16,1);
+
+  while (vram_changes_buffer.length > 0) {
+    var item = vram_changes_buffer.pop();
+    var address = item[0];
+    var word = item[1];
+    var y = Math.floor(address / 8);
+    var x = (address % 8) * 16;
+    var value;
+
+    for (var i = 0; i < img_data.data.length; i += 4) {
+      var mask = 1 << (15 - (i/4));
+
+      if ((word & mask) != 0) {
+        value = pixel_on_colour;
+      } else {
+        value = pixel_off_colour;
+      }
+      img_data.data[i]     = value;
+      img_data.data[i + 1] = value;
+      img_data.data[i + 2] = value;
+      img_data.data[i + 3] = 255;
+    }
+    canvas_context.putImageData(img_data,x,y);
+  }
+}
+
+
+function clear_screen() {
+  canvas_context.clearRect(0,0,128,128);
+}
+
+function on_key_down(event) {
+  if (updates_running) {
+    var key_name = event.code;
+    var scancodes = keycode_to_scancode[key_name];
+
+    if (event.target != document.body) {
+      return;
     }
 
-    g_screen_updates.push.apply(g_screen_updates,data.gpubuffer);
-    vram_updates(g_screen_updates);
+    event.preventDefault();
 
-    $("#args-1").html(data.cmdRegs.args[1]);
-    $("#args-2").html(data.cmdRegs.args[2]);
-
-    $("#frame").html(data.cmdRegs.frameNo);
-
-    dcm1.setValue(("00000" + data.dcm[0]).slice(-5));
-    dcm2.setValue(("00000" + data.dcm[1]).slice(-5));
-    dcm3.setValue(("00000" + data.dcm[2]).slice(-5));
-    $("#rom").scrollTop((data.progCount-1)*15);
-}
-
-function vram_updates(stack) {
-    while (stack.length > 0) {
-        var item = stack.shift();
-        var y = Math.floor(item[0] / 8);
-        var x = (item[0] % 8) * 16;
-        var word = (("0000000000000000" + item[1]).slice(-16));
-
-        var imgData = ctx.createImageData(16,1);
-        for (var i = 0; i < imgData.data.length; i += 4) {
-            if (word.charAt(i/4) == "1") {
-                var value = high_colour;
-            } else {
-                var value = low_colour;
-            }
-            imgData.data[i]     = value;
-            imgData.data[i + 1] = value;
-            imgData.data[i + 2] = value;
-            imgData.data[i + 3] = 255;
-        }
-        ctx.putImageData(imgData,x,y);
+    if (scancodes === undefined) {
+      console.warn("Can't find make code for key '" + key_name + "'");
+    } else {
+      var codes = scancodes[0];
+      worker.postMessage(["key_code",codes]);
     }
+  }
 }
 
-function handleMsg(data) {
-    switch(data[0]) {
-        case "running":
-            requestAnimationFrame(update);
-            break;
-        case "stopped":
-            cancelAnimationFrame(g_id);
-            draw(g_data);
-            break;
-        case "stepped":
-            draw(g_data);
-            break;
-        case "speed":
-            document.getElementById("load").innerHTML = "Act: " + data[1] + " Hz";
-            break;
-        case "info":
-            g_data = data[1];
-            g_line = data[1].progCount;
-            break;
-        default:
-            break;
+function on_key_up(event) {
+  if (updates_running) {
+    var key_name = event.code;
+    var scancodes = keycode_to_scancode[key_name];
+
+    if (event.target != document.body) {
+      return;
     }
+
+    event.preventDefault();
+
+    if (scancodes === undefined) {
+      console.warn("Can't find break code for key '" + key_name + "'");
+    } else {
+      var codes = scancodes[1];
+      worker.postMessage(["key_code",codes]);
+    }
+  }
 }
-
-function update() {
-       draw(g_data);
-       msg(["info"]);
-       g_id = requestAnimationFrame(update);
-}
-
-function init() {
-    g_data = {};
-    g_line = 0;
-    g_screen_updates = [];
-    worker = new Worker("engine.js");
-    worker.onmessage = function(event) {
-        handleMsg(event.data);
-    };
-
-    canvas = document.getElementById("screen");
-    ctx = canvas.getContext("2d");
-
-    msg(["clock",$("#speed").val()]);
-
-    $("#rom").focusout(function(event){
-        setRom($("#rom").val());
-    });
-
-    $("#speed").focusout(function(event){
-        msg(["clock",$("#speed").val()]);
-    });
-
-    $("#usr1, #usr2").change(function(event){
-        $("#usr1").val(Math.round($("#usr1").val()))
-        $("#usr2").val(Math.round($("#usr2").val()))
-        if ($("#usr1").val() > 65535) {$("#usr1").val(65535); }
-        if ($("#usr2").val() > 65535) {$("#usr2").val(65535); }
-        msg(["input",[$("#usr1").val(),$("#usr2").val()]]);
-    });
-
-    document.addEventListener("keydown", function(event){
-        msg(["key",event.key]);
-    });
-
-    ref = $(".lined").linedtextarea(
-        {selectedLine: 1}
-    );
-
-    dcm1 = new SegmentDisplay("dcm1");
-    dcm2 = new SegmentDisplay("dcm2");
-    dcm3 = new SegmentDisplay("dcm3");
-
-    dcm1.pattern = dcm2.pattern = dcm3.pattern = "#####";
-    dcm1.displayAngle =  dcm2.displayAngle =  dcm3.displayAngle = 0;
-    dcm1.digitHeight = dcm2.digitHeight = dcm3.digitHeight = 20;
-    dcm1.digitWidth = dcm2.digitWidth = dcm3.digitWidth = 12;
-    dcm1.digitDistance = dcm2.digitDistance = dcm3.digitDistance = 2.5;
-    dcm1.segmentWidth = dcm2.segmentWidth = dcm3.segmentWidth  = 2.5;
-    dcm1.segmentDistance = dcm2.segmentDistance = dcm3.segmentDistance = 0.5;
-    dcm1.segmentCount = dcm2.segmentCount = dcm3.segmentCount = 7;
-    dcm1.cornerType = dcm2.cornerType = dcm3.cornerType = 3;
-    dcm1.colorOn = dcm2.colorOn = "#000000"; dcm3.colorOn = "#167AC6"
-    dcm1.colorOff = dcm2.colorOff = dcm3.colorOff = "#f1f1f1";
-
-    dcm1.setValue("00000");
-    dcm2.setValue("00000");
-    dcm3.setValue("00000");
-    msg(["rom",document.getElementById("rom").value.split("\n")]);
-}
-
-
-
-$( document ).ready(function() { //connect all the butons to their actions!
-	init(); //set-up the emulator (worker, keypress capture etc.)
-
-	$( "#step" ).click(function() {
-        msg(["step"]);
-    });
-    $( "#start" ).click(function() {
-        msg(["rom",document.getElementById("rom").value.split("\n")]);
-        msg(["start"]);
-    });
-    $( "#reset" ).click(function() {
-        msg(["reset"]);
-        $("#usr1").val(0);
-        $("#usr2").val(0);
-        ctx.clearRect(0,0,128,128);
-        //g_screen_updates = [];
-    });
-	$( "#stop" ).click(function() {
-        msg(["stop"]);
-    });
-    $( "#scr-type" ).click(function() {
-        toggleScreenMode();
-    });
-
-    parent.input_data = set_rom;
-    parent.child_page_loaded();
-});
