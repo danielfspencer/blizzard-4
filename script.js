@@ -15,14 +15,6 @@ function menu(item) {  //called when a user selects a menu item
 	    $("#toolbar-title").html("Emulator");
 	    $("#content").attr("src","emulator/emulator.html");
 	    break;
-  case "ole":
-      $("#toolbar-title").html("Emulator (old version)");
-      $("#content").attr("src","old_emulator/emulator.html");
-      break;
-  case "ola":
-      $("#toolbar-title").html("Assembler (old version)");
-      $("#content").attr("src","old_assembler/assembler.html");
-      break;
 	case "man":
 	    $("#toolbar-title").html("Manual");
 	    $("#content").attr("src","manual/manual.html");
