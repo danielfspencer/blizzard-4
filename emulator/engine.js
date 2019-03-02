@@ -1,5 +1,3 @@
-importScripts("../assets/fill.js");
-
 init_memory();
 init_rom();
 init_emulator();
