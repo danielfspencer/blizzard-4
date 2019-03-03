@@ -6,6 +6,7 @@ TODO: Introduction
 
 * Online (no install required) - https://danielfspencer.github.io/blizzard-4/
 * Prebuilt binaries ([electron](https://github.com/electron/electron) app) - https://github.com/danielfspencer/blizzard-4/releases/latest
+* Google Chrome App (will be depricated soon) - [Chrome Web Store](https://chrome.google.com/webstore/detail/blizzard-4/objgfaegobaokaihpdlnaifgkmkbgbaf)
 * Build from source - see below
 
 ## Building as an Electron App
