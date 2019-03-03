@@ -1,5 +1,12 @@
 # Blizzard 4 Toolchain
-In a chrome app
+
+TODO: Introduction
+
+## Ways to use:
+
+* Online (no install required) - https://danielfspencer.github.io/blizzard-4/
+* Prebuilt binaries (electron app) - https://github.com/danielfspencer/blizzard-4/releases/latest
+* Build from source - see below
 
 ## Building as an Electron App
 
