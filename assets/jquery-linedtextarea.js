@@ -1,27 +1,27 @@
 /**
- * jQuery Lined Textarea Plugin 
+ * jQuery Lined Textarea Plugin
  *   http://alan.blog-city.com/jquerylinedtextarea.htm
  *
  * Copyright (c) 2010 Alan Williamson
- * 
- * This version contains improvement for working with a 
+ *
+ * This version contains improvement for working with a
  * large number of lines.
  *
  * Available at
  * 		https://github.com/cotenoni/jquery-linedtextarea
- * 
- * Version: 
+ *
+ * Version:
  *    $Id: jquery-linedtextarea.js 464 2010-01-08 10:36:33Z alan $
  *
  * Released under the MIT License:
  *    http://www.opensource.org/licenses/mit-license.php
- * 
+ *
  * Usage:
  *   Displays a line number count column to the left of the textarea
- *   
+ *
  *   Class up your textarea with a given class, or target it directly
  *   with JQuery Selectors
- *   
+ *
  *   $(".lined").linedtextarea({
  *   	selectedLine: 10,
  *    selectedClass: 'lineselect'
@@ -37,12 +37,12 @@
 (function($) {
 
 	$.fn.linedtextarea = function(options) {
-		
+
 		// Get the Options
 		var opts = $.extend({}, $.fn.linedtextarea.defaults, options);
 		var LINEHEIGHT = 15;
-		
-		
+
+
 		/*
 		 * Helper function to make sure the line numbers are always
 		 * kept up to the current system
@@ -69,15 +69,15 @@
 			}
 			return lineNo;
 		};
-		
-		
+
+
 		/*
 		 * Iterate through each of the elements are to be applied to
 		 */
 		return this.each(function() {
 			var lineNo = 1;
 			var textarea = $(this);
-			
+
 			/* Turn off the wrapping of as we don't want to screw up the line numbers */
 			textarea.attr("wrap", "off");
 			textarea.css({resize:'none'});
@@ -87,24 +87,24 @@
 			textarea.wrap("<div class='linedtextarea'></div>");
 			var linedTextAreaDiv	= textarea.parent().wrap("<div class='linedwrap' style='width:" + originalTextAreaWidth + "px'></div>");
 			var linedWrapDiv 			= linedTextAreaDiv.parent();
-			
+
             if (opts.dec){
                 linedWrapDiv.prepend("<div class='lines' style='width:45px'></div>");
             } else {
                 linedWrapDiv.prepend("<div class='lines' style='width:60px'></div>");
             }
-			
-			
+
+
 			var linesDiv	= linedWrapDiv.find(".lines");
 			linesDiv.height( textarea.height() + 6 );
-			
-			
+
+
 			/* Draw the number bar; filling it out where necessary */
 			linesDiv.append( "<div class='codelines'></div>" );
 			var codeLinesDiv	= linesDiv.find(".codelines");
 			lineNo = fillOutLines( codeLinesDiv, linesDiv.height(), 1 );
 
-			/* Move the textarea to the selected line */ 
+			/* Move the textarea to the selected line */
 			if ( opts.selectedLine != -1 && !isNaN(opts.selectedLine) ){
 				var fontSize = parseInt( textarea.height() / (lineNo-2) );
 				var position = parseInt( fontSize * opts.selectedLine ) - (textarea.height()/2);
@@ -120,20 +120,20 @@
 
 			textarea.width( textareaNewWidth );
 			linedWrapDiv.width( linedWrapDivNewWidth );
-			
+
 			/* React to the scroll event */
 			var tid = null;
 			textarea.scroll( function(tn){
 				if (tid === null) {
 					var that = this;
-					
+
 					// We use a timeout as to avoid appending/redrawing
 					// the div on every scroll event. This does add some latency
 					// before the right line number is displayed, but makes possible
 					// scrolling with a very high number of lines
 					tid = requestAnimationFrame( function() {
 						codeLinesDiv.empty();
-						
+
 						// Calculare the line numbers to display
 						var domTextArea			= $(that)[0];
 						var scrollTop 			= domTextArea.scrollTop;
