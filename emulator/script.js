@@ -87,7 +87,7 @@ function init() {
   $("#usr1_input, #usr2_input, #usr3_input").change(send_user_input);
 
   worker.postMessage(["request_front_panel_info"]);
-  worker.postMessage(["set_clock",1000]);
+  worker.postMessage(["set_clock",100000]);
   parent.input_data = set_rom;
   parent.child_page_loaded();
 }
