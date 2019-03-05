@@ -1,0 +1,34 @@
+#content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.entry {
+    width: 100%;
+    clear: both;
+    display: table;
+}
+
+.run {
+    background-color: #607DB8;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+h3 {
+    margin: 5px 0 10px 0;
+}
+
+.text-container {
+    float: left;
+    width: 80%;
+}
+
+.button-container {
+    float: right;
+    width: 20%;
+}
+
+#main {
+    width: 100%;
+}

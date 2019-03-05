@@ -19,6 +19,10 @@ function menu(item) {  //called when a user selects a menu item
 	    $("#toolbar-title").html("Manual");
 	    $("#content").attr("src","manual/manual.html");
 	    break;
+    case "dem":
+        $("#toolbar-title").html("Demo Programs");
+        $("#content").attr("src","demo/demo.html");
+        break;
 	}
 	$( "#menu" ).removeClass("active"); //close menu
 	$( "#dim" ).fadeToggle(100); //remove menu's shadow
