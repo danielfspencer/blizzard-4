@@ -1,0 +1,12 @@
+{
+    "ping_pong": {
+        "name": "Ping Pong",
+        "desc": "Example description.",
+        "clock_speed": 100000
+    },
+    "space_invaders_test": {
+        "nane":"Space Invaders Demo",
+        "desc":"Example description.",
+        "clock_speed": 1000000
+    }
+}
