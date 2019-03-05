@@ -1,0 +1,258 @@
+def draw_8x8
+  arg int rom_addr
+  arg int x
+  arg int y
+  var int offset y
+  var int vram_addr 6144
+  var int mask 0xff00
+  var int inv_mask 0x00ff
+  if x sys.odd
+    mask = 0x00ff
+    inv_mask = 0xff00
+  x = x >>
+  vram_addr += x
+  vram_addr += offset
+  {copy [ram.4] alu.1}
+  {copy ram.6 alu.2}
+  {copy alu.& ram.7}
+  {copy [ram.0] alu.1}
+  {copy ram.5 alu.2}
+  {copy alu.& ram.8}
+  {copy ram.8 alu.1}
+  {copy ram.7 alu.2}
+  {copy alu.| [ram.4]}
+  rom_addr++
+  vram_addr += 8
+  {copy [ram.4] alu.1}
+  {copy ram.6 alu.2}
+  {copy alu.& ram.7}
+  {copy [ram.0] alu.1}
+  {copy ram.5 alu.2}
+  {copy alu.& ram.8}
+  {copy ram.8 alu.1}
+  {copy ram.7 alu.2}
+  {copy alu.| [ram.4]}
+  rom_addr++
+  vram_addr += 8
+  {copy [ram.4] alu.1}
+  {copy ram.6 alu.2}
+  {copy alu.& ram.7}
+  {copy [ram.0] alu.1}
+  {copy ram.5 alu.2}
+  {copy alu.& ram.8}
+  {copy ram.8 alu.1}
+  {copy ram.7 alu.2}
+  {copy alu.| [ram.4]}
+  rom_addr++
+  vram_addr += 8
+  {copy [ram.4] alu.1}
+  {copy ram.6 alu.2}
+  {copy alu.& ram.7}
+  {copy [ram.0] alu.1}
+  {copy ram.5 alu.2}
+  {copy alu.& ram.8}
+  {copy ram.8 alu.1}
+  {copy ram.7 alu.2}
+  {copy alu.| [ram.4]}
+  rom_addr++
+  vram_addr += 8
+  {copy [ram.4] alu.1}
+  {copy ram.6 alu.2}
+  {copy alu.& ram.7}
+  {copy [ram.0] alu.1}
+  {copy ram.5 alu.2}
+  {copy alu.& ram.8}
+  {copy ram.8 alu.1}
+  {copy ram.7 alu.2}
+  {copy alu.| [ram.4]}
+  rom_addr++
+  vram_addr += 8
+  {copy [ram.4] alu.1}
+  {copy ram.6 alu.2}
+  {copy alu.& ram.7}
+  {copy [ram.0] alu.1}
+  {copy ram.5 alu.2}
+  {copy alu.& ram.8}
+  {copy ram.8 alu.1}
+  {copy ram.7 alu.2}
+  {copy alu.| [ram.4]}
+  rom_addr++
+  vram_addr += 8
+  {copy [ram.4] alu.1}
+  {copy ram.6 alu.2}
+  {copy alu.& ram.7}
+  {copy [ram.0] alu.1}
+  {copy ram.5 alu.2}
+  {copy alu.& ram.8}
+  {copy ram.8 alu.1}
+  {copy ram.7 alu.2}
+  {copy alu.| [ram.4]}
+  rom_addr++
+  vram_addr += 8
+  {copy [ram.4] alu.1}
+  {copy ram.6 alu.2}
+  {copy alu.& ram.7}
+  {copy [ram.0] alu.1}
+  {copy ram.5 alu.2}
+  {copy alu.& ram.8}
+  {copy ram.8 alu.1}
+  {copy ram.7 alu.2}
+  {copy alu.| [ram.4]}
+  rom_addr++
+  vram_addr += 8
+
+def shift_right
+  var int vram_addr 7168
+  var bool carry
+  while vram_addr > 6144
+    {copy [ram.0] alu.1}
+    {copy alu.>> [ram.0]}
+    vram_addr--
+    {copy [ram.0] ram.1}
+    if carry
+      vram_addr++
+      {copy [ram.0] alu.1}
+      {write 0b1000000000000000 alu.2}
+      {copy alu.| [ram.0]}
+      vram_addr--
+
+def shift_left
+  var int vram_addr 6144
+  var bool carry
+  while vram_addr < 7168
+    {copy [ram.0] alu.1}
+    {copy alu.<< [ram.0]}
+    vram_addr++
+    {copy [ram.0] alu.1}
+    {write 0b1000000000000000 alu.2}
+    {copy alu.ov ram.1}
+    if carry
+      vram_addr--
+      {copy [ram.0] alu.1}
+      {write 0b0000000000000001 alu.2}
+      {copy alu.| [ram.0]}
+      vram_addr++
+
+def shift_down
+  var int vram_addr 7167
+  while vram_addr > 6144
+    {copy ram.0 alu.1}
+    {write 32 alu.2}
+    {copy [ram.0] [alu.+]}
+    vram_addr--
+
+var int space_invader
+var int offset
+var int limit 440
+
+{write sprite ram.0}
+for var int row 16; row < 440; row += 88
+  for var int col 1; col < 15; col += 2
+    draw_8x8(space_invader,col,row)
+  space_invader += 8
+free row
+free col
+
+while true
+  for var int i; i < 8; i++
+    shift_right()
+
+  {write sprite ram.0}
+  for var int row 16 + offset; row < limit; row += 88
+    for var int col 2; col < 15; col += 2
+      draw_8x8(space_invader,col,row)
+    space_invader += 8
+  free row
+  free col
+
+  offset += 32
+  limit += 32
+
+  shift_down()
+
+  free i
+  for var int i; i < 8; i++
+    shift_left()
+
+  {write sprite ram.0}
+  for var int row 16 + offset; row < limit; row += 88
+    for var int col 1; col < 15; col += 2
+      draw_8x8(space_invader,col,row)
+    space_invader += 8
+  free row
+  free col
+
+  offset += 32
+  limit += 32
+
+
+  shift_down()
+
+
+///
+sprite:
+0b0001100000011000
+0b0011110000111100
+0b0111111001111110
+0b1101101101011011
+0b1111111111111111
+0b0010010000100100
+0b0100001001011010
+0b0010010010100101
+0b0100001001000010
+0b0011110000100100
+0b0101101010111101
+0b1111111111111111
+0b1011110111011011
+0b1010010101111110
+0b0010010000100100
+0b0100001001000010
+0b0011110000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b0110011001100110
+0b1001100100111100
+0b0100001011000011
+0b0000000000000000
+0b0100001000100100
+0b0010010000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b1011110110100101
+0b0010010000100100
+0b0100001001100110
+0b1000000110000001
+0b0111111001111110
+0b1101101111011011
+0b1101101111011011
+0b0111111001111110
+0b1010010100100100
+0b1000000101000010
+0b0110011010000001
+0b0011110000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b0001100000011000
+0b0010010000100100
+0b0100001001000010
+0b1000000100100100
+0b0100001001000010
+0b0010010000100100
+0b0111111010111101
+0b1101101111011011
+0b1111111111111111
+0b1011110101011010
+0b1001100101000010
+0b0010010011000011
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+///

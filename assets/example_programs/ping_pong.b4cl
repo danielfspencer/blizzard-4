@@ -1,0 +1,238 @@
+var sint ball_x 63
+var sint ball_y 63
+var sint ball_dx 0
+var sint ball_dy 2
+var sint old_ball_x
+var sint old_ball_y
+
+var int top_paddle_x 7
+var int bottom_paddle_x 7
+
+var int top_low_bound 56
+var int top_high_bound 72
+
+var int bottom_low_bound 56
+var int bottom_high_bound 72
+
+var int top_score
+var int bottom_score
+
+var bool top_move_left
+var bool top_move_right
+
+var bool bottom_move_left
+var bool bottom_move_right
+
+var int mode 2
+var int speed 5
+var int iter
+var int key_code
+
+def set_word
+  arg int data
+  arg int addr
+  addr += 6144
+  {write [ram.0] [ram.1]}
+
+def get_key
+  var int scan_code
+  var int kbd 8192
+
+  scan_code = *kbd
+
+  while scan_code > 0
+    if scan_code == 0xf0
+      scan_code = *kbd
+    else if scan_code == 0xe0
+      //pass
+    else
+      return scan_code
+
+    scan_code = *kbd
+
+def draw_ball
+  arg sint x
+  arg sint y
+  arg sint old_x
+  arg sint old_y
+  sys.vram.set_pixel(x:0,y:0)
+  sys.vram.set_pixel(old_x:0,old_y:0,false)
+
+def draw_paddle
+  arg int x
+  arg int addr
+  arg bool erase false
+  var int half_x x >>
+  addr += half_x
+  if erase
+    if x sys.odd
+      set_word(0,addr)
+      addr++
+      set_word(0,addr)
+    else
+      set_word(0,addr)
+  else
+    if x sys.odd
+      set_word(0x00ff,addr)
+      addr++
+      set_word(0xff00,addr)
+    else 
+      set_word(0xffff,addr)
+
+sys.print_string("Ping  Pong",3,1)
+sys.print_string("1 - p1 vs p2",2,3)
+sys.print_string("2 - p1 vs AI",2,4)
+sys.print_string("3 - AI vs AI",2,5)
+sys.print_string("player1 (top)",2,7)
+sys.print_string("A=left D=right",1,9)
+sys.print_string("player2 (bottom)",0,12)
+sys.print_string("J=left K=right",1,14)
+
+key_code = get_key()
+var bool invalid_key_code true
+
+while invalid_key_code
+  if key_code == 0x16
+    mode = 0
+    invalid_key_code = 0
+  else if key_code == 0x1e
+    mode = 1
+    invalid_key_code = 0
+  else if key_code == 0x26
+    mode = 2
+    speed = 0
+    invalid_key_code = 0
+  else
+    key_code = get_key()
+
+sys.vram.clear()
+
+draw_paddle(top_paddle_x,40)
+draw_paddle(bottom_paddle_x,976)
+sys.print_int(0,0,6)
+sys.print_int(0,0,9)
+
+while true
+  iter++
+  if iter > speed
+    old_ball_x = ball_x
+    old_ball_y = ball_y
+
+    if ball_x > 127
+      ball_dx = 0 - ball_dx
+
+    if ball_x < 1
+      ball_dx = 0 - ball_dx
+
+    if ball_y > 127
+      top_score++
+      sys.print_int(top_score,0,6)
+      ball_x = 63
+      ball_y = 20
+      ball_dx = 0
+      ball_dy = 2
+
+    if ball_y < 1
+      bottom_score++
+      sys.print_int(bottom_score,0,9)
+      ball_x = 63
+      ball_y = 107
+      ball_dx = 0
+      ball_dy = -2
+
+    if ball_y < 7
+      if ball_x > top_low_bound
+        if ball_x < top_high_bound
+          ball_dy = 0 - ball_dy
+          ball_dx++
+
+    if ball_y > 120
+      if ball_x > bottom_low_bound
+        if ball_x < bottom_high_bound
+          ball_dy = 0 - ball_dy
+          ball_dx++
+
+    ball_x += ball_dx
+    ball_y += ball_dy
+
+    draw_ball(ball_x,ball_y,old_ball_x,old_ball_y)
+    {write 0x000f vram.512}
+    {write 0xf00f vram.513}
+    {write 0xf00f vram.514}
+    {write 0xf00f vram.515}
+    {write 0xf00f vram.516}
+    {write 0xf00f vram.517}
+    {write 0xf00f vram.518}
+    {write 0xf000 vram.519}
+    iter = 0
+
+
+  key_code = get_key()
+
+  if mode == 0
+    // two player mode
+    if key_code == 0x23
+      top_move_right = true
+    else if key_code == 0x1c
+      top_move_left = true
+    else if key_code == 0x3b
+      bottom_move_left = true
+    else if key_code == 0x4b
+      bottom_move_right = true
+  else if mode == 1
+    if key_code == 0x23
+      top_move_right = true
+    else if key_code == 0x1c
+      top_move_left = true
+    if ball_y > 43
+      if ball_x <= bottom_low_bound
+        bottom_move_left = true
+      if ball_x >= bottom_high_bound
+        bottom_move_right = true
+  else
+    if ball_y < 83
+      if ball_x >= top_high_bound
+        top_move_right = true
+      if ball_x <= top_low_bound
+        top_move_left = true
+    if ball_y > 43
+      if ball_x <= bottom_low_bound
+        bottom_move_left = true
+      if ball_x >= bottom_high_bound
+        bottom_move_right = true
+
+  if top_move_right
+    top_move_right = false
+    if top_paddle_x < 14
+      draw_paddle(top_paddle_x,40,true)
+      top_paddle_x++
+      draw_paddle(top_paddle_x,40)
+      top_low_bound += 8
+      top_high_bound += 8
+
+  if top_move_left
+    top_move_left = false
+    if top_paddle_x > 0
+      draw_paddle(top_paddle_x,40,true)
+      top_paddle_x--
+      draw_paddle(top_paddle_x,40)
+      top_low_bound -= 8
+      top_high_bound -= 8
+
+  if bottom_move_left
+    bottom_move_left = false
+    if bottom_paddle_x > 0
+      draw_paddle(bottom_paddle_x,976,true)
+      bottom_paddle_x--
+      draw_paddle(bottom_paddle_x,976)
+      bottom_low_bound -= 8
+      bottom_high_bound -= 8
+
+  if bottom_move_right
+    bottom_move_right = false
+    if bottom_paddle_x < 14
+      draw_paddle(bottom_paddle_x,976,true)
+      bottom_paddle_x++
+      draw_paddle(bottom_paddle_x,976)
+      bottom_low_bound += 8
+      bottom_high_bound += 8
