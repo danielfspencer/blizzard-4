@@ -23,3 +23,7 @@ body, html {
     height: 100%;
     overflow: hidden;
 }
+
+#ver {
+    display: inline;
+}
