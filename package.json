@@ -1,4 +1,4 @@
- {
+{
   "name": "blizzard-4",
   "version": "0.42.0",
   "license": "GPL-3.0",
@@ -25,7 +25,12 @@
       "target": [
         "AppImage"
       ]
-    }
+      },
+    "mac": {
+      "target": [
+        "dmg"
+        ]
+      }
   },
   "devDependencies": {
     "electron": "latest",
