@@ -35,6 +35,10 @@ function log(level,msg) {
     //~ $("#log").animate({scrollTop: $("#log")[0].scrollHeight - $("#log").height() - 1 }, 100)
 }
 
+function set_input(string) {
+  document.getElementById("in").value = string
+}
+
 var compiling = false
 var debug = false
 var realtime = true
@@ -129,4 +133,6 @@ $( document ).ready(function() {
     }
 
     worker.postMessage(["input",$("#in").val().split("\n")])
+    parent.input_data = set_input
+    parent.child_page_loaded()
 })

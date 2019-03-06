@@ -3,6 +3,10 @@
     margin: 0 auto;
 }
 
+body, html {
+    overflow-y: auto;
+}
+
 .entry {
     width: 100%;
     clear: both;
@@ -21,14 +25,23 @@ h3 {
 
 .text-container {
     float: left;
-    width: 80%;
+    width: 60%;
 }
 
-.button-container {
-    float: right;
+.img-container {
+    float: left;
     width: 20%;
 }
 
-#main {
+.img-box  {
+    margin-right: 14px;
+}
+
+.img-box > img {
     width: 100%;
+}
+
+.button-container {
+    float: left;
+    width: 20%;
 }
