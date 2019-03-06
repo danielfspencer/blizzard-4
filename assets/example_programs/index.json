@@ -5,7 +5,7 @@
         "clock_speed": 100000
     },
     "space_invaders_test": {
-        "nane":"Space Invaders Demo",
+        "name":"Space Invaders Demo",
         "desc":"Example description.",
         "clock_speed": 1000000
     }
