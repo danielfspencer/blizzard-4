@@ -14,6 +14,7 @@
   "build": {
     "productName": "Blizzard 4",
     "artifactName": "${productName} [${os} ver. ${version}].${ext}",
+    "icon": "assets/icon_512.png",
     "appImage": {
       "systemIntegration": "doNotAsk"
     },
