@@ -29,7 +29,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
 
     $(document).on("keydown", function(e) {
         if ((e.keyCode == 10 || e.keyCode == 13) && e.ctrlKey) {
-            compile()
+            run_assemble()
         }
     })
 
@@ -40,7 +40,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
     })
 
 
-    $("out").val("")
+    // $("out").val("")
     $("#in").on( "keyup", run_assemble)
 
     $("#in").on("keydown", function (e) {
