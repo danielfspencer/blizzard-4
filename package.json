@@ -13,7 +13,7 @@
   },
   "build": {
     "productName": "Blizzard 4",
-    "artifactName": "${productName} [${os}-${arch} ver. ${version}].${ext}",
+    "artifactName": "${productName} [${os} ver. ${version}].${ext}",
     "appImage": {
       "systemIntegration": "doNotAsk"
     },
