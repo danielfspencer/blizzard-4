@@ -23,6 +23,7 @@
       ]
     },
     "linux": {
+      "category": "Development",
       "target": [
         "AppImage"
       ]
