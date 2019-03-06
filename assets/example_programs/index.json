@@ -4,8 +4,13 @@
         "desc": "Example description.",
         "clock_speed": 100000
     },
-    "space_invaders_test": {
+    "space_invaders_demo": {
         "name":"Space Invaders Demo",
+        "desc":"Example description.",
+        "clock_speed": 1000000
+    },
+    "shape_test": {
+        "name":"Shape Drawing Test",
         "desc":"Example description.",
         "clock_speed": 1000000
     }
