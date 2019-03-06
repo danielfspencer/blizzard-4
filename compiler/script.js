@@ -37,6 +37,7 @@ function log(level,msg) {
 
 function set_input(string) {
   document.getElementById("in").value = string
+  compile()
 }
 
 var compiling = false

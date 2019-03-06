@@ -72,6 +72,7 @@ function run_assemble() {
 
 function set_input(string) {
   document.getElementById("in").value = string
+  run_assemble()
 }
 
 opDefs = {
