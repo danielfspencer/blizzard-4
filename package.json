@@ -25,12 +25,7 @@
       "target": [
         "AppImage"
       ]
-      },
-    "mac": {
-      "target": [
-        "dmg"
-        ]
-      }
+    }
   },
   "devDependencies": {
     "electron": "latest",
