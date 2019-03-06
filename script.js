@@ -1,4 +1,4 @@
-function menu(item) {  //called when a user selects a menu item
+function menu(item,userInitiated) {  //called when a user selects a menu item
     selectedMenuItem = item //global variable tracking what one we're on
     $( "[id^=menu-item-]").removeClass("active") //un-select all options
     $( "#"+item ).addClass("active") // select the new one
@@ -25,7 +25,9 @@ function menu(item) {  //called when a user selects a menu item
         break
 	}
 	$( "#menu" ).removeClass("active") //close menu
-	$( "#dim" ).fadeToggle(100) //remove menu's shadow
+  if (userInitiated) {
+    $( "#dim" ).fadeToggle(100) //remove menu's shadow
+  }
 }
 
 function child_page_loaded() {
@@ -36,16 +38,16 @@ function child_page_loaded() {
 }
 
 function handleMsg(event) {
-    $("#dim").fadeToggle(100)
+    // $("#dim").fadeToggle(100)
     data = event.data[1]
     input_data_waiting = true
-    menu(event.data[0])
+    menu(event.data[0],false)
 }
 
 input_data_waiting = false
 
 $( document ).ready(function() { //connect all the butons to their actions!
-    menu("menu-item-cmp") //select the compiler by default
+    menu("menu-item-cmp",true) //select the compiler by default
     materialDesignHamburger()
 
     $( ".material-design-hamburger" ).click(function() { //show or hide menu on button press
@@ -95,7 +97,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
     })
 
     $( "[id^=menu-item-]").click(function() { //report which tab user has selected
-		menu(this.id)
+		menu(this.id,true)
         toggle_hamburger()
 	})
 
