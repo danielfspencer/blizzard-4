@@ -1,3 +1,5 @@
+let size_bytes = 0;
+
 $( document ).ready(function() { //connect all the butons to their actions!
     $("#save_in").click(function() {
         saveFile($("#in").val(),$("#name").val()+".asm")
@@ -11,10 +13,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
         saveFile($("#out").val(),$("#name").val()+".bin")
     })
 
-    $("#cmp").click(function() {
-        $("#out").val(assemble($("#in").val()))
-        $("#size").html($("#out").val().lineCount()*2+" B")
-    })
+    $("#cmp").click(run_assemble)
 
     $("#run").click(function() {
         parent.postMessage(["emu",$("#out").val()],"*")
@@ -22,7 +21,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
 
     $("#auto").change(function() {
         if(this.checked) {
-            $("#in").on( "keyup", function() { $("#out").val(assemble($("#in").val())); $("#size").html($("#out").val().lineCount()*2+" B"); })
+            $("#in").on( "keyup", run_assemble)
         } else {
             $("#in").off()
         }
@@ -42,7 +41,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
 
 
     $("out").val("")
-    $("#in").on( "keyup", function() { $("#out").val(assemble($("#in").val())); $("#size").html($("#out").val().lineCount()*2+" B"); })
+    $("#in").on( "keyup", run_assemble)
 
     $("#in").on("keydown", function (e) {
     var keyCode = e.keyCode || e.which
@@ -65,6 +64,11 @@ $( document ).ready(function() { //connect all the butons to their actions!
     parent.input_data = set_input
     parent.child_page_loaded()
 })
+
+function run_assemble() {
+  $("#out").val(assemble($("#in").val()))
+  $("#size").html(size_bytes +" B")
+}
 
 function set_input(string) {
   document.getElementById("in").value = string
@@ -264,6 +268,6 @@ function assemble(code) {
         var bin = numToBin(labels[key].toString())
         asm_string = asm_string.replace( RegExp("\\b"+key+"\\b","gi") , bin)
     }
-
+    size_bytes = (asm_string.split("\n").length - 1) * 2;
     return asm_string
 }
