@@ -18,23 +18,18 @@ function init() {
               </div></div>"
       $("#content").append(html)
       $("#" + key + " > .button-container > .run").click( () => {
-        run(key)
+        view_or_run(key,true)
       })
       $("#" + key + " > .button-container > .src").click( () => {
-        view(key)
+        view_or_run(key,false)
       })
     })
   })
 }
 
-function run(name) {
-  console.log("run " + name)
-  parent.postMessage(["cmp",$("#out").val()],"*")
-}
-
-function view(name) {
+function view_or_run(name,run) {
   $.get(path+name+".b4cl", function(data) {
       console.log(data)
-      parent.postMessage(["cmp",data],"*")
+      parent.postMessage(["cmp",data,run],"*")
   })
 }
