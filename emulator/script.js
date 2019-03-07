@@ -92,8 +92,11 @@ function init() {
   parent.child_page_loaded()
 }
 
-function set_rom(string) {
-  worker.postMessage(["set_rom",string])
+function set_rom([string,shouldRun]) {
+    worker.postMessage(["set_rom",string])
+    if (shouldRun) {
+        worker.postMessage(["start"])
+    }
 }
 
 function send_user_input(event){

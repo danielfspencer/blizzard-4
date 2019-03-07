@@ -70,9 +70,13 @@ function run_assemble() {
   $("#size").html(size_bytes +" B")
 }
 
-function set_input(string) {
-  document.getElementById("in").value = string
-  run_assemble()
+function set_input([string,shouldRun]) {
+    if (shouldRun) {
+        parent.postMessage(["emu",assemble(string),true],"*")
+    } else {
+        document.getElementById("in").value = string
+        run_assemble()
+    }
 }
 
 opDefs = {

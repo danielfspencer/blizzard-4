@@ -4,8 +4,13 @@ function handleMsg(data) {
             $("#progress").attr("value",data[1])
             break
         case "result":
-            $("#out").val(data[1])
-            compiling = false
+            if (assemble_when_compiled) {
+              parent.postMessage(["asm",data[1],true],"*")
+              compiling = false
+            } else {
+              $("#out").val(data[1])
+              compiling = false
+            }
             break
         case "log":
             log(data[1],data[2])
@@ -35,14 +40,18 @@ function log(level,msg) {
     //~ $("#log").animate({scrollTop: $("#log")[0].scrollHeight - $("#log").height() - 1 }, 100)
 }
 
-function set_input(string) {
+function set_input([string,shouldAssemble]) {
   document.getElementById("in").value = string
+  if (shouldAssemble) {
+    assemble_when_compiled = true;
+  }
   compile()
 }
 
 var compiling = false
 var debug = false
 var realtime = true
+var assemble_when_compiled = false
 
 $( document ).ready(function() {
 

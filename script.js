@@ -39,7 +39,7 @@ function child_page_loaded() {
 
 function handleMsg(event) {
     // $("#dim").fadeToggle(100)
-    data = event.data[1]
+    data = event.data.slice(1)
     input_data_waiting = true
     menu(event.data[0],false)
 }
