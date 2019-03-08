@@ -28,8 +28,11 @@ function init() {
 }
 
 function view_or_run(name,run) {
-  $.get(path+name+".b4cl", function(data) {
-      console.log(data)
-      parent.postMessage(["cmp",data,run],"*")
+  $.ajax({
+    url: path + name + ".b4cl",
+    dataType: "text",
+    success: function(data) {
+        parent.postMessage(["cmp",data,run],"*")
+    }
   })
 }
