@@ -4,8 +4,13 @@
         "desc": "Example description.",
         "clock_speed": 100000
     },
+    "snake_demo": {
+        "name":"Snake Game Prototype",
+        "desc":"Example description.",
+        "clock_speed": 1000000
+    },
     "space_invaders_demo": {
-        "name":"Space Invaders Demo",
+        "name":"Space Invaders Prototype",
         "desc":"Example description.",
         "clock_speed": 1000000
     },

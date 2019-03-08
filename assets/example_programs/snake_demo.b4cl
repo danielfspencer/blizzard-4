@@ -1,0 +1,77 @@
+var array x_coords (int,490)[10,11,12]
+var array y_coords (int,490)[10,10,10]
+
+var int head_x x_coords[0]
+var int head_y y_coords[0]
+
+var int direction 1
+var int temp_x
+var int temp_y
+
+var int key_code
+
+def get_keypress
+  var int kbd 8192
+  var int scancode *kbd
+  var int char_code 0
+
+  while scancode > 0
+    if scancode == 0xAA
+      //pass
+    else if scancode == 0xF0
+      scancode = *kbd
+    else if scancode == 0xE0
+      //pass
+    else
+      char_code = sys.kbd.scancode_to_charcode(scancode)
+      return char_code
+    scancode = *kbd
+
+  return char_code
+
+var int head 120
+var int tail 0
+while true
+  key_code = get_keypress()
+  if key_code == 29
+    if direction != 2
+      direction = 0
+  else if key_code == 27
+    if direction != 3
+      direction = 1
+  else if key_code == 30
+    if direction != 0
+      direction = 2
+  else if key_code == 28
+    if direction != 1
+      direction = 3
+
+  if direction == 0
+    head_y--
+  else if direction == 1
+    head_x++
+  else if direction == 2
+    head_y++
+  else if direction == 3
+    head_x--
+
+
+  if head < 489
+    head++
+  else
+    head = 0
+  x_coords[head] = head_x
+  y_coords[head] = head_y
+
+  sys.vram.set_pixel(head_x,head_y)
+
+  if key_code != 8
+    temp_x = x_coords[tail]
+    temp_y = y_coords[tail]
+
+    if tail < 489
+      tail++
+    else
+      tail = 0
+
+    sys.vram.set_pixel(temp_x,temp_y,false)
