@@ -28,5 +28,10 @@
         "name":"Visualize the Standard Library",
         "desc":"A simple program that imports the entire standard library and then draws the contents of the ROM to the display (VRAM).",
         "clock_speed": 20000
+    },
+    "type_test": {
+        "name":"Text Editor Prototype",
+        "desc":"Type text with your keyboard and watch it appear on screen. Press enter to start a new line and use backspace to remove characters as usual. Note: does not yet support the shift or caps-lock keys.",
+        "clock_speed": 100000
     }
 }
