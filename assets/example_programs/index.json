@@ -23,5 +23,10 @@
         "name":"Character Drawing Test",
         "desc":"A demonstration of the aesthetic advantages of drawing characters with proper spacing (kerning) over fixed spacing (monospace). However, the time consuming nature of this method can be seen by watching how fast the monospace rendering is by comparison.",
         "clock_speed": 1000000
+    },
+    "standard_library": {
+        "name":"Visualize the Standard Library",
+        "desc":"A simple program that imports the entire standard library and then draws the contents of the ROM to the display (VRAM).",
+        "clock_speed": 20000
     }
 }
