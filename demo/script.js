@@ -9,10 +9,10 @@ function init() {
       html += "<div class='card entry' id="+key+">"
       html += "<div class='img-container'><div class='img-box'>"
       html += "<img src='" + path + "/img/" + key + ".png'/>"
-      html += "</div></div><div class='text-container'>"
+      html += "</div></div><div class='text-container'><div class='text-box'>"
       html += "<h3>" + value.name + "</h3>"
       html += value.desc
-      html += "</div><div class='button-container'> \
+      html += "</div></div><div class='button-container'> \
               <div class='button run'>run</div> \
               <div class='button src'>view source</div> \
               </div></div>"

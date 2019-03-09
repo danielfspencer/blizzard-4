@@ -26,6 +26,11 @@ h3 {
 .text-container {
     float: left;
     width: 60%;
+
+}
+
+.text-box {
+    margin-right: 14px;
 }
 
 .img-container {
