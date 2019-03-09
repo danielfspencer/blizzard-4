@@ -76,7 +76,7 @@ def draw_paddle
       set_word(0x00ff,addr)
       addr++
       set_word(0xff00,addr)
-    else 
+    else
       set_word(0xffff,addr)
 
 sys.print_string("Ping  Pong",3,1)
@@ -86,7 +86,7 @@ sys.print_string("3 - AI vs AI",2,5)
 sys.print_string("player1 (top)",2,7)
 sys.print_string("A=left D=right",1,9)
 sys.print_string("player2 (bottom)",0,12)
-sys.print_string("J=left K=right",1,14)
+sys.print_string("J=left L=right",1,14)
 
 key_code = get_key()
 var bool invalid_key_code true
