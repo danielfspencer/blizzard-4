@@ -21,7 +21,7 @@ $( document ).ready(function() {
 
     $.getJSON("../manifest.json")
         .done(function(data) {
-            version = data["version"]
+            version = data["version_name"]
             $("#ver").html("Version: " + version)
     })
 
