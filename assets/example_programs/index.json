@@ -18,5 +18,10 @@
         "name":"Shape Drawing Test",
         "desc":"A continually-looping test of the square and circle drawing functions from the standard library. There are no controls for this demo.",
         "clock_speed": 1000000
+    },
+    "kerning_test": {
+        "name":"Character Drawing Test",
+        "desc":"A demonstration of the aesthetic advantages of drawing characters with proper spacing (kerning) over fixed spacing (monospace). However, the time consuming nature of this method can be seen by watching how fast the monospace rendering is by comparison.",
+        "clock_speed": 1000000
     }
 }
