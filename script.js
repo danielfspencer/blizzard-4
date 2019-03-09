@@ -103,7 +103,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
 
     $.getJSON("manifest.json")
         .done(function(data) {
-            $("#ver").html("Version: " + data["version"])
+            $("#ver").html("Version: " + data["version_name"])
         })
 
     $(document).on("keydown", function(e) {
