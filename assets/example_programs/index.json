@@ -1,22 +1,22 @@
 {
     "ping_pong": {
         "name": "Ping Pong",
-        "desc": "Example description.",
+        "desc": "A classic ping pong game. Player 1 uses keys A & D to move the paddle. Player 2 uses keys J & L to move the paddle. Optionally, one or both of the players can be computer controlled. Select the game mode by pressing number 1, 2 or 3 on the title screen.",
         "clock_speed": 100000
     },
     "snake_demo": {
         "name":"Snake Game Prototype",
-        "desc":"Example description.",
+        "desc":"Early prototype of a snake game implemented with circular buffers. There is currently no collision detecting or food for the snake. Use the arrow keys to steer the snake.",
         "clock_speed": 1000000
     },
     "space_invaders_demo": {
         "name":"Space Invaders Prototype",
-        "desc":"Example description.",
+        "desc":"Early prototype demonstrating the drawing and shifting of the sprites for a space-invaders style game. There are no controls for this demo.",
         "clock_speed": 1000000
     },
     "shape_test": {
         "name":"Shape Drawing Test",
-        "desc":"Example description.",
+        "desc":"A continually-looping test of the square and circle drawing functions from the standard library. There are no controls for this demo.",
         "clock_speed": 1000000
     }
 }
