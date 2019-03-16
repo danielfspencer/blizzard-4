@@ -89,10 +89,6 @@ function CSVToArray(strData, strDelimiter){
     return(arrData)
 }
 
-function split_by_char(input, char) {
-    return input.split(char)
-}
-
 function benchmark(iter) {
     postMessage(["update",-1])
     log = false
@@ -551,7 +547,7 @@ function tokenise(input, line) {
         var array_name = matches[1]
         var operation = matches[2]
         var argument_string = matches[3]
-        var arguments = split_by_char(argument_string,",")
+        var arguments = argument_string.split(",")
 
         var argument_tokens = []
 
@@ -664,11 +660,11 @@ function tokenise(input, line) {
         var type_size = undefined
         if(matches[2] !== undefined) {
           var type_size_string = matches[2].slice(1, -1)
-          type_size = split_by_char(type_size_string,",")
+          type_size = type_size_string.split(",")
         }
 
         var elements_string = matches[3].slice(1, -1)
-        var elements_array = split_by_char(elements_string,",")
+        var elements_array = elements_string.split(",")
         var token_array = []
 
         for (var item of elements_array) {
