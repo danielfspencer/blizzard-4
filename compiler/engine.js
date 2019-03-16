@@ -1159,15 +1159,12 @@ function translate(token, ctx_type) {
                 throw new CompError("return can only be used in functions")
             }
             var ctx_type = name_type_map[scope][scope]
-            var prefix_and_value = translate(args["expr"],ctx_type)
-            var prefix = prefix_and_value[0]
-            var value = prefix_and_value[1]
-            var type = prefix_and_value[2]
+            var [prefix, registers, type] = translate(args["expr"],ctx_type)
             result = prefix
             result.push("return")
             var map = []
 
-            for (var item of value) {
+            for (var item of registers) {
                 var temp = item.replace("ram","ram+")
                 //this next replace prevents recursive function calls producing ram++++.x addresses
                 map.push(temp.replace("ram++","ram+"))
@@ -1337,11 +1334,10 @@ function translate(token, ctx_type) {
         case "bracket":
             var expression = args["expr"]
             type = translate(expression,ctx_type)[2]
-            var prefix_and_value = translate(expression, ctx_type)
-            var size = prefix_and_value[1].length
+            [prefix, expression_registers, type] = translate(expression, ctx_type)
+            var size = registers.length
 
             //evaluate expresssion
-            prefix = prefix_and_value[0]
             registers = []
 
             var temp_memory = alloc_block(size)
@@ -1351,7 +1347,7 @@ function translate(token, ctx_type) {
 
             for (var i = 0; i < size; i++) {
                 var address = "ram." + memory_copy.shift()
-                prefix.push("write " + prefix_and_value[1][i] + " " + address)
+                prefix.push("write " + expression_registers[i] + " " + address)
                 registers.push("["+address+"]")
             }
 
@@ -1374,9 +1370,7 @@ function translate(token, ctx_type) {
                 case "long":
                     load_lib("sys.long_add")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_add","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token, ctx_type)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token, ctx_type)
                     break
 
                 default:
@@ -1401,9 +1395,7 @@ function translate(token, ctx_type) {
                 case "long":
                     load_lib("sys.long_subtract")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_subtract","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token, ctx_type)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token, ctx_type)
                     break
 
                 default:
@@ -1422,25 +1414,19 @@ function translate(token, ctx_type) {
                 case "int":
                     load_lib("sys.int_multiply")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.int_multiply","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 case "sint":
                     load_lib("sys.sint_multiply")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.sint_multiply","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token,ctx_type)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token,ctx_type)
                     break
 
                 case "long":
                     load_lib("sys.long_multiply")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_multiply","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token,ctx_type)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token,ctx_type)
                     break
 
                 default:
@@ -1459,25 +1445,19 @@ function translate(token, ctx_type) {
                 case "int":
                     load_lib("sys.int_divide")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.int_divide","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 case "sint":
                     load_lib("sys.int_divide")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.sint_divide","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 case "long":
                     load_lib("sys.long_divide")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_divide","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 default:
@@ -1496,25 +1476,19 @@ function translate(token, ctx_type) {
                 case "int":
                     load_lib("sys.int_exponent")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.int_exponent","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 case "sint":
                     load_lib("sys.sint_exponent")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.sint_exponent","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 case "long":
                     load_lib("sys.long_exponent")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_exponent","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 default:
@@ -1533,17 +1507,13 @@ function translate(token, ctx_type) {
                 case "int":
                     load_lib("sys.int_modulo")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.int_modulo","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 case "sint":
                     load_lib("sys.sint_modulo")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.sint_modulo","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 default:
@@ -1578,9 +1548,7 @@ function translate(token, ctx_type) {
                 case "long":
                     load_lib("sys.long_greater")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_greater","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 default:
@@ -1616,9 +1584,7 @@ function translate(token, ctx_type) {
                 case "long":
                     load_lib("sys.long_less")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_less","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 default:
@@ -1767,9 +1733,7 @@ function translate(token, ctx_type) {
                 case "long":
                     load_lib("sys.long_equal")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_equal","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 default:
@@ -1798,9 +1762,7 @@ function translate(token, ctx_type) {
                 case "long":
                     load_lib("sys.long_not_equal")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_not_equal","exprs":[args["expr1"],args["expr2"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 default:
@@ -1840,17 +1802,13 @@ function translate(token, ctx_type) {
                 case "sint":
                     load_lib("sys.sint_rshift")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.sint_rshift","exprs":[args["expr"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 case "long":
                     load_lib("sys.long_rshift")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_rshift","exprs":[args["expr"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 default:
@@ -1873,9 +1831,7 @@ function translate(token, ctx_type) {
                 case "long":
                     load_lib("sys.long_lshift")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_lshift","exprs":[args["expr"]]}}
-                    var prefix_and_value = translate(token)
-                    prefix = prefix_and_value[0]
-                    registers = prefix_and_value[1]
+                    var [prefix, registers] = translate(token)
                     break
 
                 default:
@@ -1927,12 +1883,7 @@ function translate(token, ctx_type) {
         case "is_odd":
             console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
-            var prefix_and_value = translate(args["expr"],"int")
-            prefix = prefix_and_value[0]
-            registers = prefix_and_value[1]
-            //~ if (prefix_and_value[2] != "int") {
-                //~ throw new CompError("not supported unless int")
-            //~ }
+            var [prefix, registers] = translate(args["expr"],"int")
             registers = [registers[0]]
             break
 
