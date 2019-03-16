@@ -868,10 +868,7 @@ function translate(token, ctx_type) {
                 var dst_regs = var_map[scope][args["name"]]
                 var dst_type = name_type_map[scope][args["name"]]
 
-                var prefix_value_type = translate(args["expr"],dst_type)
-                var prefix = prefix_value_type[0]
-                var regs = prefix_value_type[1]
-                var type = prefix_value_type[2]
+                var [prefix, registers, type] = translate(args["expr"],dst_type)
 
                 if (type != dst_type) {
                     throw new CompError("Variable expected type '"+dst_type+"', got '"+type+"'")
@@ -879,7 +876,7 @@ function translate(token, ctx_type) {
                 result = prefix
 
                 for (var i = 0; i < dst_regs.length; i++) {
-                    result.push("write " + regs[i] + " ram." + dst_regs[i])
+                    result.push("write " + registers[i] + " ram." + dst_regs[i])
                 }
             } else {
                 throw new CompError("Error looking up variable '" + args["name"] + "' is undefined")
@@ -887,32 +884,30 @@ function translate(token, ctx_type) {
             break
 
         case "pointer_set":             //*[pointer] = [expr]
-            var prefix_value_type = translate(args["expr"])
-            var prefix = prefix_value_type[0]
-            var regs = prefix_value_type[1]
-            var type = prefix_value_type[2]
+            var [prefix, registers, type] = translate(args["expr"])
+            var prefix = prefix
             var size = data_types[type]
 
             result = prefix
 
             var pointer_expr = tokenise(args["name"])
             var pointer_prefix_value_type = translate(pointer_expr,"int")
-            var pointer_regs = pointer_prefix_value_type[1]
+            var pointer_regs = pointer_registers
 
-            if (pointer_prefix_value_type[2] != "int") {
-              throw new CompError("Pointers must be of type int, got '" + pointer_prefix_value_type[2] + "'")
+            if (pointer_type != "int") {
+              throw new CompError("Pointers must be of type int, got '" + pointer_type + "'")
             }
 
             console.debug("type: '"+type+"', size: '"+size+"'")
 
-            result.push("write " + regs[0] + " " + pointer_regs[0])
+            result.push("write " + registers[0] + " " + pointer_regs[0])
 
             if (size > 1) {
               result.push("write " + pointer_regs[0] + " alu.1")
 
               for (var i = 1; i < size; i++) {
                   result.push("write " + i + " alu.2")
-                  result.push("write " + regs[i] + " [alu.+]")
+                  result.push("write " + registers[i] + " [alu.+]")
               }
             }
 
@@ -923,15 +918,15 @@ function translate(token, ctx_type) {
             var index = args["index_expr"]
             var expr = args["expr"]
 
-            var prefix_value_type = translate(index,"int")
-            if (prefix_value_type[2] != "int") {
+            var [prefix, registers, type] = translate(index,"int")
+            if (type != "int") {
                 throw new CompError("Array indexes must be integers")
             }
-            result.push.apply(result,prefix_value_type[0])
+            result.push.apply(result,prefix)
 
             var array_information = var_map[scope][array_name]
 
-            var index = prefix_value_type[1]
+            var index = registers
             var base_addr = "[ram."+array_information[0]+"]"
             var item_size_as_register = "[ram."+array_information[2]+"]"
             var item_size_as_number = name_type_map[scope][array_name+".contained_size"]
@@ -949,15 +944,15 @@ function translate(token, ctx_type) {
 
             //evaluate the expression and put the result in a buffer area
             var array_type = name_type_map[scope][array_name+".contained_type"]
-            var prefix_value_type = translate(expr, array_type)
-            if (prefix_value_type[2] != array_type) {
-                throw new CompError("Array expected type '" +array_type+ "', got '" + prefix_value_type[2] + "'")
+            var [prefix, registers, type] = translate(expr, array_type)
+            if (type != array_type) {
+                throw new CompError("Array expected type '" +array_type+ "', got '" + type + "'")
             }
-            result.push.apply(result,prefix_value_type[0])
+            result.push.apply(result,prefix)
             var memory = alloc_block(item_size_as_number)
             var buffer = memory.slice()
 
-            for (var register of prefix_value_type[1]) {
+            for (var register of registers) {
                 result.push("write " + register + " ram." + buffer.shift())
             }
 
@@ -1001,15 +996,15 @@ function translate(token, ctx_type) {
 
               //evaluate the expression and put the result in a buffer area
               var array_type = name_type_map[scope][array_name+".contained_type"]
-              var prefix_value_type = translate(expr, array_type)
-              if (prefix_value_type[2] != array_type) {
-                  throw new CompError("Array expected type '" +array_type+ "', got '" + prefix_value_type[2] + "'")
+              var [prefix, registers, type] = translate(expr, array_type)
+              if (type != array_type) {
+                  throw new CompError("Array expected type '" +array_type+ "', got '" + type + "'")
               }
-              result.push.apply(result,prefix_value_type[0])
+              result.push.apply(result,prefix)
               var memory = alloc_block(item_size_as_number)
               var buffer = memory.slice()
 
-              for (var register of prefix_value_type[1]) {
+              for (var register of registers) {
                   result.push("write " + register + " ram." + buffer.shift())
               }
 
@@ -1036,15 +1031,15 @@ function translate(token, ctx_type) {
               var item_expression = args["exprs"][1]
 
               //evaluate the expression that gives the index
-              var prefix_value_type = translate(index_expression,"int")
-              if (prefix_value_type[2] != "int") {
+              var [prefix, registers, type] = translate(index_expression,"int")
+              if (type != "int") {
                   throw new CompError("Array indexes must be integers")
               }
-              result.push.apply(result,prefix_value_type[0])
+              result.push.apply(result,prefix)
 
               var array_information = var_map[scope][array_name]
 
-              var index = prefix_value_type[1]
+              var index = registers
               var base_addr = "[ram."+array_information[0]+"]"
               var item_size_as_register = "[ram."+array_information[2]+"]"
               var item_size_as_number = name_type_map[scope][array_name+".contained_size"]
@@ -2027,15 +2022,15 @@ function translate(token, ctx_type) {
 
             if (operation == "index") {
                 var index = args["expr"]
-                var prefix_value_type = translate(index,"int")
-                if (prefix_value_type[2] != "int") {
+                var [prefix, registers, type] = translate(index,"int")
+                if (type != "int") {
                     throw new CompError("Array indexes must be integers")
                 }
-                prefix.push.apply(prefix,prefix_value_type[0])
+                prefix.push.apply(prefix,prefix)
 
                 var array_information = var_map[scope][array_name]
 
-                var index = prefix_value_type[1]
+                var index = registers
                 var base_addr = "[ram."+array_information[0]+"]"
                 var item_size_as_register = "[ram."+array_information[2]+"]"
                 var item_size_as_number = name_type_map[scope][array_name+".contained_size"]
@@ -2141,14 +2136,14 @@ function translate(token, ctx_type) {
                 var target_regs = var_map[args["name"]][Object.keys(target_args)[i]]
                 var token = args["exprs"][i]
 
-                var prefix_value_type = translate(token,target_type)
-                if (prefix_value_type[2] != target_type) {
-                    throw new CompError("Arg '" + Object.keys(target_args)[i] + "' requires '" + target_type+ "', got '"+ prefix_value_type[2] +"'")
+                var [arg_prefix, arg_registers, arg_type] = translate(token,target_type)
+                if (arg_type != target_type) {
+                    throw new CompError("Arg '" + Object.keys(target_args)[i] + "' requires '" + target_type+ "', got '"+ type +"'")
                 }
 
-                prefix.push.apply(prefix,prefix_value_type[0])
+                prefix.push.apply(prefix,arg_prefix)
                 for (var y = 0; y < target_regs.length; y++) {
-                    var expr_reg = prefix_value_type[1][y]
+                    var expr_reg = arg_registers[y]
                     var dst_reg = "ram+." + target_regs[y]
                     prefix.push("write " + expr_reg + " " + dst_reg)
                 }
@@ -2170,15 +2165,15 @@ function translate(token, ctx_type) {
         case "pointer_lookup":
             var var_or_const_name = args["var_or_const_name"]
             var address_expr = tokenise(var_or_const_name)
-            var prefix_value_type = translate(address_expr,"int")
-            if (prefix_value_type[2] != "int") {
-                throw new CompError("Pointers must be of type int, got '" + prefix_value_type[2] +"'")
+            var [prefix, registers, type] = translate(address_expr,"int")
+            if (type != "int") {
+                throw new CompError("Pointers must be of type int, got '" + type +"'")
             }
-            prefix.push.apply(prefix,prefix_value_type[0])
+            prefix.push.apply(prefix,prefix)
 
             //write address to temp word
             var address_int = get_temp_word()
-            prefix.push("write " + prefix_value_type[1] + " " + address_int[1])
+            prefix.push("write " + registers + " " + address_int[1])
 
             var lookup_value = get_temp_word()
             prefix.push("copy [" + address_int[1] + "] " + lookup_value[1])
