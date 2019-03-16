@@ -1,42 +1,29 @@
 console.debug = function(message) {
-    if (!log) {return}
-    if (!debug) {return}
-    if (typeof message == 'object') {
-        var text = (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />'
-    } else {
-        var text = message + "\n"
-    }
-    postMessage(["log","debug",text])
+    send_log(message,"debug")
 }
 
 console.log = function(message) {
-    if (!log) {return}
-    if (typeof message == 'object') {
-        var text = (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />'
-    } else {
-        var text = message + "\n"
-    }
-    postMessage(["log","info",text])
+    send_log(message,"info")
 }
 
 console.warn = function(message) {
-    if (!log) {return}
-    if (typeof message == 'object') {
-        var text = (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />'
-    } else {
-        var text = message + "\n"
-    }
-    postMessage(["log","warn",text])
+    send_log(message,"warn")
 }
 
 console.error = function(message) {
-    if (!log) {return}
+    send_log(message,"error")
+}
+
+function send_log(message, level) {
+    if (!log || (level == "debug" && !debug)) {
+        return false;
+    }
     if (typeof message == 'object') {
         var text = (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />'
     } else {
         var text = message + "\n"
     }
-    postMessage(["log","error",text])
+    postMessage(["log",level,text])
 }
 
 var log = true
