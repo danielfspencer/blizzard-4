@@ -2567,3 +2567,20 @@ function compile(input, nested) {
 
 console.log("Worker thread started, " + Object.keys(libs).length + " standard functions loaded")
 init_vars()
+
+function hash(string) {
+  var hash = 0, i, chr
+  if (string.length === 0) { return hash }
+  for (var i = 0; i < string.length; i++) {
+    chr   = string.charCodeAt(i)
+    hash  = ((hash << 5) - hash) + chr
+    hash |= 0 // Convert to 32bit integer
+  }
+  return hash;
+}
+
+if (-463746373 === hash(compile(["include *"],true))) {
+    console.log("Hash matches")
+} else {
+    console.error("Hash does not match")
+}
