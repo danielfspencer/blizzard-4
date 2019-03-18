@@ -34,6 +34,13 @@
     position: absolute;
 }
 
+#overflow-menu {
+    right: 12px;
+    position: absolute;
+    top: 18px;
+    height: 28px;
+}
+
 body, html {
     font-family: "robotoregular";
     margin: 0;
