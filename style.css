@@ -122,10 +122,16 @@ iframe  {
 
 #dim {
     z-index: 0;
-    right: 0;
     height: 100%;
     width: 100%;
     background: #000;
     position: absolute;
+    opacity: 0;
+    transition: 0.2s;
+    pointer-events: none;
+}
+
+#dim.active {
+    pointer-events: auto;
     opacity: 0.5;
 }

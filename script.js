@@ -26,7 +26,7 @@ function menu(item,userInitiated) {  //called when a user selects a menu item
 	}
 	$( "#menu" ).removeClass("active") //close menu
   if (userInitiated) {
-    $( "#dim" ).fadeToggle(100) //remove menu's shadow
+    $( "#dim" ).removeClass("active") //remove menu's shadow
   }
 }
 
@@ -38,7 +38,6 @@ function child_page_loaded() {
 }
 
 function handleMsg(event) {
-    // $("#dim").fadeToggle(100)
     data = event.data.slice(1)
     input_data_waiting = true
     menu(event.data[0],false)
@@ -47,12 +46,12 @@ function handleMsg(event) {
 input_data_waiting = false
 
 $( document ).ready(function() { //connect all the butons to their actions!
-    menu("menu-item-cmp",true) //select the compiler by default
+    menu("menu-item-cmp",false) //select the compiler by default
     materialDesignHamburger()
 
     $( ".material-design-hamburger" ).click(function() { //show or hide menu on button press
         $( "#menu" ).toggleClass("active")
-        $( "#dim" ).fadeToggle(100)
+        $( "#dim" ).toggleClass("active")
     })
 
     $( "#close" ).click(function() {
@@ -87,12 +86,12 @@ $( document ).ready(function() { //connect all the butons to their actions!
           })
         }
         $( "#menu" ).toggleClass("active")
-        $( "#dim" ).fadeToggle(100)
+        $( "#dim" ).toggleClass("active")
     })
 
     $( "#dim" ).click(function() { //or hide when user clicks off it
         $( "#menu" ).toggleClass("active")
-        $( "#dim" ).fadeToggle(100)
+        $( "#dim" ).toggleClass("active")
         toggle_hamburger()
     })
 
