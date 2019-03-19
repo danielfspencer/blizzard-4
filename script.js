@@ -72,7 +72,8 @@ $( document ).ready(function() { //connect all the butons to their actions!
     })
 
     $( "#about" ).click(function() {
-      toggle_hamburger()
+        $( "#overflow-close" ).removeClass("active")
+        $( "#dropdown-menu" ).removeClass("active")
       if (!window.chrome) {
         window.open("about/about.html",'About','height=218,width=734')
       } else {
@@ -85,14 +86,22 @@ $( document ).ready(function() { //connect all the butons to their actions!
             }
           })
         }
-        $( "#menu" ).toggleClass("active")
-        $( "#dim" ).toggleClass("active")
     })
 
     $( "#dim" ).click(function() { //or hide when user clicks off it
         $( "#menu" ).toggleClass("active")
         $( "#dim" ).toggleClass("active")
         toggle_hamburger()
+    })
+
+    $( "#overflow-menu" ).click(function() {
+        $( "#dropdown-menu" ).toggleClass("active")
+        $( "#overflow-close" ).toggleClass("active")
+    })
+
+    $("#overflow-close").click( function () {
+        $( "#dropdown-menu" ).removeClass("active")
+        $( "#overflow-close" ).removeClass("active")
     })
 
     $( "[id^=menu-item-]").click(function() { //report which tab user has selected
