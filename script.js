@@ -1,4 +1,4 @@
-function menu(item,userInitiated) {  //called when a user selects a menu item
+function menu(item) {  //called when a user selects a menu item
     $( "[id^=menu-item-]").removeClass("active") //un-select all options
     $( "#"+item ).addClass("active") // select the new one
     switch(item.slice(-3)) { //change title and content accordingly
