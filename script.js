@@ -1,8 +1,7 @@
 function menu(item,userInitiated) {  //called when a user selects a menu item
-    selectedMenuItem = item //global variable tracking what one we're on
     $( "[id^=menu-item-]").removeClass("active") //un-select all options
     $( "#"+item ).addClass("active") // select the new one
-    switch(item.slice(-3)) { //change title and content accrodingly
+    switch(item.slice(-3)) { //change title and content accordingly
 	case "asm":
 	    $("#toolbar-title").html("Assembler")
 	    $("#content").attr("src","assembler/assembler.html")
@@ -25,9 +24,7 @@ function menu(item,userInitiated) {  //called when a user selects a menu item
         break
 	}
 	$( "#menu" ).removeClass("active") //close menu
-  if (userInitiated) {
     $( "#dim" ).removeClass("active") //remove menu's shadow
-  }
 }
 
 function child_page_loaded() {
@@ -40,18 +37,27 @@ function child_page_loaded() {
 function handleMsg(event) {
     data = event.data.slice(1)
     input_data_waiting = true
-    menu(event.data[0],false)
+    menu(event.data[0])
+}
+
+function toggle_overflow_menu() {
+    $( "#dropdown-menu" ).toggleClass("active")
+    $( "#overflow-close" ).toggleClass("active")
+}
+
+function toggle_menu() {
+    $( "#menu" ).toggleClass("active")
+    $( "#dim" ).toggleClass("active")
 }
 
 input_data_waiting = false
 
 $( document ).ready(function() { //connect all the butons to their actions!
-    menu("menu-item-cmp",false) //select the compiler by default
+    menu("menu-item-cmp") //select the compiler by default
     materialDesignHamburger()
 
     $( ".material-design-hamburger" ).click(function() { //show or hide menu on button press
-        $( "#menu" ).toggleClass("active")
-        $( "#dim" ).toggleClass("active")
+        toggle_menu()
     })
 
     $( "#close" ).click(function() {
@@ -72,8 +78,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
     })
 
     $( "#about" ).click(function() {
-        $( "#overflow-close" ).removeClass("active")
-        $( "#dropdown-menu" ).removeClass("active")
+        toggle_overflow_menu()
       if (!window.chrome) {
         window.open("about/about.html",'About','height=218,width=734')
       } else {
@@ -89,23 +94,20 @@ $( document ).ready(function() { //connect all the butons to their actions!
     })
 
     $( "#dim" ).click(function() { //or hide when user clicks off it
-        $( "#menu" ).toggleClass("active")
-        $( "#dim" ).toggleClass("active")
         toggle_hamburger()
+        toggle_menu()
     })
 
     $( "#overflow-menu" ).click(function() {
-        $( "#dropdown-menu" ).toggleClass("active")
-        $( "#overflow-close" ).toggleClass("active")
+        toggle_overflow_menu()
     })
 
     $("#overflow-close").click( function () {
-        $( "#dropdown-menu" ).removeClass("active")
-        $( "#overflow-close" ).removeClass("active")
+        toggle_overflow_menu()
     })
 
     $( "[id^=menu-item-]").click(function() { //report which tab user has selected
-		menu(this.id,true)
+		menu(this.id)
         toggle_hamburger()
 	})
 
