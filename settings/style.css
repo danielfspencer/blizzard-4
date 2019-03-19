@@ -1,0 +1,12 @@
+h3 {
+    margin: 0 0 12px 0;
+}
+
+#content {
+    width: 300px;
+    margin: 0 auto;
+}
+
+#content > .card {
+    width: 100%;
+}

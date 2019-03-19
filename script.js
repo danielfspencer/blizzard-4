@@ -93,6 +93,22 @@ $( document ).ready(function() { //connect all the butons to their actions!
         }
     })
 
+    $( "#settings" ).click(function() {
+        toggle_overflow_menu()
+      if (!window.chrome) {
+        window.open("settings/settings.html",'About','height=500,width=300')
+      } else {
+          chrome.app.window.create('settings/settings.html', {
+            "frame": "none",
+            "resizable": false,
+            "bounds": {
+              width: 300,
+              height: 500
+            }
+          })
+        }
+    })
+
     $( "#dim" ).click(function() { //or hide when user clicks off it
         toggle_hamburger()
         toggle_menu()
