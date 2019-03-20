@@ -78,6 +78,7 @@
     position: absolute;
     top: 18px;
     height: 28px;
+    cursor: pointer;
 }
 
 #overflow-close {
