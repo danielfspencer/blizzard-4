@@ -12,7 +12,7 @@
    viewBox="0 0 24 24"
    id="svg2989"
    version="1.1"
-   inkscape:version="0.48.4 r9939"
+   inkscape:version="0.92.4 (unknown)"
    sodipodi:docname="minimise.svg">
   <metadata
      id="metadata2999">
@@ -36,23 +36,25 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="640"
-     inkscape:window-height="480"
+     inkscape:window-width="1600"
+     inkscape:window-height="824"
      id="namedview2995"
      showgrid="false"
      inkscape:zoom="9.8333333"
-     inkscape:cx="12"
+     inkscape:cx="10.220339"
      inkscape:cy="12"
-     inkscape:window-x="804"
-     inkscape:window-y="295"
-     inkscape:window-maximized="0"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
      inkscape:current-layer="svg2989" />
   <path
-     d="M19 13h-14v-2h14v2z"
+     d="M 19,18.59322 H 5 v -2 h 14 z"
      id="path2991"
-     style="fill:#ffffff" />
+     style="fill:#ffffff"
+     inkscape:connector-curvature="0" />
   <path
-     d="M0 0h24v24h-24z"
-     fill="none"
-     id="path2993" />
+     d="M 0,5.5932204 H 24 V 29.59322 H 0 Z"
+     id="path2993"
+     inkscape:connector-curvature="0"
+     style="fill:none" />
 </svg>

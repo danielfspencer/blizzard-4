@@ -2,18 +2,22 @@
     width: 100%;
     height: 24px;
 	background: #616161;
+    display: flex;
 }
 
 #drag-region {
-    width: 95%;
+    width: 100%;
     height: 100%;
-    float: left;
 	-webkit-app-region: drag;
+}
+
+#window-controls {
+    display: inline-flex;
 }
 
 #mini, #close, #max{
     z-index: 1;
-    float: right;
+    height: 24px;
 }
 
 #toolbar {
