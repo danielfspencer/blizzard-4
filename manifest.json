@@ -13,5 +13,5 @@
     "128": "assets/icon_128.png",
     "512": "assets/icon_512.png"
   },
-  "permissions": []
+  "permissions": ["storage"]
 }

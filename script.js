@@ -79,33 +79,33 @@ $( document ).ready(function() { //connect all the butons to their actions!
 
     $( "#about" ).click(function() {
         toggle_overflow_menu()
-      if (!window.chrome) {
-        window.open("about/about.html",'About','height=218,width=734')
-      } else {
-          chrome.app.window.create('about/about.html', {
-            "frame": "none",
-            "resizable": false,
-            "bounds": {
-              width: 734,
-              height: 218
-            }
-          })
+        if (is_chrome_app()) {
+            chrome.app.window.create('about/about.html', {
+                "frame": "none",
+                "resizable": false,
+                "bounds": {
+                    width: 734,
+                    height: 218
+                }
+            })
+        } else {
+            window.open("about/about.html",'About','height=218,width=734')
         }
     })
 
     $( "#settings" ).click(function() {
         toggle_overflow_menu()
-      if (!window.chrome) {
-        window.open("settings/settings.html",'Settings','height=500,width=400')
-      } else {
-          chrome.app.window.create('settings/settings.html', {
-            "frame": "none",
-            "resizable": false,
-            "bounds": {
-              width: 400,
-              height: 500
-            }
-          })
+        if (is_chrome_app()) {
+            chrome.app.window.create('settings/settings.html', {
+                "frame": "none",
+                "resizable": false,
+                "bounds": {
+                    width: 400,
+                    height: 500
+                }
+            })
+        } else {
+            window.open("settings/settings.html",'Settings','height=500,width=400')
         }
     })
 

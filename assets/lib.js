@@ -12,3 +12,12 @@ function loadFile(e, target) {
     };
     reader.readAsText(file);
 }
+
+function is_chrome_app() {
+    try {
+        var ref = chrome.storage.local
+        return true
+    } catch (e) {
+        return false
+    }
+}
