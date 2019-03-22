@@ -96,13 +96,13 @@ $( document ).ready(function() { //connect all the butons to their actions!
     $( "#settings" ).click(function() {
         toggle_overflow_menu()
       if (!window.chrome) {
-        window.open("settings/settings.html",'About','height=500,width=300')
+        window.open("settings/settings.html",'Settings','height=500,width=400')
       } else {
           chrome.app.window.create('settings/settings.html', {
             "frame": "none",
             "resizable": false,
             "bounds": {
-              width: 300,
+              width: 400,
               height: 500
             }
           })
