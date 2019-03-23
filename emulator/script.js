@@ -182,7 +182,7 @@ function slow_step(delay) {
 
 function benchmark() {
   console.time("leds")
-  for (var i = 0; i < 50000; i++) {
+  for (var i = 0; i < 500000; i++) {
     display_number_on_leds("data_bus_leds",i % 65535)
   }
   console.timeEnd("leds")
@@ -222,13 +222,14 @@ function display_number_on_leds(id, number) {
 
   for (var i = 0; i < leds.length; i++) {
     var mask = 1 << (leds.length - i - 1)
+    var ref = leds[i].classList
     if ((number & mask) != 0) {
-      if (!leds[i].classList.contains("on")) {
-        leds[i].classList.add("on")
+      if (!ref.contains("on")) {
+        ref.add("on")
       }
     } else {
-      if (leds[i].classList.contains("on")) {
-        leds[i].classList.remove("on")
+      if (ref.contains("on")) {
+        ref.remove("on")
       }
     }
   }
