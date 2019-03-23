@@ -5,6 +5,7 @@
     <link rel="stylesheet" type="text/css" href="../style.css">
     <link rel="stylesheet" type="text/css" href="style.css">
     <script src="../assets/jquery.min.js"></script>
+    <script src="../assets/lib.js"></script>
     <script src="script.js"></script>
     <title>Settings</title>
 </head>
@@ -16,11 +17,11 @@
     <div id="content">
         <div class="card">
             <h3>General</h3>
-            <div class="paper-toggle"><input id="dark-theme" class="switch" type="checkbox" checked/>
+            <div class="paper-toggle"><input id="dark-theme" class="switch" type="checkbox"/>
                 <label for="dark-theme">Dark Theme</label>
             </div>
             <a>Starting page</a>
-            <select>
+            <select id="starting-page">
                 <option value="emu">Emulator</option>
                 <option value="asm">Assembler</option>
                 <option value="cmp">Compiler</option>
