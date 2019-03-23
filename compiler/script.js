@@ -68,16 +68,8 @@ $( document ).ready(function() {
         )
     })
 
-    $("#save_in").click(function() {
-        saveFile($("#in").val(),$("#name").val()+".b4cl")
-    })
-
     $("#load_in").change(function(e) {
         loadFile(e, "in")
-    })
-
-    $("#save_out").click(function() {
-        saveFile($("#out").val(),$("#name").val()+".asm")
     })
 
     $(document).delegate('#in', 'keydown', function(e) {

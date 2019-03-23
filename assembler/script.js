@@ -3,16 +3,8 @@ let size_bytes = 0;
 $( document ).ready(function() { //connect all the butons to their actions!
     parent.child_set_theme(document)
 
-    $("#save_in").click(function() {
-        saveFile($("#in").val(),$("#name").val()+".asm")
-    })
-
     $("#load_in").change(function(e) {
         loadFile(e, "in")
-    })
-
-    $("#save_out").click(function() {
-        saveFile($("#out").val(),$("#name").val()+".bin")
     })
 
     $("#cmp").click(run_assemble)
