@@ -27,6 +27,29 @@ function menu(item) {  //called when a user selects a menu item
     $( "#dim" ).removeClass("active") //remove menu's shadow
 }
 
+function set_theme(theme) {
+    if (name == null) { return }
+    current_theme = theme
+
+    var path = "assets/themes/" + theme + "_frame.css"
+    inject_stylesheet(path, document)
+    child_set_theme(document.getElementById("content").contentDocument)
+}
+
+function inject_stylesheet(path, target) {
+    var stylesheet = document.createElement("link")
+    stylesheet.href = path
+    stylesheet.rel = "stylesheet"
+    stylesheet.type = "text/css"
+    target.body.appendChild(stylesheet)
+}
+
+function child_set_theme(target) {
+    if (current_theme == null) { return }
+    var path = "../assets/themes/" + current_theme + "_content.css"
+    inject_stylesheet("../"+path, target)
+}
+
 function child_page_loaded() {
   if (input_data_waiting) {
     input_data(data)
@@ -50,7 +73,8 @@ function toggle_menu() {
     $( "#dim" ).toggleClass("active")
 }
 
-input_data_waiting = false
+var input_data_waiting = false
+var current_theme = null
 
 $( document ).ready(function() { //connect all the butons to their actions!
     menu("menu-item-cmp") //select the compiler by default
@@ -82,7 +106,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
     $( "#about" ).click(function() {
         toggle_overflow_menu()
         if (is_chrome_app()) {
-            chrome.app.window.create('about/about.html', {
+            var page = chrome.app.window.create('about/about.html', {
                 "frame": "none",
                 "resizable": false,
                 "bounds": {
@@ -91,14 +115,15 @@ $( document ).ready(function() { //connect all the butons to their actions!
                 }
             })
         } else {
-            window.open("about/about.html",'About','height=218,width=734')
+            var page = window.open("about/about.html",'About','height=218,width=734')
         }
+        console.log(page)
     })
 
     $( "#settings" ).click(function() {
         toggle_overflow_menu()
         if (is_chrome_app()) {
-            chrome.app.window.create('settings/settings.html', {
+            var page = chrome.app.window.create('settings/settings.html', {
                 "frame": "none",
                 "resizable": false,
                 "bounds": {
@@ -107,8 +132,9 @@ $( document ).ready(function() { //connect all the butons to their actions!
                 }
             })
         } else {
-            window.open("settings/settings.html",'Settings','height=500,width=400')
+            var page = window.open("settings/settings.html",'Settings','height=500,width=400')
         }
+        console.log(page)
     })
 
     $( "#dim" ).click(function() { //or hide when user clicks off it

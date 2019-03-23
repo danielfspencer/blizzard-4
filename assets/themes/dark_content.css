@@ -1,0 +1,40 @@
+body {
+    background: #111111;
+    color: #ffffff;
+}
+
+.card {
+    background: #151515;
+}
+
+.button {
+    background: #182027;
+}
+
+.tooltip_enabled .tooltip_content {
+    background: #151515;
+}
+
+textarea {
+    background: #151515;
+}
+
+div.led {
+    filter: saturate(50%);
+}
+
+div.led.blue {
+    background: #01dcff;
+}
+
+/* div.led.red {
+    background: #01dcff;
+}
+
+div.led.green {
+    background: #01dcff;
+} */
+
+.linedwrap {
+    border: 1px solid #888888;
+}

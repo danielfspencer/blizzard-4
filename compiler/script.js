@@ -54,6 +54,7 @@ var realtime = true
 var assemble_when_compiled = false
 
 $( document ).ready(function() {
+    parent.child_set_theme(document)
 
     $(function() {
             $(".lined-dec").linedtextarea(
