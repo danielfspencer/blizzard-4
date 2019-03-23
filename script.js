@@ -77,10 +77,10 @@ var input_data_waiting = false
 var current_theme = null
 
 $( document ).ready(function() { //connect all the butons to their actions!
-    menu("menu-item-cmp") //select the compiler by default
-    materialDesignHamburger()
-
+    storage_get_key("theme",set_theme,null)
     storage_get_key("starting-page",(page) => (menu("menu-item-"+page)),"dem")
+
+    materialDesignHamburger()
 
     $( ".material-design-hamburger" ).click(function() { //show or hide menu on button press
         toggle_menu()
