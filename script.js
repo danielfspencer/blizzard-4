@@ -56,6 +56,8 @@ $( document ).ready(function() { //connect all the butons to their actions!
     menu("menu-item-cmp") //select the compiler by default
     materialDesignHamburger()
 
+    storage_get_key("starting-page",(page) => (menu("menu-item-"+page)),"dem")
+
     $( ".material-design-hamburger" ).click(function() { //show or hide menu on button press
         toggle_menu()
     })
