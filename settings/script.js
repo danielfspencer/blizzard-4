@@ -1,6 +1,6 @@
 $( document ).ready(() => {
-    storage_get_key("starting-page",set_starting_page,"dem")
-    storage_get_key("theme",set_theme,"light")
+    storage_get_key("starting-page",get_starting_page,"dem")
+    storage_get_key("theme",get_theme,"light")
 
     $( "#close" ).click(function() {
         window.close()
@@ -9,25 +9,38 @@ $( document ).ready(() => {
     $( "#dark-theme" ).change(function() {
         if ($(this).prop("checked")) {
             storage_set_key("theme","dark")
-            console.log("saving page to storage: dark")
         } else {
             storage_set_key("theme","light")
-            console.log("saving page to storage: light")
         }
     })
 
     $( "#starting-page" ).change(function() {
-        console.log("saving page to storage: " + $(this).val())
         storage_set_key("starting-page",$(this).val())
     })
 })
 
-function set_theme(theme) {
-    console.log("theme from storage: " + theme)
+
+function get_theme(theme) {
     $("#dark-theme").prop('checked', theme == "dark")
 }
 
-function set_starting_page(page) {
-    console.log("page from storage: " + page)
+function get_starting_page(page) {
     $("#starting-page").val(page)
+}
+
+/* theme setting */
+
+function inject_stylesheet(path, target) {
+    var stylesheet = document.createElement("link")
+    stylesheet.href = path
+    stylesheet.rel = "stylesheet"
+    stylesheet.type = "text/css"
+    target.body.appendChild(stylesheet)
+}
+
+function set_theme(theme) {
+    if (theme == "light") { return }
+    var path = "../assets/themes/" + theme
+    inject_stylesheet(path + "_content.css", document)
+    inject_stylesheet(path + "_frame.css", document)
 }

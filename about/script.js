@@ -37,3 +37,20 @@ $( document ).ready(function() {
             $("#latest_ver").html("Latest Version: (error checking for new version)")
         })
 })
+
+/* theme setting */
+
+function inject_stylesheet(path, target) {
+    var stylesheet = document.createElement("link")
+    stylesheet.href = path
+    stylesheet.rel = "stylesheet"
+    stylesheet.type = "text/css"
+    target.body.appendChild(stylesheet)
+}
+
+function set_theme(theme) {
+    if (theme == "light") { return }
+    var path = "../assets/themes/" + theme
+    inject_stylesheet(path + "_content.css", document)
+    inject_stylesheet(path + "_frame.css", document)
+}
