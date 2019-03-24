@@ -27,10 +27,11 @@ $( document ).ready(function() {
 
     $.getJSON("https://danielfspencer.github.io/blizzard-4/manifest.json")
         .done(function(data) {
-            if (data["version"] !== version) {
-                $("#latest_ver").html("Latest Version: " + data["version"] + " (update available)")
+            var latest_version = data["version_name"]
+            if (version !== latest_version) {
+                $("#latest_ver").html("Latest Version: " + latest_version + " (update available)")
             } else {
-                $("#latest_ver").html("Latest Version: " + data["version"] + " (up to date)")
+                $("#latest_ver").html("Latest Version: " + latest_version + " (up to date)")
             }
         })
         .fail( function() {
