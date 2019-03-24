@@ -1,6 +1,7 @@
 {
   "name": "Blizzard 4",
-  "version": "0.42.0",
+  "version": "0.43.0",
+  "version_name": "0.43.0-beta.1",
   "description": "Emulator & toolchain for the Blizzard 4 16-bit computer.",
   "manifest_version": 2,
   "app": {
@@ -12,5 +13,5 @@
     "128": "assets/icon_128.png",
     "512": "assets/icon_512.png"
   },
-  "permissions": []
+  "permissions": ["storage"]
 }

@@ -1,0 +1,17 @@
+include *
+
+def rom_to_vram
+  var int rom_addr 32768
+  var int vram_addr 6144
+  for var int page; page < 32; page++
+    vram_addr = 6144
+    for var int col; col < 8; col++
+      for var int row; row < 128; row++
+        {copy [ram.0] [ram.1]}
+        rom_addr++
+        vram_addr += 8
+      vram_addr -= 1023
+  free rom_addr
+  free vram_addr
+
+rom_to_vram()

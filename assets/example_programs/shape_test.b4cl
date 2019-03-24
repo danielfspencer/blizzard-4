@@ -1,0 +1,114 @@
+var int counter
+var int base
+while true
+  counter = 8
+  base = 4
+  while counter < 20
+    sys.vram.draw_square(base,base,counter)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_square(base,base,counter,false)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_square(118-base,base,counter)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_square(118-base,base,counter,false)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_square(base,118-base,counter)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_square(base,118-base,counter,false)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_square(118-base,118-base,counter)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_square(118-base,118-base,counter,false)
+    base += 8
+    counter++
+
+  counter = 8
+  base = 4
+  while counter < 20
+    sys.vram.draw_circle(base,base,counter)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_circle(base,base,counter,false)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_circle(118-base,base,counter)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_circle(118-base,base,counter,false)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_circle(base,118-base,counter)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_circle(base,118-base,counter,false)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_circle(118-base,118-base,counter)
+    base += 8
+    counter++
+
+  counter =  8
+  base = 4
+  while counter < 20
+    sys.vram.draw_circle(118-base,118-base,counter,false)
+    base += 8
+    counter++

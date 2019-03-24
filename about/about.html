@@ -2,13 +2,17 @@
 <html><head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <link rel="stylesheet" type="text/css" href="../assets/lib.css">
+    <link rel="stylesheet" type="text/css" href="../style.css">
     <link rel="stylesheet" type="text/css" href="style.css">
     <script src="../assets/jquery.min.js"></script>
+    <script src="../assets/lib.js"></script>
     <script src="script.js"></script>
+    <title>About</title>
 </head>
 <body>
+    <script src="../assets/set_theme.js"></script>
 
-        <div id="statusbar" style="background: #E6E6E6; margin-bottom: 8px;">
+        <div id="statusbar" class="light-accent" style="margin-bottom: 8px;">
             <div id="drag-region"></div>
             <img id="close" src="../assets/icons/close.svg"/>
         </div>
@@ -25,8 +29,7 @@
 
         <div class="card" style="width: 500px; height: 140px; padding-left: 18px;">
           <h1 style="margin: 0;">Blizzard 4 Emulator & Toolchain</h1>
-          <a>Licensed under the GNU General Public License v3.0</a>
-          <br><br>
+          <div id="ver">Version: -.--.-</div><div id="latest_ver">Latest Version: (checking...)</div>
           <div style="margin-top: 10px; width: 300px; display: inline-block;" class="button">Copyright &copy; 2019 Daniel Spencer</div>
           <div style="margin-top: 10px; width: 145px; display: inline-block;" class="button" id="licence">View Licence</div>
         </div>

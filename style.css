@@ -2,18 +2,26 @@
     width: 100%;
     height: 24px;
 	background: #616161;
+    display: flex;
 }
 
 #drag-region {
-    width: 95%;
+    width: 100%;
     height: 100%;
-    float: left;
 	-webkit-app-region: drag;
+}
+
+#window-controls {
+    display: inline-flex;
 }
 
 #mini, #close, #max{
     z-index: 1;
-    float: right;
+    height: 24px;
+}
+
+#statusbar.light-accent {
+    background: #9E9E9E;
 }
 
 #toolbar {
@@ -32,6 +40,62 @@
     font-family: "robotomedium";
     font-size: 18pt;
     position: absolute;
+}
+
+#dropdown-menu {
+    z-index: 3;
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    padding: 0px;
+    visibility: hidden;
+}
+
+#dropdown-menu.active {
+    visibility: visible;
+}
+
+#dropdown-menu-list {
+    padding: 0px;
+    margin: 0px;
+    list-style: none;
+    margin: 0 20px 0 14px;
+}
+
+#dropdown-menu-list > li {
+    margin: 16px 0;
+    height: 24px;
+    line-height: 24px;
+}
+
+#dropdown-menu-list > li > img {
+    margin-right: 10px;
+    opacity: 0.7;
+}
+
+#dropdown-menu-list > li * {
+    vertical-align: middle;
+}
+
+#overflow-menu {
+    right: 12px;
+    position: absolute;
+    top: 18px;
+    height: 28px;
+    cursor: pointer;
+}
+
+#overflow-close {
+    z-index: 1;
+    top: 0px;
+    bottom: 0px;
+    width: 100%;
+    position: absolute;
+    pointer-events: none;
+}
+
+#overflow-close.active {
+    pointer-events: auto;
 }
 
 body, html {
@@ -53,26 +117,10 @@ iframe  {
     width: 58px;
 }
 
-#ver {
-    color: gray;
+#version {
+    color: #9a9a9a;
     font-weight: bold;
-    margin-left: 15px;
-}
-
-#about {
-    font-weight: bold;
-    margin-left: 15px;
-    opacity: 0.5;
-    margin-top: 4px;
-}
-
-#about img {
-    vertical-align: middle;
-}
-
-#about a {
-    vertical-align: middle;
-    margin-left: 6px;
+    margin-left: 24px;
 }
 
 #menu-list {
@@ -85,7 +133,8 @@ iframe  {
 }
 
 #menu-list > li {
-    padding-left: 15px;
+    padding-left: 24px;
+    padding-right: 36px;
     line-height: 48px;
     height: 48px;
     opacity: 0.87;
@@ -99,7 +148,7 @@ iframe  {
 #menu-list > li > img {
     margin-bottom: 3px;
     vertical-align: middle;
-    padding-right: 40px;
+    padding-right: 24px;
     opacity: 0.4;
 }
 
@@ -107,7 +156,6 @@ iframe  {
     box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.37);
     position: absolute;
     height: 100%;
-    width: 300px;
     background: #FFF;
     position: absolute;
     z-index: 1;
@@ -122,10 +170,16 @@ iframe  {
 
 #dim {
     z-index: 0;
-    right: 0;
     height: 100%;
     width: 100%;
     background: #000;
     position: absolute;
+    opacity: 0;
+    transition: 0.2s;
+    pointer-events: none;
+}
+
+#dim.active {
+    pointer-events: auto;
     opacity: 0.5;
 }

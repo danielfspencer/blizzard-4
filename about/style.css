@@ -1,25 +1,3 @@
-#statusbar {
-    width: 100%;
-    height: 24px;
-	background: #616161;
-}
-
-#drag-region {
-    width: 95%;
-    height: 100%;
-    float: left;
-	-webkit-app-region: drag;
-}
-
-#max{
-    z-index: 1;
-    float: right;
-}
-
-body, html {
-    font-family: "robotoregular";
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
+#ver {
+    display: inline;
 }
