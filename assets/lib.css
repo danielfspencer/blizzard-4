@@ -55,6 +55,10 @@ body, html {
     -webkit-user-select: none;
 }
 
+img {
+    -webkit-user-drag: none;
+}
+
 .card {
     border-radius: 2px;
     float:left;
