@@ -31,6 +31,10 @@ body {
     background: #171717;
 }
 
+#statusbar.light-accent {
+    background: #232323;
+}
+
 #toolbar {
     background: #232323;
 }
