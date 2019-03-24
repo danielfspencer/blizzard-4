@@ -3,8 +3,6 @@ const path = "../assets/example_programs/"
 $(document).ready(init)
 
 function init() {
-  parent.child_set_theme(document)
-
   $.getJSON(path+"index.json", function(data) {
     $.each(data, function(key,value) {
       var html = "";

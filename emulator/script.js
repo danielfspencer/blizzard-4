@@ -1,8 +1,6 @@
 $(document).ready(init)
 
 function init() {
-  parent.child_set_theme(document)
-
   worker = new Worker("engine.js")
   worker.onmessage = function(event) {
     handle_message(event.data)
