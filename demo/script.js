@@ -32,7 +32,7 @@ function view_or_run(name,run) {
     url: path + name + ".b4cl",
     dataType: "text",
     success: function(data) {
-        parent.postMessage(["cmp",data,run],"*")
+        parent.postMessage(["menu-item-cmp",data,run],"*")
     }
   })
 }

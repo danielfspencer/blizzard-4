@@ -8,7 +8,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
     $("#cmp").click(run_assemble)
 
     $("#run").click(function() {
-        parent.postMessage(["emu",$("#out").val()],"*")
+        parent.postMessage(["menu-item-emu",$("#out").val()],"*")
     })
 
     $("#auto").change(function() {
@@ -64,7 +64,7 @@ function run_assemble() {
 
 function set_input([string,shouldRun]) {
     if (shouldRun) {
-        parent.postMessage(["emu",assemble(string),true],"*")
+        parent.postMessage(["menu-item-emu",assemble(string),true],"*")
     } else {
         document.getElementById("in").value = string
         run_assemble()

@@ -23,8 +23,6 @@ function menu(item) {  //called when a user selects a menu item
         $("#content").attr("src","demo/demo.html")
         break
 	}
-	$( "#menu" ).removeClass("active") //close menu
-    $( "#dim" ).removeClass("active") //remove menu's shadow
 }
 
 function set_theme(theme) {
@@ -163,6 +161,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
     $( "[id^=menu-item-]").click(function() { //report which tab user has selected
 		menu(this.id)
         toggle_hamburger()
+        toggle_menu()
 	})
 
     $.getJSON("manifest.json")

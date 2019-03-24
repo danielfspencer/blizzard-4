@@ -5,7 +5,7 @@ function handleMsg(data) {
             break
         case "result":
             if (assemble_when_compiled) {
-              parent.postMessage(["asm",data[1],true],"*")
+              parent.postMessage(["menu-item-asm",data[1],true],"*")
               compiling = false
             } else {
               $("#out").val(data[1])
@@ -118,7 +118,7 @@ $( document ).ready(function() {
     })
 
     $("#assemble").click(function() {
-        parent.postMessage(["asm",$("#out").val()],"*")
+        parent.postMessage(["menu-item-asm",$("#out").val()],"*")
     })
 
     $("#in").on( "keyup", function(e) {
@@ -133,7 +133,6 @@ $( document ).ready(function() {
         handleMsg(event.data)
     }
 
-    worker.postMessage(["input",$("#in").val().split("\n")])
     parent.input_data = set_input
     parent.child_page_loaded()
 })
