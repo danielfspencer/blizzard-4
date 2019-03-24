@@ -28,12 +28,28 @@ function menu(item) {  //called when a user selects a menu item
 }
 
 function set_theme(theme) {
+    console.log(performance.now() + " set_theme called")
     if (name == null) { return }
-    current_theme = theme
+    current_theme.name = theme
 
     var path = "assets/themes/" + theme + "_frame.css"
     inject_stylesheet(path, document)
-    child_set_theme(document.getElementById("content").contentDocument)
+
+    $.ajax({
+        url: "assets/themes/"+ theme + "_content.css",
+        dataType: "text",
+        success: (content) => {
+            current_theme.content = create_css_element(content)
+        }
+    })
+}
+
+function create_css_element(content) {
+    var elem = document.createElement("style")
+    elem.type = "text/css"
+    elem.innerHTML = content
+    console.log(elem)
+    return elem
 }
 
 function inject_stylesheet(path, target) {
@@ -45,9 +61,7 @@ function inject_stylesheet(path, target) {
 }
 
 function child_set_theme(target) {
-    if (current_theme == null) { return }
-    var path = "assets/themes/" + current_theme + "_content.css"
-    inject_stylesheet("../"+path, target)
+    target.body.appendChild(current_theme.content)
 }
 
 function child_page_loaded() {
@@ -74,12 +88,14 @@ function toggle_menu() {
 }
 
 var input_data_waiting = false
-var current_theme = null
+var current_theme = {
+    "name" : null,
+    "content" : null
+}
 
 $( document ).ready(function() { //connect all the butons to their actions!
-    storage_get_key("theme",set_theme,null)
     storage_get_key("starting-page",(page) => (menu("menu-item-"+page)),"dem")
-
+    console.log(performance.now() + " index page DOM ready")
     materialDesignHamburger()
 
     $( ".material-design-hamburger" ).click(function() { //show or hide menu on button press
