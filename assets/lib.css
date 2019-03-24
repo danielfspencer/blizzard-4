@@ -49,6 +49,10 @@ body, html {
     font-family: "robotoregular";
     -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
     -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -moz-user-select: -moz-none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
 }
 
 .card {
