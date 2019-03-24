@@ -89,26 +89,26 @@ input {
   margin-right: 4px;
 }
 
-.on {
+.led.on {
   opacity: 1;
 }
 
-.red {
+.led.red {
   background: red;
 }
 
-.green {
+.led.green {
   background: green;
 }
 
-.blue {
+.led.blue {
   background: blue;
 }
 
-.blank {
+.led.blank {
   background: #b0b0b0;
 }
 
-.blank.on {
+.led.blank.on {
   opacity: 0.2;
 }

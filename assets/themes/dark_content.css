@@ -17,24 +17,38 @@ body {
 
 textarea {
     background: #151515;
+    color: inherit;
 }
 
 div.led {
-    filter: saturate(50%);
+    filter: saturate(60%);
+    opacity: 0.1;
 }
 
-div.led.blue {
+.led.blue {
     background: #01dcff;
 }
 
-/* div.led.red {
-    background: #01dcff;
+.led.red {
+    background: #ff0000;
 }
 
-div.led.green {
-    background: #01dcff;
-} */
+.led.green {
+    background: #00cc00;
+}
 
 .linedwrap {
     border: 1px solid #888888;
+}
+
+.item.info {
+    background: #182027;
+}
+
+.item.warn {
+    background: #423400;
+}
+
+.item.error {
+    background: #2f0c0c;
 }
