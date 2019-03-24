@@ -5,8 +5,23 @@ h3 {
 #content {
     width: 300px;
     margin: 0 auto;
+    padding-top: 8px;
+    box-sizing: border-box;
 }
 
 #content > .card {
     width: 100%;
+    box-sizing: border-box;
+}
+
+.settings > * {
+    margin-top: 6px;
+}
+
+.button {
+    margin-top: 12px;
+}
+
+#starting-page {
+    margin-left: 10px;
 }

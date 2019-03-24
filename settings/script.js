@@ -6,6 +6,10 @@ $( document ).ready(() => {
         window.close()
     })
 
+    $( "#reset" ).click(function() {
+        storage_clear()    
+    })
+
     $( "#dark-theme" ).change(function() {
         if ($(this).prop("checked")) {
             storage_set_key("theme","dark")

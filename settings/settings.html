@@ -18,17 +18,21 @@
     <div id="content">
         <div class="card">
             <h3>General</h3>
-            <div class="paper-toggle"><input id="dark-theme" class="switch" type="checkbox"/>
-                <label for="dark-theme">Dark Theme</label>
+            <div class="settings">
+                <div class="paper-toggle"><input id="dark-theme" class="switch" type="checkbox"/>
+                    <label for="dark-theme">Dark Theme</label>
+                </div>
+
+                <a>Starting page</a>
+                <select id="starting-page">
+                    <option value="emu">Emulator</option>
+                    <option value="asm">Assembler</option>
+                    <option value="cmp">Compiler</option>
+                    <option value="man">Manual</option>
+                    <option value="dem">Demo Programs</option>
+               </select>
+               <div class="button" id="reset">reset to defaults</div>
             </div>
-            <a>Starting page</a>
-            <select id="starting-page">
-                <option value="emu">Emulator</option>
-                <option value="asm">Assembler</option>
-                <option value="cmp">Compiler</option>
-                <option value="man">Manual</option>
-                <option value="dem">Demo Programs</option>
-           </select>
         </div>
     </div>
 </body></html>

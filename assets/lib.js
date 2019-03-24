@@ -52,3 +52,11 @@ function storage_get_key(key,callback,default_value) {
         }
     }
 }
+
+function storage_clear(key,value) {
+    if (is_chrome_app()) {
+        chrome.storage.local.clear()
+    } else {
+        localStorage.clear()
+    }
+}
