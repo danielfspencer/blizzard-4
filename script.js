@@ -46,7 +46,7 @@ function inject_stylesheet(path, target) {
 
 function child_set_theme(target) {
     if (current_theme == null) { return }
-    var path = "../assets/themes/" + current_theme + "_content.css"
+    var path = "assets/themes/" + current_theme + "_content.css"
     inject_stylesheet("../"+path, target)
 }
 
