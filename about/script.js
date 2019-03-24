@@ -2,9 +2,7 @@ var version = ""
 
 $( document ).ready(function() {
     $( "#licence" ).click(function() {
-      if (!window.chrome) {
-        window.open("../licence.html",'Licence','height=800,width=600')
-      } else {
+      if (is_chrome_app()) {
           chrome.app.window.create('../licence.html', {
             "resizable": true,
             "bounds": {
@@ -12,7 +10,9 @@ $( document ).ready(function() {
               height: 680
             }
           })
-        }
+      } else {
+          window.open("../licence.html",'Licence','height=800,width=600')
+      }
     })
 
     $( "#close" ).click(function() {
