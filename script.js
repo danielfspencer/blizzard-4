@@ -57,7 +57,9 @@ function inject_stylesheet(path, target) {
 }
 
 function child_set_theme(target) {
-    target.body.appendChild(current_theme.content)
+    if (current_theme.content != null) {
+        target.body.appendChild(current_theme.content)
+    }
 }
 
 function child_page_loaded() {
