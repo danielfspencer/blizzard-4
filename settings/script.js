@@ -7,7 +7,7 @@ $( document ).ready(() => {
     })
 
     $( "#reset" ).click(function() {
-        storage_clear()    
+        storage_clear()
     })
 
     $( "#dark-theme" ).change(function() {

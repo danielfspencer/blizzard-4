@@ -92,7 +92,7 @@ var current_theme = {
 }
 
 $( document ).ready(function() { //connect all the butons to their actions!
-    storage_get_key("starting-page",(page) => (menu("menu-item-"+page)),"dem")
+    storage_get_key("starting-page", (page) => (menu("menu-item-"+page)), "dem")
     materialDesignHamburger()
 
     $( ".material-design-hamburger" ).click(function() { //show or hide menu on button press
