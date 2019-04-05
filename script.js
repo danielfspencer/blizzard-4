@@ -1,3 +1,8 @@
+if (get_platform() == "electron") {
+    window.$ = window.jQuery = module.exports; // avoid breaking jquery with node integration
+    remote = require('electron').remote
+}
+
 function menu(item) {  //called when a user selects a menu item
     $( "[id^=menu-item-]").removeClass("active") //un-select all options
     $( "#"+item ).addClass("active") // select the new one
@@ -104,20 +109,37 @@ $( document ).ready(function() { //connect all the butons to their actions!
     })
 
     $( "#mini" ).click(function() {
-        chrome.app.window.current().minimize()
+        switch (get_platform()) {
+            case "chrome":
+                chrome.app.window.current().minimize()
+                break
+            case "electron":
+                remote.BrowserWindow.getFocusedWindow().minimize()
+                break
+        }
     })
 
     $( "#max" ).click(function() {
-        if (chrome.app.window.current().isMaximized()) {
-            chrome.app.window.current().restore()
-        } else {
-            chrome.app.window.current().maximize()
+        switch (get_platform()) {
+            case "chrome":
+                var page = chrome.app.window.current()
+                break
+            case "electron":
+                var page = remote.BrowserWindow.getFocusedWindow()
+                break
         }
+
+        if (page.isMaximized()) {
+            page.restore()
+        } else {
+            page.maximize()
+        }
+
     })
 
     $( "#about" ).click(function() {
         toggle_overflow_menu()
-        if (is_chrome_app()) {
+        if (get_platform() == "chrome") {
             chrome.app.window.create('about/about.html', {
                 "frame": "none",
                 "resizable": false,
@@ -133,7 +155,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
 
     $( "#settings" ).click(function() {
         toggle_overflow_menu()
-        if (is_chrome_app()) {
+        if (get_platform() == "chrome") {
             chrome.app.window.create('settings/settings.html', {
                 "frame": "none",
                 "resizable": false,
@@ -171,11 +193,12 @@ $( document ).ready(function() { //connect all the butons to their actions!
             $("#version").html("Version / " + data["version_name"])
         })
 
-    $(document).on("keydown", function(e) {
-        if (e.keyCode == 33) {
-            e.preventDefault()
+    window.onkeydown = (event) => {
+        if (event.which === 123 && get_platform() === "electron") {
+            remote.BrowserWindow.getFocusedWindow().webContents.openDevTools()
         }
-    })
+    }
+
 })
 
 window.addEventListener('message', handleMsg, false)

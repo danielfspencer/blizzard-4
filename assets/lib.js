@@ -13,17 +13,26 @@ function loadFile(e, target) {
     reader.readAsText(file);
 }
 
-function is_chrome_app() {
+function get_platform() {
     try {
         var ref = chrome.storage.local
-        return true
     } catch (e) {
-        return false
+
     }
+
+    if (typeof ref !== 'undefined') {
+        return "chrome"
+    }
+
+    if (typeof require !== 'undefined') {
+        return "electron"
+    }
+
+    return "website"
 }
 
 function storage_set_key(key,value) {
-    if (is_chrome_app()) {
+    if (get_platform() == "chrome") {
         var obj = {}
         obj[key] = value
         chrome.storage.local.set(obj)
@@ -33,7 +42,7 @@ function storage_set_key(key,value) {
 }
 
 function storage_get_key(key,callback,default_value) {
-    if (is_chrome_app()) {
+    if (get_platform() == "chrome") {
         chrome.storage.local.get([key], (items) => {
             var result = items[key]
             if (result === undefined) {
@@ -54,7 +63,7 @@ function storage_get_key(key,callback,default_value) {
 }
 
 function storage_clear(key,value) {
-    if (is_chrome_app()) {
+    if (get_platform() == "chrome") {
         chrome.storage.local.clear()
     } else {
         localStorage.clear()
