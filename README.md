@@ -1,3 +1,6 @@
+![Screenshot of emulator](/assets/screenshots/emulator.png?raw=true)
+
+
 # Blizzard 4 Toolchain
 
 TODO: Introduction
