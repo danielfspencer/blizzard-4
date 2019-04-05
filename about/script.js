@@ -1,8 +1,11 @@
+if (get_platform() == "electron") {
+    window.$ = window.jQuery = module.exports; // avoid breaking jquery with node integration
+}
 var version = ""
 
 $( document ).ready(function() {
     $( "#licence" ).click(function() {
-      if (is_chrome_app()) {
+      if (get_platform() == "chrome") {
           chrome.app.window.create('../licence.html', {
             "resizable": true,
             "bounds": {

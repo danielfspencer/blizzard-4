@@ -1,3 +1,7 @@
+if (get_platform() == "electron") {
+    window.$ = window.jQuery = module.exports; // avoid breaking jquery with node integration
+}
+
 $( document ).ready(() => {
     storage_get_key("starting-page",get_starting_page,"dem")
     storage_get_key("theme",get_theme,"light")
@@ -7,7 +11,7 @@ $( document ).ready(() => {
     })
 
     $( "#reset" ).click(function() {
-        storage_clear()    
+        storage_clear()
     })
 
     $( "#dark-theme" ).change(function() {
@@ -20,6 +24,15 @@ $( document ).ready(() => {
 
     $( "#starting-page" ).change(function() {
         storage_set_key("starting-page",$(this).val())
+    })
+
+    $( "#platform" ).html( () => {
+        switch (get_platform()) {
+            case "electron": return "Electron App"
+            case "chrome":   return "Chrome App"
+            case "website":  return "Webstite"
+            default:         return "Unknown"
+        }
     })
 })
 
