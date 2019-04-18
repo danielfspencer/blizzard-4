@@ -1795,8 +1795,8 @@ function translate(token, ctx_type) {
                 case "int":
                 case "sint":
                     prefix = write_operands(args["expr1"],args["expr2"],ctx_type)
-                    prefix.push("write [alu.=] cnd")
-                    prefix.push("write [cnd] alu.1")
+                    prefix.push("write [alu.=] ctl.cnd")
+                    prefix.push("write [ctl.cnd] alu.1")
                     registers = ["[alu.!]"]
                     break
 
@@ -2251,7 +2251,7 @@ function translate(token, ctx_type) {
                     console.warn("Structure expession expected type 'bool', got '"+ prefix_and_value[2] +"'")
                 }
                 result.push.apply(result,prefix)
-                result.push("write " + value[0] + " cnd")
+                result.push("write " + value[0] + " ctl.cnd")
                 result.push("goto? " + next_case_label)
 
                 result.push.apply(result,translate_body(main_tokens[i]))
@@ -2288,7 +2288,7 @@ function translate(token, ctx_type) {
                 console.warn("Structure: expected type 'bool', got '"+ expr_prefix_and_value[2] +"'")
             }
             result.push.apply(result,expr_prefix)
-            result.push("write " + expr_value + " cnd")
+            result.push("write " + expr_value + " ctl.cnd")
             result.push("goto? " + label + "_end")
             result.push([(label+"_start:")])
 
@@ -2298,7 +2298,7 @@ function translate(token, ctx_type) {
             result.push.apply(result,cmd_result)
 
             result.push.apply(result,expr_prefix)
-            result.push("write " + expr_value + " cnd")
+            result.push("write " + expr_value + " ctl.cnd")
             result.push("goto? " + label + "_end")
             result.push("goto " + label + "_start")
             result.push(label+"_end:")
@@ -2314,14 +2314,14 @@ function translate(token, ctx_type) {
                 console.warn("Structure: expected type 'bool', got '"+ prefix_and_value[2] +"'")
             }
             result.push.apply(result,prefix)
-            result.push("write " + value + " cnd")
+            result.push("write " + value + " ctl.cnd")
             result.push("goto? " + label + "_end")
             result.push([(label+"_start:")])
 
             result.push.apply(result,translate_body(token["body"]))
 
             result.push.apply(result,prefix)
-            result.push("write " + value + " cnd")
+            result.push("write " + value + " ctl.cnd")
             result.push("goto? " + label + "_end")
             result.push("goto " + label + "_start")
             result.push(label+"_end:")
