@@ -265,6 +265,17 @@ function assemble(code) {
         var bin = numToBin(labels[key].toString())
         asm_string = asm_string.replace( RegExp("\\b"+key+"\\b","gi") , bin)
     }
-    size_bytes = (asm_string.split("\n").length - 1) * 2;
+
+    // check passing
+    var as_list = asm_string.split("\n")
+
+    for (var line of as_list) {
+      console.log(line);
+      if (!   /^[0-1]{16}\n?$/.test(line) && line != "") {
+        asm_string = "error \n" + "'" + line + "'"
+      }
+    }
+
+    size_bytes = (as_list.length - 1) * 2;
     return asm_string
 }
