@@ -121,6 +121,10 @@ $( document ).ready(function() {
         parent.postMessage(["menu-item-asm",$("#out").val()],"*")
     })
 
+    $("#run").click(function() {
+        parent.postMessage(["menu-item-asm",$("#out").val(),true],"*")
+    })
+
     $("#in").on( "keyup", function(e) {
         if (!realtime) {return}
         if (![37,38,39,40].includes(e.keyCode)) {

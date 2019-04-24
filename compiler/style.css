@@ -43,6 +43,19 @@ form {
     color: #fff;
 }
 
+#two-button {
+    display: flex;
+}
+
+#two-button > div {
+    flex-grow: 1;
+}
+
+#run {
+    background-color: #607DB8;
+    color: #fff;
+}
+
 #cmp {
     background-color: #607DB8;
     color: #fff;
