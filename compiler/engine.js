@@ -2218,6 +2218,7 @@ function translate(token, ctx_type) {
             var label = "if_" + gen_id("if")
 
             var else_present = false
+            var else_if_present = false
             var exprs = [args["expr"]]
             var main_tokens = [[]]
             var else_tokens = []
@@ -2230,6 +2231,7 @@ function translate(token, ctx_type) {
                     main_tokens.push([])
                     exprs.push(item["arguments"]["expr"])
                     target = main_tokens[clause_number]
+                    else_if_present = true
                 } else if (item["name"] == "else") {
                     if (else_present) {
                         throw new CompError("Too many else statements")
@@ -2264,7 +2266,7 @@ function translate(token, ctx_type) {
 
                 result.push.apply(result,translate_body(main_tokens[i]))
 
-                if (else_present && i != exprs.length) {
+                if ((else_present || else_if_present) && i != exprs.length) {
                     result.push("goto " + label+"_end")
                 }
             }
