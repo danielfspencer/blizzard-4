@@ -33,5 +33,10 @@
         "name":"Text Editor Prototype",
         "desc":"Type text with your keyboard and watch it appear on screen. Press enter to start a new line and use backspace to remove characters as usual. Note: does not yet support the shift or caps-lock keys.",
         "clock_speed": 100000
+    },
+    "int_tests": {
+        "name":"Integer Tests",
+        "desc":"Runs a series of sanity checks on the three current integer data types to check they behave as expected.",
+        "clock_speed": 100000
     }
 }
