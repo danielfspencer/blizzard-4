@@ -1551,6 +1551,14 @@ function translate(token, ctx_type) {
                     registers = prefix_and_value[1]
                     break
 
+                case "long":
+                    load_lib("sys.long_modulo")
+                    var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_modulo","exprs":[args["expr1"],args["expr2"]]}}
+                    var prefix_and_value = translate(token)
+                    prefix = prefix_and_value[0]
+                    registers = prefix_and_value[1]
+                    break
+
                 default:
                     throw new CompError("Unsupported datatype '"+ctx_type+"' for operation " + token["name"])
                     break
