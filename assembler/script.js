@@ -31,6 +31,12 @@ $( document ).ready(function() { //connect all the butons to their actions!
     )
     })
 
+    $(function() {
+            $(".lined-dec").linedtextarea(
+            {selectedLine: 1, dec:true}
+        )
+    })
+
 
     // $("out").val("")
     $("#in").on( "keyup", run_assemble)
