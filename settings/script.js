@@ -30,7 +30,7 @@ $( document ).ready(() => {
         switch (get_platform()) {
             case "electron": return "Electron App"
             case "chrome":   return "Chrome App"
-            case "website":  return "Webstite"
+            case "website":  return "Website"
             default:         return "Unknown"
         }
     })
