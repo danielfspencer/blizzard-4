@@ -576,6 +576,8 @@ function simulate_effect_of_write_bus_change() {
           conditional_bit = data_bus & 0b0000000000000001
         } else if (address == 2) {
           direct_ram_addressing = (data_bus & 0b0000000000000001) == 1
+        } else if (address == 4) {
+          frame_number = data_bus & 0b0000000000001111
         }
         break
       case 1:                                                             //alu
