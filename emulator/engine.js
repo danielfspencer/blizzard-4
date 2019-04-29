@@ -631,87 +631,49 @@ function get_execute_microcode_instructions() {
 
 function run_load_fetch_microcode_1st_stage(instructions) {
   debug && console.debug("running instructions: " + JSON.stringify(instructions))
-  if (instructions[0] === 1) {
-    pc_to_read_bus()
-  }
-  if (instructions[2] === 1) {
-    increment_mode()
-  }
-  if (instructions[3] === 1) {
-    increment_pc()
-  }
-  if (instructions[4] === 1) {
-    decrement_arg_counter()
-  }
-  if (instructions[6] === 1) {
-    arg3_to_selected_bus()
-  }
 
+  instructions[0] && pc_to_read_bus()
+  instructions[2] && increment_mode()
+  instructions[3] && increment_pc()
+  instructions[4] && decrement_arg_counter()
+  instructions[6] && arg3_to_selected_bus()
 }
 
 function run_load_fetch_microcode_2nd_stage(instructions) {
   debug && console.debug("running instructions: " + JSON.stringify(instructions))
-  if (instructions[1]) {
-    data_bus_to_cmd_reg()
-  }
-  if (instructions[5]) {
-    data_bus_to_arg3()
-  }
-  if (instructions[7]) {
-    data_bus_to_arg1()
-  }
-  if (instructions[8]) {
-    data_bus_to_arg2()
-  }
+
+  instructions[1] && data_bus_to_cmd_reg()
+  instructions[5] && data_bus_to_arg3()
+  instructions[7] && data_bus_to_arg1()
+  instructions[8] && data_bus_to_arg2()
 }
 
 function run_execute_microcode_1st_stage(instructions) {
   debug && console.debug("running instructions: " + JSON.stringify(instructions))
+
   if (conditional_bit && (command_word & 1) == 1) {
     debug && console.log("execute disabled due to cnd bit")
     increment_mode()
     return
   }
-  if (instructions[0]) {
-    clock_stop()
-  }
-  if (instructions[1]) {
-    ram_caller_pointer_to_read_bus()
-  }
-  if (instructions[5]) {
-    arg2_to_pc()
-  }
-  if (instructions[6]) {
-    arg1_to_data_bus()
-  }
-  if (instructions[7]) {
-    arg1_to_read_bus()
-  }
-  if (instructions[10]) {
-    pc_to_data_bus()
-  }
-  if (instructions[11]) {
-    increment_mode()
-  }
+
+  instructions[0]  && clock_stop()
+  instructions[1]  && ram_caller_pointer_to_read_bus()
+  instructions[5]  && arg2_to_pc()
+  instructions[6]  && arg1_to_data_bus()
+  instructions[7]  && arg1_to_read_bus()
+  instructions[10] && pc_to_data_bus()
+  instructions[11] && increment_mode()
 }
 
 function run_execute_microcode_2nd_stage(instructions) {
   debug && console.debug("running instructions: " + JSON.stringify(instructions))
-  if (instructions[2]) {
-    ram_caller_pointer_to_write_bus()
-  }
-  if (instructions[3]) {
-    decrement_frame_no()
-  }
-  if (instructions[4]) {
-    increment_frame_no()
-  }
-  if (instructions[8]) {
-    data_bus_to_pc()
-  }
-  if (instructions[9]) {
-    arg2_to_write_bus()
-  }
+
+  instructions[2] && ram_caller_pointer_to_write_bus()
+  instructions[3] && decrement_frame_no()
+  instructions[4] && increment_frame_no()
+  instructions[8] && data_bus_to_pc()
+  instructions[9] && arg2_to_write_bus()
 }
 
 function run_buffered_instructions() {
