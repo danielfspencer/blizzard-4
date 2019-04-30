@@ -29,12 +29,13 @@ table {
 
 #front_panel {
   padding-top: 4px;
-  width: 970px;
+  width: 934px;
   display: inline-block;
 }
 
 #front_panel > .card {
   padding-top: 2px;
+  width: 100%;
   padding-bottom: 2px;
 }
 
