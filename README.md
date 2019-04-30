@@ -1,6 +1,6 @@
 ![Screenshot of emulator](/assets/screenshots/emulator.png?raw=true)
 
-![Gif of ping pong game](/assets/screenshots/ping_pong.gif?raw=true)
+<img src="/assets/screenshots/ping_pong.gif?raw=true" height="200" align="right">
 
 # Blizzard 4 Toolchain
 
