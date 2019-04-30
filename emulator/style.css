@@ -43,6 +43,10 @@ table {
   display: inline-block;
 }
 
+#bus_controls > .button {
+  display: inline-block;
+}
+
 #clock-target {
   width: 80px;
 }

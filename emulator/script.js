@@ -76,8 +76,20 @@ function init() {
     worker.postMessage(["clock_high"])
   })
 
-  $("#step").mouseup(function() {
+  $("#step, #read, #write, #copy").mouseup(function() {
     worker.postMessage(["clock_low"])
+  })
+
+  $("#read").mousedown(function() {
+    worker.postMessage(["bus_read"])
+  })
+
+  $("#write").mousedown(function() {
+    worker.postMessage(["bus_write"])
+  })
+
+  $("#copy").mousedown(function() {
+    worker.postMessage(["bus_copy"])
   })
 
   $("#clock-target").change(function(event){
