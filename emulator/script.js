@@ -84,7 +84,7 @@ function init() {
     worker.postMessage(["set_clock",$("#clock-target").val()])
   })
 
-  $("#usr1_input, #usr2_input, #usr3_input").change(send_user_input)
+  $("#usr1_input, #usr2_input, #usr3_input").on('input', send_user_input)
 
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock",100000])
