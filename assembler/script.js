@@ -108,7 +108,10 @@ defs = {
     "usrio.out3" : 4101,
     "kbd.pop": 8192,
     "kbd.len": 8193,
-    "cnd" : 1
+    "ctl.cnd" : 1,
+    "ctl.addrmode" : 2,
+    "ctl.framenum" : 4
+
 }
 
 function regToCode(id) {
@@ -130,6 +133,13 @@ function regToCode(id) {
         var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
         if ( number >= 0 && number <= 1023) {
             return number+24576//it's valid
+        } else {
+            return false
+        }
+    } else if (id.toLowerCase().startsWith("ram#.")) { //it's a direct ram address
+        var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
+        if ( number >= 0 && number < 16384) {
+            return number+16384//it's valid
         } else {
             return false
         }

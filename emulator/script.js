@@ -46,6 +46,7 @@ function init() {
     "ram_read_leds":null,
     "ram_offset_leds":null,
     "ram_write_leds":null,
+    "ram_addr_mode_leds":null,
     "rom_read_leds":null,
     "rom_write_leds":null,
     "inp1_leds":null,
@@ -376,6 +377,7 @@ function draw_front_panel() {
   display_number_on_leds("ram_write_leds", front_panel_info["activity_indicators"]["ram_write"])
   display_number_on_leds("ram_read_leds", front_panel_info["activity_indicators"]["ram_read"])
   display_number_on_leds("ram_offset_leds", front_panel_info["activity_indicators"]["ram_frame_offset"])
+  display_number_on_leds("ram_addr_mode_leds", front_panel_info["ram_addr_mode"])
 
   display_number_on_leds("rom_addr_leds", front_panel_info["activity_indicators"]["rom_address"])
   display_number_on_leds("rom_read_leds", front_panel_info["activity_indicators"]["rom_read"])

@@ -1,3 +1,5 @@
+global bool shift false
+
 def get_keypress
   var int kbd 8192
   var int scancode *kbd
@@ -8,10 +10,14 @@ def get_keypress
       //pass
     else if scancode == 0xF0
       scancode = *kbd
+      if scancode == 0x12
+        shift = false
     else if scancode == 0xE0
       //pass
+    else if scancode == 0x12
+      shift = true
     else
-      char_code = sys.kbd.scancode_to_charcode(scancode)
+      char_code = sys.kbd.scancode_to_charcode(scancode,shift)
       return char_code
     scancode = *kbd
 

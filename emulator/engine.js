@@ -266,7 +266,8 @@ function send_front_panel_info() {
     "data_bus": data_bus,
     "read_bus": read_bus,
     "alu_operands": alu_operands,
-    "activity_indicators": activity_indicators
+    "activity_indicators": activity_indicators,
+    "ram_addr_mode": direct_ram_addressing
   }
   postMessage(["front_panel_info",data])
 }
@@ -452,10 +453,13 @@ function simulate_effect_of_read_bus_change() {
 
     switch (card_address) {                                               //control unit
       case 0:
-        data_bus = conditional_bit // read from cnd bit is required for != test
+        if (address == 1) {
+          data_bus = conditional_bit // read from cnd bit is required for != test
+        } else if (address == 4) {
+          data_bus = frame_number
+        }
         break
       case 1:                                                             //alu
-
         switch (address) {
           case 2:
             data_bus = alu_operands[0] + alu_operands[1]
@@ -598,7 +602,13 @@ function simulate_effect_of_write_bus_change() {
 
     switch (card_address) {                                               //control unit
       case 0:
-        conditional_bit = data_bus & 0b0000000000000001
+        if (address == 1) {
+          conditional_bit = data_bus & 0b0000000000000001
+        } else if (address == 2) {
+          direct_ram_addressing = (data_bus & 0b0000000000000001) == 1
+        } else if (address == 4) {
+          frame_number = data_bus & 0b0000000000001111
+        }
         break
       case 1:                                                             //alu
         if (address == 0) {
