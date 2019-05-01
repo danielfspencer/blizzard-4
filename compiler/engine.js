@@ -976,6 +976,60 @@ function translate(token, ctx_type) {
                 for (var i = 0; i < dst_regs.length; i++) {
                     result.push("write " + regs[i] + " ram." + dst_regs[i])
                 }
+            } else if (args["name"] in var_map["[global]"]) {
+                var dst_type = name_type_map["[global]"][args["name"]]
+
+                var prefix_value_type = translate(args["expr"],dst_type)
+                var prefix = prefix_value_type[0]
+                var registers = prefix_value_type[1]
+                var type = prefix_value_type[2]
+
+                if (type != dst_type) {
+                    throw new CompError("Variable expected type '"+dst_type+"', got '"+type+"'")
+                }
+
+                var size = registers.length
+
+                var memory = var_map["[global]"][args["name"]]
+                var memory_copy = memory.slice()
+                var buffer = alloc_block(size)
+                var buffer_copy = buffer.slice()
+
+                // make data available
+                result = prefix
+
+                // copy to temp buffer
+                for (var register of registers) {
+                    result.push("write " + register + " ram." + buffer.shift())
+                }
+
+                // need to calculate absoulute address of source and destination and then copy
+                // ctl.framenum * 1024     =>      15,360 + mem
+                var temp_word = get_temp_word()
+
+                load_lib("sys.global.frame_offsets")
+                prefix.push("write sys.global.frame_offsets alu.1")
+                prefix.push("write [ctl.framenum] alu.2")
+                prefix.push("copy [alu.+] " + temp_word[1])
+
+                prefix.push("copy " + temp_word[1] + " alu.1")
+                prefix.push("write " + buffer_copy[0] + " alu.2")
+
+                prefix.push("write [alu.+] " + temp_word[1])
+                prefix.push("copy " + temp_word[1] + " alu.1")
+                prefix.push("write 0 alu.2")
+                // absoulute address of start of buffer is now in alu.1
+
+                // addr_offset is the value of "ram#.0"
+                result.push("write 1 ctl.addrmode")
+                var addr_offset = 16384
+                for (var register of registers) {
+                    result.push("write " + addr_offset + " alu.2")
+                    result.push("copy [alu.+] ram#." + (memory_copy.shift() + 15360))
+                    addr_offset++
+                }
+                result.push("write 0 ctl.addrmode")
+
             } else {
                 throw new CompError("Error looking up variable '" + args["name"] + "' is undefined")
             }
