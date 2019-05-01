@@ -2140,11 +2140,9 @@ function translate(token, ctx_type) {
             }
 
             type = name_type_map[scope][args["name"]]
-            console.log(type)
             if (typeof type === "undefined") {
                 type = name_type_map["[global]"][args["name"]]
             }
-            console.log(type)
             if (typeof type === "undefined") {
                 throw new CompError("Can't lookup type of '" + args["name"] + "'")
             }
