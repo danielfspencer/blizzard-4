@@ -211,10 +211,10 @@ onmessage = function(msg) {
 
 function init_vars() {
     scope = "[root]"
-    free_ram = {"[root]":gen_free_ram_map()}
-    var_map = {"[root]":{}}
+    free_ram = {"[root]":gen_free_ram_map(),"[global]":gen_free_ram_map()}
+    var_map = {"[root]":{},"[global]":{}}
     arg_map = {}
-    name_type_map = {"[root]":{}}
+    name_type_map = {"[root]":{},"[global]":{}}
     const_map = {}
     return_map = {}
     consts = []
@@ -234,7 +234,7 @@ function gen_free_ram_map() {
 
 function var_name_available(name) {
     if (name in const_map || name in var_map[scope]
-    || name in var_map || name in reserved_keywords) {
+    || name in var_map || name in reserved_keywords || name in var_map["[global]"]) {
         return false
     }
     if (typeof var_map[scope] == undefined) {
@@ -312,6 +312,15 @@ function alloc_block(size) {
     if ((511-free_ram[scope].length) > max_ram_slots) {
             max_ram_slots = (511-free_ram[scope].length)
     }
+    return addrs
+}
+
+function alloc_global_block(size) {
+    var old_scope = scope
+    scope = "[global]"
+    var addrs = alloc_block(size)
+    scope = old_scope
+
     return addrs
 }
 
@@ -424,6 +433,18 @@ function tokenise(input, line) {
             token = {"name":"const_alloc","type":"command","arguments":{"type":list[1],"name":list[2]}}
         } else {
             throw new CompError("Constant decleration syntax: <br> const [type] [name] <expr>")
+        }
+
+    } else if (list[0] == "global") {             // global [type] [name] [expr]
+        if (list.length >= 4) {
+            var expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
+            if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError("Invalid name: '"+list[2]+"'")}
+            token = {"name":"global_alloc","type":"command","arguments":{"type":list[1],"name":list[2],"expr":expr}}
+        } else if (list.length > 2) {
+            if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError("Invalid name: '"+list[2]+"'")}
+            token = {"name":"global_alloc","type":"command","arguments":{"type":list[1],"name":list[2]}}
+        } else {
+            throw new CompError("Global decleration syntax: <br> global [type] [name] <expr>")
         }
 
     } else if (list[0] == "if") {               // if [bool]
@@ -779,6 +800,80 @@ function translate(token, ctx_type) {
                 consts.push(memory.shift()+":")
                 consts.push(register)
             }
+            break
+
+        case "global_alloc":     //global [name] [type] <expr>
+            check_datatype(args["type"])
+            if (args["type"] == "array") {
+              throw new CompError("Not implemented")
+            }
+
+            if (!var_name_available(args["name"])) {
+                throw new CompError("Variable name: '" + args["name"] + "' is not available")
+            }
+
+            if ("expr" in args) {
+                var token = args["expr"]
+            } else if (args["type"] == "str") {
+                var token = tokenise('" "')
+            } else {
+                var token = tokenise("0")
+            }
+
+            var prefix_registers_type = translate(token,args["type"])
+            var prefix = prefix_registers_type[0]
+            var registers = prefix_registers_type[1]
+            if (args["type"] != prefix_registers_type[2]) {
+                throw new CompError("Wrong data type, expected '"+ args["type"] +"', got '"+ prefix_registers_type[2] +"'")
+            }
+            var type = args["type"]
+            var size = registers.length
+            console.debug("global alloc '"+type+"', size '"+size+"'")
+
+            var memory = alloc_global_block(size)
+            var buffer = alloc_block(size)
+            var buffer_copy = buffer.slice()
+
+            var_map["[global]"][args["name"]] = memory.slice()
+            name_type_map["[global]"][args["name"]] = type
+
+            // make data available
+            result = prefix
+
+            // copy to temp buffer
+            for (var register of registers) {
+                result.push("write " + register + " ram." + buffer.shift())
+            }
+
+            // need to calculate absoulute address of source and destination and then copy
+            // ctl.framenum * 1024     =>      15,360 + mem
+            var temp_word = get_temp_word()
+
+            load_lib("sys.global.frame_offsets")
+            prefix.push("write sys.global.frame_offsets alu.1")
+            prefix.push("write [ctl.framenum] alu.2")
+            prefix.push("copy [alu.+] " + temp_word[1])
+
+            prefix.push("copy " + temp_word[1] + " alu.1")
+            prefix.push("write " + buffer_copy[0] + " alu.2")
+
+            prefix.push("write [alu.+] " + temp_word[1])
+            prefix.push("copy " + temp_word[1] + " alu.1")
+            prefix.push("write 0 alu.2")
+            // absoulute address of start of buffer is now in alu.1
+
+            // addr_offset is the value of "ram#.0"
+            result.push("write 1 ctl.addrmode")
+            var addr_offset = 16384
+            for (var register of registers) {
+                result.push("write " + addr_offset + " alu.2")
+                result.push("copy [alu.+] ram#." + (memory.shift() + 15360))
+                addr_offset++
+            }
+            result.push("write 0 ctl.addrmode")
+
+            free_block(temp_word[0])
+            free_block(buffer_copy)
             break
 
         case "arg_alloc":       //arg [name] [type] [expr]
@@ -2010,13 +2105,49 @@ function translate(token, ctx_type) {
                 for (var addr of const_map[args["name"]]) {
                     registers.push("[" + addr + "]")
                 }
+            } else if (args["name"] in var_map["[global]"]) {
+                var buffer = alloc_block(var_map["[global]"][args["name"]].length)
+
+                load_lib("sys.global.frame_offsets")
+                var temp_word = get_temp_word()
+                prefix.push("write sys.global.frame_offsets alu.1")
+                prefix.push("write [ctl.framenum] alu.2")
+                prefix.push("copy [alu.+] " + temp_word[1])
+
+                prefix.push("copy " + temp_word[1] + " alu.1")
+                prefix.push("write " + buffer[0] + " alu.2")
+
+                prefix.push("write [alu.+] " + temp_word[1])
+                prefix.push("copy " + temp_word[1] + " alu.1")
+                free_block(temp_word[0])
+
+                registers = []
+                prefix.push("write 1 ctl.addrmode")
+                var addr_offset = 16384
+                for (var address of var_map["[global]"][args["name"]]) {
+                    prefix.push("write " + addr_offset + " alu.2")
+                    prefix.push("copy ram#." + (address + 15360) + " [alu.+]")
+                    addr_offset++
+                }
+                prefix.push("write 0 ctl.addrmode")
+
+                for (var address of buffer) {
+                    registers.push("[ram." + address + "]")
+                }
+
             } else {
                 throw new CompError("'"+args["name"]+"' is undefined")
             }
-            if (typeof name_type_map[scope][args["name"]] == undefined) {
-                console.error("Can't lookup type of '" + args["name"] + "'")
-            }
+
             type = name_type_map[scope][args["name"]]
+            console.log(type)
+            if (typeof type === "undefined") {
+                type = name_type_map["[global]"][args["name"]]
+            }
+            console.log(type)
+            if (typeof type === "undefined") {
+                throw new CompError("Can't lookup type of '" + args["name"] + "'")
+            }
             break
 
         case "array_expression":
