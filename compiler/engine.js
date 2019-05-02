@@ -859,7 +859,6 @@ function translate(token, ctx_type) {
 
             prefix.push("write [alu.+] " + temp_word[1])
             prefix.push("copy " + temp_word[1] + " alu.1")
-            prefix.push("write 0 alu.2")
             // absoulute address of start of buffer is now in alu.1
 
             // addr_offset is the value of "ram#.0"
@@ -1017,7 +1016,6 @@ function translate(token, ctx_type) {
 
                 prefix.push("write [alu.+] " + temp_word[1])
                 prefix.push("copy " + temp_word[1] + " alu.1")
-                prefix.push("write 0 alu.2")
                 // absoulute address of start of buffer is now in alu.1
 
                 // addr_offset is the value of "ram#.0"
