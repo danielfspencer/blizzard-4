@@ -845,20 +845,10 @@ function translate(token, ctx_type) {
                 result.push("write " + register + " ram." + buffer.shift())
             }
 
-            // need to calculate absoulute address of source and destination and then copy
-            // ctl.framenum * 1024     =>      15,360 + mem
-            var temp_word = get_temp_word()
-
-            load_lib("sys.global.frame_offsets")
-            prefix.push("write sys.global.frame_offsets alu.1")
-            prefix.push("write [ctl.framenum] alu.2")
-            prefix.push("copy [alu.+] " + temp_word[1])
-
-            prefix.push("copy " + temp_word[1] + " alu.1")
-            prefix.push("write " + buffer_copy[0] + " alu.2")
-
-            prefix.push("write [alu.+] " + temp_word[1])
-            prefix.push("copy " + temp_word[1] + " alu.1")
+            // need to calculate absoulute address of source
+            load_lib("sys.global.addr_calc")
+            prefix.push("write " + buffer_copy[0] + " ram+.1021")
+            prefix.push("call func_sys.global.addr_calc")
             // absoulute address of start of buffer is now in alu.1
 
             // addr_offset is the value of "ram#.0"
@@ -871,7 +861,6 @@ function translate(token, ctx_type) {
             }
             result.push("write 0 ctl.addrmode")
 
-            free_block(temp_word[0])
             free_block(buffer_copy)
             break
 
@@ -1002,20 +991,10 @@ function translate(token, ctx_type) {
                     result.push("write " + register + " ram." + buffer.shift())
                 }
 
-                // need to calculate absoulute address of source and destination and then copy
-                // ctl.framenum * 1024     =>      15,360 + mem
-                var temp_word = get_temp_word()
-
-                load_lib("sys.global.frame_offsets")
-                prefix.push("write sys.global.frame_offsets alu.1")
-                prefix.push("write [ctl.framenum] alu.2")
-                prefix.push("copy [alu.+] " + temp_word[1])
-
-                prefix.push("copy " + temp_word[1] + " alu.1")
-                prefix.push("write " + buffer_copy[0] + " alu.2")
-
-                prefix.push("write [alu.+] " + temp_word[1])
-                prefix.push("copy " + temp_word[1] + " alu.1")
+                // need to calculate absoulute address of source
+                load_lib("sys.global.addr_calc")
+                prefix.push("write " + buffer_copy[0] + " ram+.1021")
+                prefix.push("call func_sys.global.addr_calc")
                 // absoulute address of start of buffer is now in alu.1
 
                 // addr_offset is the value of "ram#.0"
@@ -2168,18 +2147,11 @@ function translate(token, ctx_type) {
             } else if (args["name"] in var_map["[global]"]) {
                 var buffer = alloc_block(var_map["[global]"][args["name"]].length)
 
-                load_lib("sys.global.frame_offsets")
-                var temp_word = get_temp_word()
-                prefix.push("write sys.global.frame_offsets alu.1")
-                prefix.push("write [ctl.framenum] alu.2")
-                prefix.push("copy [alu.+] " + temp_word[1])
-
-                prefix.push("copy " + temp_word[1] + " alu.1")
-                prefix.push("write " + buffer[0] + " alu.2")
-
-                prefix.push("write [alu.+] " + temp_word[1])
-                prefix.push("copy " + temp_word[1] + " alu.1")
-                free_block(temp_word[0])
+                // need to calculate absoulute address of source
+                load_lib("sys.global.addr_calc")
+                prefix.push("write " + buffer[0] + " ram+.1021")
+                prefix.push("call func_sys.global.addr_calc")
+                // absoulute address of start of buffer is now in alu.1
 
                 registers = []
                 prefix.push("write 1 ctl.addrmode")
