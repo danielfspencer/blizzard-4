@@ -154,9 +154,14 @@ function handle_message(message) {
       var strings_as_array = message[1].split("\n")
       if (strings_as_array.length < rom.length) {
         for (var i = 0; i < strings_as_array.length; i++) {
+          if (strings_as_array[i] == "") {
+            break
+          }
           var number = parseInt(strings_as_array[i],2)
-          if (number > 0 && number <= 0xffff) {
-            rom[i] = parseInt(strings_as_array[i],2)
+          if (number >= 0 && number <= 0xffff) {
+            rom[i] = number
+          } else {
+            console.error("Illegal ROM input '" + strings_as_array[i] + "', word " + i)
           }
         }
       } else {
