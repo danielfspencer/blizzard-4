@@ -1391,7 +1391,7 @@ function translate(token, ctx_type) {
             var dec_val = parse_int(args["value"])
 
             if (dec_val > 32767) {
-                throw new CompError("Integer out of range (sign ± 2^15 bits max)")
+                throw new CompError("Signed integer out of range (sign ± 2^15 bits max)")
             }
 
             if (dec_val == 0) {
@@ -1401,7 +1401,7 @@ function translate(token, ctx_type) {
             var bin = 0
 
             if (negative) {
-                bin = ((dec_val ^ 0xffff)+1).toString(2)
+                bin = (0xffff - dec_val + 1).toString(2)
             } else {
                 bin = dec_val.toString(2)
             }
@@ -1413,7 +1413,7 @@ function translate(token, ctx_type) {
 
         case "long":
             if (!/(^[+]?\d+$)|(^0b[10]+$)|(^0x[0-9a-fA-F]+$)/.test(args["value"])) {
-                throw new CompError("Invalid input for type 'int'")
+                throw new CompError("Invalid input for type 'long'")
             }
 
             var dec_val = parse_int(args["value"])
@@ -1427,6 +1427,48 @@ function translate(token, ctx_type) {
 
             type = "long"
             registers = [high,low]
+            break
+
+        case "slong":
+            if (!/(^[+-]?\d+$)|(^-?0b[10]+$)|(^-?0x[0-9a-fA-F]+$)/.test(args["value"])) {
+                throw new CompError("Invalid input for type 'sint'")
+            }
+
+            var negative = false
+            if (args["value"].startsWith("-")) {
+                args["value"] = args["value"].substring(1)
+                negative = true
+            }
+
+            var dec_val = parse_int(args["value"])
+
+            if (dec_val == 0) {
+                negative = false
+            }
+
+            if (dec_val > 2147483647) {
+                throw new CompError("Signed integer out of range (sign ± 2^31 bits max)")
+            }
+
+            var bin = 0
+
+            if (negative) {
+                bin = (0xffffffff - dec_val + 1).toString(2)
+            } else {
+                bin = dec_val.toString(2)
+            }
+
+            bin = pad(bin,32)
+            var high = "0b"+bin.substring(0,16)
+            var low = "0b"+bin.substring(16,32)
+
+            registers = [high,low]
+            type = "slong"
+            break
+
+        case "float":
+            throw new CompError("Not implemented")
+            type = "float"
             break
 
         case "str":
@@ -1453,16 +1495,6 @@ function translate(token, ctx_type) {
 
             registers = [id]
             type = "str"
-            break
-
-        case "slong":
-            throw new CompError("Not implemented")
-            type = "slong"
-            break
-
-        case "float":
-            throw new CompError("Not implemented")
-            type = "float"
             break
 
         case "bracket":
@@ -1510,6 +1542,14 @@ function translate(token, ctx_type) {
                     registers = prefix_and_value[1]
                     break
 
+                case "slong":
+                    load_lib("sys.slong_add")
+                    var token = {"name":"function","type":"expression","arguments":{"name":"sys.slong_add","exprs":[args["expr1"],args["expr2"]]}}
+                    var prefix_and_value = translate(token, ctx_type)
+                    prefix = prefix_and_value[0]
+                    registers = prefix_and_value[1]
+                    break
+
                 default:
                     throw new CompError("Unsupported datatype '"+ctx_type+"' for operation " + token["name"])
                     break
@@ -1532,6 +1572,14 @@ function translate(token, ctx_type) {
                 case "long":
                     load_lib("sys.long_subtract")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_subtract","exprs":[args["expr1"],args["expr2"]]}}
+                    var prefix_and_value = translate(token, ctx_type)
+                    prefix = prefix_and_value[0]
+                    registers = prefix_and_value[1]
+                    break
+
+                case "slong":
+                    load_lib("sys.slong_subtract")
+                    var token = {"name":"function","type":"expression","arguments":{"name":"sys.slong_subtract","exprs":[args["expr1"],args["expr2"]]}}
                     var prefix_and_value = translate(token, ctx_type)
                     prefix = prefix_and_value[0]
                     registers = prefix_and_value[1]
@@ -1911,6 +1959,14 @@ function translate(token, ctx_type) {
                     registers = prefix_and_value[1]
                     break
 
+                case "slong":
+                    load_lib("sys.slong_equal")
+                    var token = {"name":"function","type":"expression","arguments":{"name":"sys.slong_equal","exprs":[args["expr1"],args["expr2"]]}}
+                    var prefix_and_value = translate(token, ctx_type)
+                    prefix = prefix_and_value[0]
+                    registers = prefix_and_value[1]
+                    break
+
                 default:
                     throw new CompError("Unsupported datatype '"+ctx_type+"' for operation " + token["name"])
                     break
@@ -1938,6 +1994,14 @@ function translate(token, ctx_type) {
                     load_lib("sys.long_not_equal")
                     var token = {"name":"function","type":"expression","arguments":{"name":"sys.long_not_equal","exprs":[args["expr1"],args["expr2"]]}}
                     var prefix_and_value = translate(token)
+                    prefix = prefix_and_value[0]
+                    registers = prefix_and_value[1]
+                    break
+
+                case "slong":
+                    load_lib("sys.slong_not_equal")
+                    var token = {"name":"function","type":"expression","arguments":{"name":"sys.slong_not_equal","exprs":[args["expr1"],args["expr2"]]}}
+                    var prefix_and_value = translate(token, ctx_type)
                     prefix = prefix_and_value[0]
                     registers = prefix_and_value[1]
                     break
