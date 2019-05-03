@@ -48,6 +48,7 @@ function init_memory() {
 
 function init_rom() {
   rom  = create_zeroed_array(1024 * 32) //32k x 16 bit (64KB)
+  write_protect = false
 }
 
 function create_zeroed_array(length) {
@@ -241,6 +242,9 @@ function handle_message(message) {
     case "set_clock":
       target_cycles_per_second = message[1]
       cycles_per_batch = Math.floor(target_cycles_per_second / 100)
+      break
+    case "write_protect_change":
+      write_protect = message[1]
       break
     case "benchmark":
       benchmark()
@@ -563,7 +567,9 @@ function simulate_effect_of_write_bus_change() {
     var address = write_bus - 32768
     activity_indicators["rom_write"] = 1
     activity_indicators["rom_address"] = address
-    rom[address] = data_bus
+    if (!write_protect) {
+      rom[address] = data_bus
+    }
 
   } else if (write_bus > 16383) {                                          // RAM
     activity_indicators["ram_write"] = 1

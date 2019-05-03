@@ -99,6 +99,10 @@ function init() {
 
   $("#usr1_input, #usr2_input, #usr3_input").on('input', send_user_input)
 
+  $("#rom_write_protect").change(function(event){
+    worker.postMessage(["write_protect_change",this.checked])
+  })
+
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock",100000])
   parent.input_data = set_rom
