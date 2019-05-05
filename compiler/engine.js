@@ -42,7 +42,7 @@ function CompError(message) {
     this.message = message
 }
 
-function log_error(err,line) {
+function log_internal_error(err,line) {
     var msg = ""
     if (err instanceof CompError) {
         msg += "line " + line + ": <br>"
@@ -174,7 +174,7 @@ function find_type_priority(expr1,expr2) {
 
 function set_token(name, operation, exprs, line) {
     var add = {"name":operation,"type":"expression","arguments":{"expr1":exprs[0],"expr2":exprs[1]}}
-    var set_var = {"name":"set","type":"command","arguments":{"expr":add,"name":name}}
+    var set_var = {"name":"set","type":"command","arguments":{"expr":add,"name":name},"line":line}
     return set_var
 }
 
@@ -189,7 +189,7 @@ onmessage = function(msg) {
                 try {
                     postMessage(["result",compile(input,false)])
                 } catch (error) {
-                    log_error(error)
+                    log_internal_error(error)
                 }
                 compiling = false
             }
@@ -201,7 +201,7 @@ onmessage = function(msg) {
             try {
                 postMessage(["score",benchmark(msg.data[1])])
             } catch (error) {
-                log_error(error)
+                log_internal_error(error)
             }
             break
         default:
@@ -226,7 +226,7 @@ function init_vars() {
 
 function gen_free_ram_map() {
     var map = []
-    for (var x=0; x < 1023; x++) { //last word of RAM is function return address
+    for (var x = 0; x < 1023; x++) { //last word of RAM is function return address
         map.push(x)
     }
     return map
@@ -237,7 +237,7 @@ function var_name_available(name) {
     || name in var_map || name in reserved_keywords || name in var_map["[global]"]) {
         return false
     }
-    if (typeof var_map[scope] == undefined) {
+    if (typeof var_map[scope] === undefined) {
         return true
     }
     return true
@@ -257,7 +257,7 @@ function const_name_available(name) {
 }
 
 function is_argument(name) {
-    if (arg_map[scope] == undefined) {
+    if (arg_map[scope] === undefined) {
         return false
     }
     if (name in arg_map[scope]) {
@@ -269,7 +269,7 @@ function is_argument(name) {
 function gen_id(type) {
     var id = structures[type]
     structures[type] += 1
-    if (id == undefined) {
+    if (id === undefined) {
         throw new CompError("Error generating id: unknown structure " + type)
     }
     return id
@@ -277,12 +277,8 @@ function gen_id(type) {
 
 function write_operands(expr1,expr2,type) {
     var result = []
-    var expr1 = translate(expr1,type)
-    var expr2 = translate(expr2,type)
-    var expr1_prefix = expr1[0]
-        expr1_reg = expr1[1]
-    var expr2_prefix = expr2[0]
-        expr2_reg = expr2[1]
+    var [expr1_prefix, expr1_reg] = translate(expr1,type)
+    var [expr2_prefix, expr2_reg] = translate(expr2,type)
     result.push.apply(result,expr1_prefix)
     result.push("write "+ expr1_reg +" alu.1")
     result.push.apply(result,expr2_prefix)
@@ -292,9 +288,7 @@ function write_operands(expr1,expr2,type) {
 
 function write_operand(expr,type) {
     var result = []
-    var expr = translate(expr,type)
-    var expr_prefix = expr[0]
-        expr_reg = expr[1]
+    var [expr_prefix, expr_reg] = translate(expr,type)
     result = expr_prefix
     result.push("write "+ expr_reg +" alu.1")
     return result
@@ -353,8 +347,8 @@ function translate_body(tokens) {
     if (tokens.length == 0) {
         return result
     }
-    for (var i=0; i < tokens.length; i++) {
-        if (tokens[i]["type"] == "expression" && tokens[i]["name"] != "function" || typeof tokens[i] == undefined) {
+    for (var i = 0; i < tokens.length; i++) {
+        if (tokens[i]["type"] == "expression" && tokens[i]["name"] != "function" || typeof tokens[i] === undefined) {
             throw new CompError("line " + (tokens[i]["line"]+i) + ": " + "<br> Unexpected token")
         } else {
             var command = translate(tokens[i])
@@ -630,7 +624,7 @@ function tokenise(input, line) {
         var arguments = []
         if (args_string !== "") {
             for (var item of string_list) {
-                if (item != undefined) {
+                if (item !== undefined) {
                     arguments.push(tokenise(item,line))
                 }
             }
@@ -1308,7 +1302,7 @@ function translate(token, ctx_type) {
                 map.push(temp.replace("ram++","ram+"))
             }
             return_map[scope] = map
-            if (ctx_type == undefined) {
+            if (ctx_type === undefined) {
                 name_type_map[scope][scope] = type
             }
             break
@@ -2279,7 +2273,7 @@ function translate(token, ctx_type) {
             var max_length = length
 
             //but explicitly given type and max length will override these
-            if (given_type_size != undefined) {
+            if (given_type_size !== undefined) {
                 if (given_type_size.length == 1) {
                     contained_type = given_type_size[0]
                 } else if (given_type_size.length == 2) {
@@ -2504,7 +2498,7 @@ function translate(token, ctx_type) {
 
             prefix.push("call " + label)
 
-            if (typeof return_map[args["name"]] != undefined) {
+            if (typeof return_map[args["name"]] !== undefined) {
                 registers = return_map[args["name"]]
                 type = name_type_map[args["name"]][args["name"]]
             }
@@ -2687,8 +2681,8 @@ function translate(token, ctx_type) {
             name_type_map[scope] = {}
             free_ram[scope] = gen_free_ram_map()
 
-            if (args["type"] != undefined) {
-                console.log("explicit type detected")
+            if (args["type"] !== undefined) {
+                console.debug("explicit function type detected")
                 name_type_map[scope][scope] = args["type"]
             }
             console.debug("namespace -> " + scope)
@@ -2802,7 +2796,7 @@ function compile(input, nested) {
                 }
 
             } catch (msg) {
-                log_error(msg,i+1)
+                log_internal_error(msg,i+1)
                 error = true
                 break
             }
@@ -2853,7 +2847,7 @@ function compile(input, nested) {
                     output += "\n"
                 }
             } catch (msg) {
-                log_error(msg,tokens[i]["line"])
+                log_internal_error(msg,tokens[i]["line"])
                 error = true
                 break
             }
@@ -2909,11 +2903,10 @@ function compile(input, nested) {
             console.warn(var_number + " variable(s) are never deallocated")
         }
         console.log("RAM use: " + ram_percent + "% (" + max_allocated_ram_slots + "/1023 words) <progress value="+max_allocated_ram_slots+" max=\"1023\" class=\"ram-bar\"></progress>")
-        console.log("Standard functions used: " + standard_libs_used)
+        console.log("Standard library functions used: " + standard_libs_used)
     }
 
     return output
 }
 
 console.log("Worker thread started, " + Object.keys(libs).length + " standard functions loaded")
-init_vars()
