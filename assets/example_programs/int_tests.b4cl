@@ -532,6 +532,8 @@ var slong slong_test
 
 slong_test = 1 + 1
 
+test++
+{write [ram.1] usrio.out3}
 if slong_test != 2
   fail("slong 1 fail",line)
   line++
@@ -735,9 +737,6 @@ test++
 if slong_test != slong_minus729
   fail("slong 25 fail",line)
   line++
-
-test++
-{write [ram.1] usrio.out3}
 
 if line == 0
   sys.print_int(test)
