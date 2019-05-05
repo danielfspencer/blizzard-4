@@ -220,7 +220,7 @@ function init_vars() {
     consts = []
     func = {}
     require = {}
-    max_ram_slots = 0
+    max_allocated_ram_slots = 0
     structures = {"if":0,"for":0,"while":0,"str":0,"expr_array":0}
 }
 
@@ -301,16 +301,20 @@ function write_operand(expr,type) {
 }
 
 function alloc_block(size) {
-    console.debug("request for " + size + " words(s) of RAM")
+    console.debug("Request for " + size + " words(s) of RAM")
     var addrs = []
     if (size > free_ram[scope].length) {
         throw new CompError("Out of memory, " + size + " word(s) requested ("+ free_ram[scope].length +" free)")
     }
-    for (var i =0; i<size; i++) {
+    for (var i = 0; i < size; i++) {
         addrs.push(free_ram[scope].shift())
     }
-    if ((511-free_ram[scope].length) > max_ram_slots) {
-            max_ram_slots = (511-free_ram[scope].length)
+
+    if (!scope.startsWith("sys.")) {
+      var allocated_slots = 1023 - free_ram[scope].length;
+      if (allocated_slots > max_allocated_ram_slots) {
+        max_allocated_ram_slots = allocated_slots
+      }
     }
     return addrs
 }
@@ -2898,13 +2902,13 @@ function compile(input, nested) {
             var_number -= Object.keys(arg_map[namespace]).length
         }
 
-        var ram_percent = Math.round((max_ram_slots / 1023) * 100)
+        var ram_percent = Math.round((max_allocated_ram_slots / 1023) * 100)
         var standard_libs_used = Object.keys(require).length
 
         if (var_number > 0) {
             console.warn(var_number + " variable(s) are never deallocated")
         }
-        console.log("RAM use: " + ram_percent + "% (" + max_ram_slots + "/1023 words) <progress value="+max_ram_slots+" max=\"1023\" class=\"ram-bar\"></progress>")
+        console.log("RAM use: " + ram_percent + "% (" + max_allocated_ram_slots + "/1023 words) <progress value="+max_allocated_ram_slots+" max=\"1023\" class=\"ram-bar\"></progress>")
         console.log("Standard functions used: " + standard_libs_used)
     }
 
