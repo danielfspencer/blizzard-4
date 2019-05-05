@@ -527,6 +527,218 @@ else
 test++
 {write [ram.1] usrio.out3}
 
+//signed integer tests
+var slong slong_test
+
+slong_test = 1 + 1
+
+if slong_test != 2
+  fail("slong 1 fail",line)
+  line++
+
+slong_test = 1 - 1
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 0
+  fail("slong 2 fail",line)
+  line++
+
+slong_test = 1 >>
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 0
+  fail("slong 3 fail",line)
+  line++
+
+slong_test = 1 <<
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 2
+  fail("slong 4 fail",line)
+  line++
+
+slong_test = 1 * 1
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 1
+  fail("slong 5 fail",line)
+  line++
+
+slong_test = 1 / 1
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 1
+  fail("slong 6 fail",line)
+  line++
+
+slong_test = 2 * 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 4
+  fail("slong 7 fail",line)
+  line++
+
+slong_test = 4 / 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 2
+  fail("slong 8 fail",line)
+  line++
+
+slong_test = 7 * 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 14
+  fail("slong 9 fail",line)
+  line++
+
+slong_test = 14 / 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 7
+  fail("slong 10 fail",line)
+  line++
+
+slong_test = 4 ^ 4
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 256
+  fail("slong 11 fail",line)
+  line++
+
+slong_test = 63 % 4
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 3
+  fail("slong 12 fail",line)
+  line++
+
+slong_test = 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test > 3
+  fail("slong 13 fail",line)
+  line++
+
+slong_test = 3
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test < 2
+  fail("slong 14 fail",line)
+  line++
+
+slong_test = 3
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test <= 2
+  fail("slong 15 fail",line)
+  line++
+
+slong_test = 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test >= 3
+  fail("slong 16 fail",line)
+  line++
+
+slong_test = -2 * -2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 4
+  fail("slong 17 fail",line)
+  line++
+
+slong_test = -2 / -2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 1
+  fail("slong 18 fail",line)
+  line++
+
+const slong slong_minus10 -10
+const slong slong_minus50 -50
+const slong slong_minus5 -5
+
+slong_test = slong_minus50 / slong_minus10
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 5
+  fail("slong 19 fail",line)
+  line++
+
+slong_test = slong_minus50 / 10
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != slong_minus5
+  fail("slong 20 fail",line)
+  line++
+
+slong_test = 50 / slong_minus10
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != slong_minus5
+  fail("slong 21 fail",line)
+  line++
+
+slong_test = 147 * 147
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 21609
+  fail("slong 22 fail",line)
+  line++
+
+slong_test = 9 ^ 4
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 6561
+  fail("slong 23 fail",line)
+  line++
+
+const slong slong_minus9 -9
+const slong slong_minus729 -729
+
+slong_test = slong_minus9  ^ 4
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 6561
+  fail("slong 24 fail",line)
+  line++
+
+
+slong_test = slong_minus9  ^ 3
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != slong_minus729
+  fail("slong 25 fail",line)
+  line++
+
+test++
+{write [ram.1] usrio.out3}
+
 if line == 0
   sys.print_int(test)
   sys.print_string("tests OK",3)
