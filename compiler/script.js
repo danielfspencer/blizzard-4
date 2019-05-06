@@ -53,10 +53,10 @@ var compiling = false
 var realtime = true
 var assemble_when_compiled = false
 
-$( document ).ready(function() {
+$( document ).ready( () => {
     $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
 
-    $("#load_in").change(function(e) {
+    $("#load_in").change((e) => {
         load_file(e, "in")
     })
 
@@ -75,17 +75,17 @@ $( document ).ready(function() {
       }
     })
 
-    $(document).on("keydown", function(e) {
+    $(document).on("keydown", (e) => {
         if ((e.keyCode == 10 || e.keyCode == 13) && e.ctrlKey) {
             compile()
         }
     })
 
-    $("#cmp").click(function() {
+    $("#cmp").click( () => {
         compile()
     })
 
-    $("#bench").click(function() {
+    $("#bench").click( () => {
        worker.postMessage(["bench",500])
     })
 
@@ -97,15 +97,15 @@ $( document ).ready(function() {
         worker.postMessage(["debug",this.checked])
     })
 
-    $("#assemble").click(function() {
+    $("#assemble").click( () => {
         parent.postMessage(["menu-item-asm",$("#out").val()],"*")
     })
 
-    $("#run").click(function() {
+    $("#run").click( () => {
         parent.postMessage(["menu-item-asm",$("#out").val(),true],"*")
     })
 
-    $("#in").on( "keyup", function(e) {
+    $("#in").on( "keyup", (e) => {
         if (!realtime) {return}
         if (![37,38,39,40].includes(e.keyCode)) {
             compile()
@@ -113,8 +113,8 @@ $( document ).ready(function() {
     })
 
     worker = new Worker("engine.js")
-    worker.onmessage = function(event) {
-        handleMsg(event.data)
+    worker.onmessage = (e) => {
+        handleMsg(e.data)
     }
 
     parent.input_data = set_input

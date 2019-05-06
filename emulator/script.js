@@ -1,9 +1,7 @@
-$(document).ready(init)
-
-function init() {
+$(document).ready( () => {
   worker = new Worker("engine.js")
-  worker.onmessage = function(event) {
-    handle_message(event.data)
+  worker.onmessage = (e) => {
+    handle_message(e.data)
   }
 
   document.addEventListener("keydown", on_key_down)
@@ -58,48 +56,48 @@ function init() {
     led_strips[name] = get_led_references(name)
   }
 
-  $("#start").click(function() {
+  $("#start").click( () => {
     send_user_input()
     worker.postMessage(["start"])
   })
 
-  $("#stop").click(function() {
+  $("#stop").click( () => {
     worker.postMessage(["stop"])
   })
 
-  $("#reset").click(function() {
+  $("#reset").click( () => {
     worker.postMessage(["reset"])
     worker.postMessage(["set_clock",$("#clock-target").val()])
     setTimeout(clear_screen, 150)
   })
 
-  $("#step").mousedown(function() {
+  $("#step").mousedown( () => {
     worker.postMessage(["clock_high"])
   })
 
-  $("#step, #read, #write, #copy").mouseup(function() {
+  $("#step, #read, #write, #copy").mouseup( () => {
     worker.postMessage(["clock_low"])
   })
 
-  $("#read").mousedown(function() {
+  $("#read").mousedown( () => {
     worker.postMessage(["bus_read"])
   })
 
-  $("#write").mousedown(function() {
+  $("#write").mousedown( () => {
     worker.postMessage(["bus_write"])
   })
 
-  $("#copy").mousedown(function() {
+  $("#copy").mousedown( () => {
     worker.postMessage(["bus_copy"])
   })
 
-  $("#clock-target").change(function(event){
+  $("#clock-target").change( () => {
     worker.postMessage(["set_clock",$("#clock-target").val()])
   })
 
   $("#usr1_input, #usr2_input, #usr3_input").on('input', send_user_input)
 
-  $("#rom_write_protect").change(function(event){
+  $("#rom_write_protect").change(function() {
     worker.postMessage(["write_protect_change",this.checked])
   })
 
@@ -107,7 +105,7 @@ function init() {
   worker.postMessage(["set_clock",100000])
   parent.input_data = set_rom
   parent.child_page_loaded()
-}
+})
 
 function set_rom([string,shouldRun]) {
     worker.postMessage(["set_rom",string])
@@ -183,7 +181,7 @@ function stop_updates() {
 function start_slow_step(delay) {
   if (! updates_running) {
     start_updates()
-    step_timer = setInterval(function() { slow_step(delay) }, delay)
+    step_timer = setInterval( () => { slow_step(delay) }, delay)
   }
 }
 
@@ -194,7 +192,7 @@ function stop_slow_step() {
 
 function slow_step(delay) {
   worker.postMessage(["clock_high"])
-  setTimeout(function() { worker.postMessage(["clock_low"]) }, delay/2)
+  setTimeout( () => { worker.postMessage(["clock_low"]) }, delay/2)
 }
 
 function benchmark() {

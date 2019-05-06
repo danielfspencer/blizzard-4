@@ -2,15 +2,15 @@ if (get_platform() == "electron") {
     window.$ = window.jQuery = module.exports; // avoid breaking jquery with node integration
 }
 
-$( document ).ready(() => {
+$( document ).ready( () => {
     storage_get_key("starting-page",get_starting_page,"dem")
     storage_get_key("theme",get_theme,"light")
 
-    $( "#close" ).click(function() {
+    $( "#close" ).click( () => {
         window.close()
     })
 
-    $( "#reset" ).click(function() {
+    $( "#reset" ).click( () => {
         storage_clear()
     })
 

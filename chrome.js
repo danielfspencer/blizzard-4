@@ -1,4 +1,4 @@
-chrome.app.runtime.onLaunched.addListener(function() {
+chrome.app.runtime.onLaunched.addListener(() => {
   chrome.app.window.create('index.html', {
     "frame": "none",
     "resizable": false,
@@ -6,5 +6,5 @@ chrome.app.runtime.onLaunched.addListener(function() {
       width: 1526,
       height: 656
     }
-  });
-});
+  })
+})

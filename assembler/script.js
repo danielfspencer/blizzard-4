@@ -1,17 +1,17 @@
 let size_bytes = 0;
 
-$( document ).ready(function() { //connect all the butons to their actions!
-    $("#load_in").change(function(e) {
+$( document ).ready( () => { //connect all the butons to their actions!
+    $("#load_in").change((e) => {
         load_file(e, "in")
     })
 
     $("#cmp").click(run_assemble)
 
-    $("#load").click(function() {
+    $("#load").click( () => {
         parent.postMessage(["menu-item-emu",$("#out").val()],"*")
     })
 
-    $("#run").click(function() {
+    $("#run").click( () => {
         parent.postMessage(["menu-item-emu",$("#out").val(),true],"*")
     })
 
