@@ -29,20 +29,10 @@ $( document ).ready(function() { //connect all the butons to their actions!
         }
     })
 
-    $(function() {
-        $(".lined").linedtextarea(
-        {selectedLine: 1}
-    )
-    })
+    $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
 
-    $(function() {
-            $(".lined-dec").linedtextarea(
-            {selectedLine: 1, dec:true}
-        )
-    })
+    $(".lined").linedtextarea({selectedLine: 1, dec:false})
 
-
-    // $("out").val("")
     $("#in").on( "keyup", run_assemble)
 
     $("#in").on("keydown", function (e) {

@@ -53,17 +53,7 @@ var realtime = true
 var assemble_when_compiled = false
 
 $( document ).ready(function() {
-    $(function() {
-            $(".lined-dec").linedtextarea(
-            {selectedLine: 1, dec:true}
-        )
-    })
-
-    $(function() {
-            $(".lined").linedtextarea(
-            {selectedLine: 1, dec:true}
-        )
-    })
+    $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
 
     $("#load_in").change(function(e) {
         load_file(e, "in")
