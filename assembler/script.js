@@ -7,8 +7,12 @@ $( document ).ready(function() { //connect all the butons to their actions!
 
     $("#cmp").click(run_assemble)
 
-    $("#run").click(function() {
+    $("#load").click(function() {
         parent.postMessage(["menu-item-emu",$("#out").val()],"*")
+    })
+
+    $("#run").click(function() {
+        parent.postMessage(["menu-item-emu",$("#out").val(),true],"*")
     })
 
     $("#auto").change(function() {

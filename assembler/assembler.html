@@ -17,7 +17,7 @@
         <div class="card">
             <div style="margin-bottom: 4px;"><div class="title" style="display: inline;">In (assembly)</div><input style="display: inline;" type="text" id="name" placeholder="program name"></div>
             <form><textarea spellcheck="false" class="lined-dec" style="width: 490px; height: 415px;" id="in"></textarea></form>
-            <div class="button" id="load"><input type="file" id="load_in"/></div>
+            <div class="button"><input type="file" id="load_in"/></div>
         </div>
 
         <div style="float: left;">
@@ -36,7 +36,10 @@
         <div class="card">
             <div style="margin-bottom: 4px;" class="title">Out (machine code)</div>
             <form><textarea readonly spellcheck="false" class="lined" style="width: 490px; height: 415px;" id="out"></textarea></form>
-                <div class="button" id="run">Run</div>
+            <div id="two-button">
+              <div class="button" id="load">load</div>
+              <div class="button" id="run">run</div>
+            </div>
         </div>
     </div>
 </body>
