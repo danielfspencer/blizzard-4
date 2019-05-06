@@ -2,7 +2,7 @@ let size_bytes = 0;
 
 $( document ).ready(function() { //connect all the butons to their actions!
     $("#load_in").change(function(e) {
-        loadFile(e, "in")
+        load_file(e, "in")
     })
 
     $("#cmp").click(run_assemble)

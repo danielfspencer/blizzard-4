@@ -67,7 +67,7 @@ $( document ).ready(function() {
     })
 
     $("#load_in").change(function(e) {
-        loadFile(e, "in")
+        load_file(e, "in")
     })
 
     $(document).delegate('#in', 'keydown', function(e) {
