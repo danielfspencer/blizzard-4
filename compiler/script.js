@@ -49,7 +49,6 @@ function set_input([string,shouldAssemble]) {
 }
 
 var compiling = false
-var debug = false
 var realtime = true
 var assemble_when_compiled = false
 
@@ -100,21 +99,11 @@ $( document ).ready(function() {
     })
 
     $("#auto").change(function() {
-        if(this.checked) {
-            realtime = true
-        } else {
-            realtime = false
-        }
+        realtime = this.checked
     })
 
     $("#debug").change(function() {
-        if(this.checked) {
-            debug = true
-            worker.postMessage(["debug",debug])
-        } else {
-            debug = false
-            worker.postMessage(["debug",debug])
-        }
+        worker.postMessage(["debug",this.checked])
     })
 
     $("#assemble").click(function() {
