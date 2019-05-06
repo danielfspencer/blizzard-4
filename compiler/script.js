@@ -5,12 +5,13 @@ function handleMsg(data) {
             break
         case "result":
             if (assemble_when_compiled) {
-              parent.postMessage(["menu-item-asm",data[1],true],"*")
-              compiling = false
+              if (data[1] !== undefined) {
+                parent.postMessage(["menu-item-asm",data[1],true],"*")
+              }
             } else {
               $("#out").val(data[1])
-              compiling = false
             }
+            compiling = false
             break
         case "log":
             log(data[1],data[2])

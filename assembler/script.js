@@ -64,7 +64,13 @@ function run_assemble() {
 
 function set_input([string,shouldRun]) {
     if (shouldRun) {
-        parent.postMessage(["menu-item-emu",assemble(string),true],"*")
+        var output = assemble(string)
+        if (!output.startsWith("error")) {
+          parent.postMessage(["menu-item-emu",output,true],"*")
+        } else {
+          $("#in").val(string)
+          $("#out").val(output)
+        }
     } else {
         document.getElementById("in").value = string
         run_assemble()
