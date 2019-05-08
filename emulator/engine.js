@@ -462,10 +462,21 @@ function simulate_effect_of_read_bus_change() {
 
     switch (card_address) {                                               //control unit
       case 0:
-        if (address == 1) {
-          data_bus = conditional_bit // read from cnd bit is required for != test
-        } else if (address == 4) {
-          data_bus = frame_number
+        switch (address) {
+          case 1:
+            data_bus = conditional_bit
+            break
+          case 4:
+            data_bus = frame_number
+            break
+          case 8:
+            data_bus = (performance.now() * 8.192) & 0xffff
+            break
+          case 16:
+            data_bus = ((performance.now() * 8.192) >> 16) & 0xffff
+            break
+          default:
+            break
         }
         break
       case 1:                                                             //alu
