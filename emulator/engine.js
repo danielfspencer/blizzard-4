@@ -72,6 +72,8 @@ function init_emulator() {
   vram_addresses_changed = {}
   vram_changes_buffer = []
 
+  timer_register_zeroing_offset = 0
+
   init_activity_indicators()
   init_buffered_instructions()
 }
@@ -301,6 +303,19 @@ function vram_change(address, new_data) {
   }
 }
 
+function get_timer_value() {
+  var value = (performance.now() - timer_register_zeroing_offset) * 8.192
+
+  var low_word = value & 0xffff
+  var high_word = (value >> 16) & 0xffff
+
+  return [low_word,high_word]
+}
+
+function reset_timer() {
+  timer_register_zeroing_offset = performance.now()
+}
+
 function start() {
   if (!is_running) {
     debug = false
@@ -470,11 +485,10 @@ function simulate_effect_of_read_bus_change() {
             data_bus = frame_number
             break
           case 8:
-            data_bus = (performance.now() * 8.192) & 0xffff
+            data_bus = get_timer_value()[0]
             break
           case 16:
-            data_bus = ((performance.now() * 8.192) >> 16) & 0xffff
-            break
+            data_bus = get_timer_value()[1]
           default:
             break
         }
@@ -624,12 +638,21 @@ function simulate_effect_of_write_bus_change() {
 
     switch (card_address) {                                               //control unit
       case 0:
-        if (address == 1) {
-          conditional_bit = data_bus & 0b0000000000000001
-        } else if (address == 2) {
-          direct_ram_addressing = (data_bus & 0b0000000000000001) == 1
-        } else if (address == 4) {
-          frame_number = data_bus & 0b0000000000001111
+        switch (address) {
+          case 1:
+            conditional_bit = data_bus & 0b0000000000000001
+            break
+          case 2:
+            direct_ram_addressing = (data_bus & 0b0000000000000001) == 1
+            break
+          case 4:
+            frame_number = data_bus & 0b0000000000001111
+            break
+          case 8:
+            reset_timer()
+            break
+          default:
+            break
         }
         break
       case 1:                                                             //alu
