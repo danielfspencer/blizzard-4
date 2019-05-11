@@ -110,7 +110,9 @@ defs = {
     "kbd.len": 8193,
     "ctl.cnd" : 1,
     "ctl.addrmode" : 2,
-    "ctl.framenum" : 4
+    "ctl.framenum" : 4,
+    "ctl.lowtimer" : 8,
+    "ctl.hightimer" : 16
 
 }
 
