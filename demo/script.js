@@ -1,10 +1,8 @@
 const path = "../assets/example_programs/"
 
-$(document).ready(init)
-
-function init() {
-  $.getJSON(path+"index.json", function(data) {
-    $.each(data, function(key,value) {
+$(document).ready( () => {
+  $.getJSON(path+"index.json", (data) => {
+    $.each(data, (key,value) => {
       var html = "";
       html += "<div class='card entry' id="+key+">"
       html += "<div class='img-container'><div class='img-box'>"
@@ -25,13 +23,13 @@ function init() {
       })
     })
   })
-}
+})
 
 function view_or_run(name,run) {
   $.ajax({
     url: path + name + ".b4cl",
     dataType: "text",
-    success: function(data) {
+    success: (data) => {
         parent.postMessage(["menu-item-cmp",data,run],"*")
     }
   })

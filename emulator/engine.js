@@ -321,7 +321,7 @@ function start() {
     debug = false
     is_running = true
     //set a timer to run the calculated number of cycles every 10ms that will equate to the target_cycles_per_second
-    interval_timer = setInterval(function() {run_batch(cycles_per_batch)}, 10)
+    interval_timer = setInterval(() => { run_batch(cycles_per_batch) }, 10)
     frequency_measurement_timer = setInterval(measure_frequency, 100)
     postMessage(["started"])
   }
