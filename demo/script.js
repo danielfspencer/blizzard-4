@@ -1,4 +1,4 @@
-const path = "../assets/example_programs/"
+const path = "example_programs/"
 
 $(document).ready( () => {
   $.getJSON(path+"index.json", (data) => {
