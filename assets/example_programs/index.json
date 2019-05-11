@@ -2,7 +2,7 @@
     "ping_pong": {
         "name": "Ping Pong",
         "desc": "A classic ping pong game. Player 1 uses keys A & D to move the paddle. Player 2 uses keys J & L to move the paddle. Optionally, one or both of the players can be computer controlled. Select the game mode by pressing number 1, 2 or 3 on the title screen.",
-        "clock_speed": 100000
+        "clock_speed": 100100
     },
     "snake_demo": {
         "name":"Snake Game Prototype",

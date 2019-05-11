@@ -107,7 +107,11 @@ $(document).ready( () => {
   parent.child_page_loaded()
 })
 
-function set_rom([string,shouldRun]) {
+function set_rom([string, shouldRun, clock_speed]) {
+    if (clock_speed !== undefined) {
+      $("#clock-target").val(clock_speed)
+      worker.postMessage(["set_clock",clock_speed])
+    }
     worker.postMessage(["set_rom",string])
     if (shouldRun) {
         worker.postMessage(["start"])

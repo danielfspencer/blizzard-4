@@ -16,21 +16,22 @@ $(document).ready( () => {
               </div></div>"
       $("#content").append(html)
       $("#" + key + " > .button-container > .run").click( () => {
-        view_or_run(key,true)
+        view_or_run(key, true, value.clock_speed)
       })
       $("#" + key + " > .button-container > .src").click( () => {
-        view_or_run(key,false)
+        view_or_run(key,false, value.clock_speed)
       })
     })
   })
 })
 
-function view_or_run(name,run) {
+function view_or_run(name, run, clock_speed) {
   $.ajax({
     url: path + name + ".b4cl",
     dataType: "text",
     success: (data) => {
-        parent.postMessage(["menu-item-cmp",data,run],"*")
+        console.log(data)
+        parent.postMessage(["menu-item-cmp", data, run, clock_speed],"*")
     }
   })
 }

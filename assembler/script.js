@@ -62,11 +62,11 @@ function run_assemble() {
   $("#size").html(size_bytes +" B")
 }
 
-function set_input([string,shouldRun]) {
+function set_input([string, shouldRun, clock_speed]) {
     if (shouldRun) {
         var output = assemble(string)
         if (!output.startsWith("error")) {
-          parent.postMessage(["menu-item-emu",output,true],"*")
+          parent.postMessage(["menu-item-emu", output, true, clock_speed],"*")
         } else {
           $("#in").val(string)
           $("#out").val(output)

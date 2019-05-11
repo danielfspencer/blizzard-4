@@ -6,7 +6,7 @@ function handleMsg(data) {
         case "result":
             if (assemble_when_compiled) {
               if (data[1] !== undefined) {
-                parent.postMessage(["menu-item-asm",data[1],true],"*")
+                parent.postMessage(["menu-item-asm", data[1], true, target_clock_speed],"*")
               }
             } else {
               $("#out").val(data[1])
@@ -41,10 +41,11 @@ function log(level,msg) {
     //~ $("#log").animate({scrollTop: $("#log")[0].scrollHeight - $("#log").height() - 1 }, 100)
 }
 
-function set_input([string,shouldAssemble]) {
+function set_input([string, shouldAssemble, clock_speed]) {
   document.getElementById("in").value = string
   if (shouldAssemble) {
     assemble_when_compiled = true;
+    target_clock_speed = clock_speed
   }
   compile()
 }
@@ -52,6 +53,7 @@ function set_input([string,shouldAssemble]) {
 var compiling = false
 var realtime = true
 var assemble_when_compiled = false
+var target_clock_speed = 0
 
 $( document ).ready( () => {
     $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
