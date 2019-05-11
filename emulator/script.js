@@ -1,9 +1,7 @@
-$(document).ready(init)
-
-function init() {
+$(document).ready( () => {
   worker = new Worker("engine.js")
-  worker.onmessage = function(event) {
-    handle_message(event.data)
+  worker.onmessage = (e) => {
+    handle_message(e.data)
   }
 
   document.addEventListener("keydown", on_key_down)
@@ -46,6 +44,7 @@ function init() {
     "ram_read_leds":null,
     "ram_offset_leds":null,
     "ram_write_leds":null,
+    "ram_addr_mode_leds":null,
     "rom_read_leds":null,
     "rom_write_leds":null,
     "inp1_leds":null,
@@ -57,42 +56,62 @@ function init() {
     led_strips[name] = get_led_references(name)
   }
 
-  $("#start").click(function() {
+  $("#start").click( () => {
     send_user_input()
     worker.postMessage(["start"])
   })
 
-  $("#stop").click(function() {
+  $("#stop").click( () => {
     worker.postMessage(["stop"])
   })
 
-  $("#reset").click(function() {
+  $("#reset").click( () => {
     worker.postMessage(["reset"])
     worker.postMessage(["set_clock",$("#clock-target").val()])
     setTimeout(clear_screen, 150)
   })
 
-  $("#step").mousedown(function() {
+  $("#step").mousedown( () => {
     worker.postMessage(["clock_high"])
   })
 
-  $("#step").mouseup(function() {
+  $("#step, #read, #write, #copy").mouseup( () => {
     worker.postMessage(["clock_low"])
   })
 
-  $("#clock-target").change(function(event){
+  $("#read").mousedown( () => {
+    worker.postMessage(["bus_read"])
+  })
+
+  $("#write").mousedown( () => {
+    worker.postMessage(["bus_write"])
+  })
+
+  $("#copy").mousedown( () => {
+    worker.postMessage(["bus_copy"])
+  })
+
+  $("#clock-target").change( () => {
     worker.postMessage(["set_clock",$("#clock-target").val()])
   })
 
-  $("#usr1_input, #usr2_input, #usr3_input").change(send_user_input)
+  $("#usr1_input, #usr2_input, #usr3_input").on('input', send_user_input)
+
+  $("#rom_write_protect").change(function() {
+    worker.postMessage(["write_protect_change",this.checked])
+  })
 
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock",100000])
   parent.input_data = set_rom
   parent.child_page_loaded()
-}
+})
 
-function set_rom([string,shouldRun]) {
+function set_rom([string, shouldRun, clock_speed]) {
+    if (clock_speed !== undefined) {
+      $("#clock-target").val(clock_speed)
+      worker.postMessage(["set_clock",clock_speed])
+    }
     worker.postMessage(["set_rom",string])
     if (shouldRun) {
         worker.postMessage(["start"])
@@ -166,7 +185,7 @@ function stop_updates() {
 function start_slow_step(delay) {
   if (! updates_running) {
     start_updates()
-    step_timer = setInterval(function() { slow_step(delay) }, delay)
+    step_timer = setInterval( () => { slow_step(delay) }, delay)
   }
 }
 
@@ -177,7 +196,7 @@ function stop_slow_step() {
 
 function slow_step(delay) {
   worker.postMessage(["clock_high"])
-  setTimeout(function() { worker.postMessage(["clock_low"]) }, delay/2)
+  setTimeout( () => { worker.postMessage(["clock_low"]) }, delay/2)
 }
 
 function benchmark() {
@@ -364,6 +383,7 @@ function draw_front_panel() {
   display_number_on_leds("ram_write_leds", front_panel_info["activity_indicators"]["ram_write"])
   display_number_on_leds("ram_read_leds", front_panel_info["activity_indicators"]["ram_read"])
   display_number_on_leds("ram_offset_leds", front_panel_info["activity_indicators"]["ram_frame_offset"])
+  display_number_on_leds("ram_addr_mode_leds", front_panel_info["ram_addr_mode"])
 
   display_number_on_leds("rom_addr_leds", front_panel_info["activity_indicators"]["rom_address"])
   display_number_on_leds("rom_read_leds", front_panel_info["activity_indicators"]["rom_read"])

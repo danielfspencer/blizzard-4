@@ -3,8 +3,10 @@ if (get_platform() == "electron") {
 }
 var version = ""
 
-$( document ).ready(function() {
-    $( "#licence" ).click(function() {
+$( document ).ready( () => {
+    $.ajaxSetup({ cache: false }) // do not cache requests to check for latest version!
+
+    $( "#licence" ).click( () => {
       if (get_platform() == "chrome") {
           chrome.app.window.create('../licence.html', {
             "resizable": true,
@@ -18,27 +20,31 @@ $( document ).ready(function() {
       }
     })
 
-    $( "#close" ).click(function() {
+    $( "#website" ).click( () => {
+        window.open("https://github.com/danielfspencer/blizzard-4")
+    })
+
+    $( "#close" ).click( () => {
         window.close()
     })
 
     $.getJSON("../manifest.json")
-        .done(function(data) {
+        .done( (data) => {
             version = data["version_name"]
-            $("#ver").html("Version: " + version)
+            $("#version-name").html(version)
     })
 
     $.getJSON("https://danielfspencer.github.io/blizzard-4/manifest.json")
-        .done(function(data) {
+        .done( (data) => {
             var latest_version = data["version_name"]
             if (version !== latest_version) {
-                $("#latest_ver").html("Latest Version: " + latest_version + " (update available)")
+                $("#version-status").html(" (newer version " + latest_version + " available)")
             } else {
-                $("#latest_ver").html("Latest Version: " + latest_version + " (up to date)")
+                $("#version-status").html(" (up to date)")
             }
         })
-        .fail( function() {
-            $("#latest_ver").html("Latest Version: (error checking for new version)")
+        .fail( () => {
+            $("#version-status").html(" (error checking for new version)")
         })
 })
 

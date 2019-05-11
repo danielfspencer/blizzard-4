@@ -1,0 +1,745 @@
+var int line
+var int test
+def fail
+  arg str message
+  arg int line
+  sys.print_string(message,0,line)
+
+//integer tests
+var int int_test
+
+int_test = 1 + 1
+
+if int_test != 2
+  fail("int 1 fail",line)
+  line++
+
+int_test = 1 - 1
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 0
+  fail("int 2 fail",line)
+  line++
+
+int_test = 1 >>
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 0
+  fail("int 3 fail",line)
+  line++
+
+int_test = 1 <<
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 2
+  fail("int 4 fail",line)
+  line++
+
+int_test = 1 * 1
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 1
+  fail("int 5 fail",line)
+  line++
+
+int_test = 1 / 1
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 1
+  fail("int 6 fail",line)
+  line++
+
+int_test = 2 * 2
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 4
+  fail("int 7 fail",line)
+  line++
+
+int_test = 4 / 2
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 2
+  fail("int 8 fail",line)
+  line++
+
+int_test = 7 * 2
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 14
+  fail("int 9 fail",line)
+  line++
+
+int_test = 14 / 2
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 7
+  fail("int 10 fail",line)
+  line++
+
+int_test = 4 ^ 4
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 256
+  fail("int 11 fail",line)
+  line++
+
+int_test = 63 % 4
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 3
+  fail("int 12 fail",line)
+  line++
+
+int_test = 2
+
+test++
+{write [ram.1] usrio.out3}
+if int_test > 3
+  fail("int 13 fail",line)
+  line++
+
+int_test = 3
+
+test++
+{write [ram.1] usrio.out3}
+if int_test < 2
+  fail("int 14 fail",line)
+  line++
+
+int_test = 3
+
+test++
+{write [ram.1] usrio.out3}
+if int_test <= 2
+  fail("int 15 fail",line)
+  line++
+
+int_test = 2
+
+test++
+{write [ram.1] usrio.out3}
+if int_test >= 3
+  fail("int 16 fail",line)
+  line++
+
+int_test = 250 * 147
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 36750
+  fail("int 17 fail",line)
+  line++
+
+int_test = 9 ^ 5
+
+test++
+{write [ram.1] usrio.out3}
+if int_test != 59049
+  fail("int 18 fail",line)
+  line++
+
+int_test = 0xffff + 1
+
+if sys.ov
+  test = test
+else
+  fail("int 19 fail",line)
+  line++
+test++
+{write [ram.1] usrio.out3}
+
+//signed integer tests
+var sint sint_test
+
+sint_test = 1 + 1
+
+if sint_test != 2
+  fail("sint 1 fail",line)
+  line++
+
+sint_test = 1 - 1
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 0
+  fail("sint 2 fail",line)
+  line++
+
+sint_test = 1 >>
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 0
+  fail("sint 3 fail",line)
+  line++
+
+sint_test = 1 <<
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 2
+  fail("sint 4 fail",line)
+  line++
+
+sint_test = 1 * 1
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 1
+  fail("sint 5 fail",line)
+  line++
+
+sint_test = 1 / 1
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 1
+  fail("sint 6 fail",line)
+  line++
+
+sint_test = 2 * 2
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 4
+  fail("sint 7 fail",line)
+  line++
+
+sint_test = 4 / 2
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 2
+  fail("sint 8 fail",line)
+  line++
+
+sint_test = 7 * 2
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 14
+  fail("sint 9 fail",line)
+  line++
+
+sint_test = 14 / 2
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 7
+  fail("sint 10 fail",line)
+  line++
+
+sint_test = 4 ^ 4
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 256
+  fail("sint 11 fail",line)
+  line++
+
+sint_test = 63 % 4
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 3
+  fail("sint 12 fail",line)
+  line++
+
+sint_test = 2
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test > 3
+  fail("sint 13 fail",line)
+  line++
+
+sint_test = 3
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test < 2
+  fail("sint 14 fail",line)
+  line++
+
+sint_test = 3
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test <= 2
+  fail("sint 15 fail",line)
+  line++
+
+sint_test = 2
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test >= 3
+  fail("sint 16 fail",line)
+  line++
+
+sint_test = -2 * -2
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 4
+  fail("sint 17 fail",line)
+  line++
+
+sint_test = -2 / -2
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 1
+  fail("sint 18 fail",line)
+  line++
+
+const sint minus10 -10
+const sint minus50 -50
+const sint minus5 -5
+
+sint_test = minus50 / minus10
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 5
+  fail("sint 19 fail",line)
+  line++
+
+sint_test = minus50 / 10
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != minus5
+  fail("sint 20 fail",line)
+  line++
+
+sint_test = 50 / minus10
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != minus5
+  fail("sint 21 fail",line)
+  line++
+
+sint_test = 147 * 147
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 21609
+  fail("sint 22 fail",line)
+  line++
+
+sint_test = 9 ^ 4
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 6561
+  fail("sint 23 fail",line)
+  line++
+
+const sint minus9 -9
+const sint minus729 -729
+
+sint_test = minus9  ^ 4
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != 6561
+  fail("sint 24 fail",line)
+  line++
+
+
+sint_test = minus9  ^ 3
+
+test++
+{write [ram.1] usrio.out3}
+if sint_test != minus729
+  fail("sint 25 fail",line)
+  line++
+
+test++
+{write [ram.1] usrio.out3}
+
+//long tests
+var long long_test
+
+long_test = 1 + 1
+
+if long_test != 2
+  fail("long 1 fail",line)
+  line++
+
+long_test = 1 - 1
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 0
+  fail("long 2 fail",line)
+  line++
+
+long_test = 1 >>
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 0
+  fail("long 3 fail",line)
+  line++
+
+long_test = 1 <<
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 2
+  fail("long 4 fail",line)
+  line++
+
+long_test = 1 * 1
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 1
+  fail("long 5 fail",line)
+  line++
+
+long_test = 1 / 1
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 1
+  fail("long 6 fail",line)
+  line++
+
+long_test = 2 * 2
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 4
+  fail("long 7 fail",line)
+  line++
+
+long_test = 4 / 2
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 2
+  fail("long 8 fail",line)
+  line++
+
+long_test = 7 * 2
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 14
+  fail("long 9 fail",line)
+  line++
+
+long_test = 14 / 2
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 7
+  fail("long 10 fail",line)
+  line++
+
+long_test = 4 ^ 4
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 256
+  fail("long 11 fail",line)
+  line++
+
+long_test = 63 % 4
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 3
+  fail("long 12 fail",line)
+  line++
+
+long_test = 2
+
+test++
+{write [ram.1] usrio.out3}
+if long_test > 3
+  fail("long 13 fail",line)
+  line++
+
+long_test = 3
+
+test++
+{write [ram.1] usrio.out3}
+if long_test < 2
+  fail("long 14 fail",line)
+  line++
+
+long_test = 3
+
+test++
+{write [ram.1] usrio.out3}
+if long_test <= 2
+  fail("long 15 fail",line)
+  line++
+
+long_test = 2
+
+test++
+{write [ram.1] usrio.out3}
+if long_test >= 3
+  fail("long 16 fail",line)
+  line++
+
+long_test = 250 * 147
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 36750
+  fail("long 17 fail",line)
+  line++
+
+long_test = 9 ^ 5
+
+test++
+{write [ram.1] usrio.out3}
+if long_test != 59049
+  fail("long 18 fail",line)
+  line++
+
+long_test = 0xffffffff + 1
+
+if sys.ov
+  test = test
+else
+  fail("long 19 fail",line)
+  line++
+test++
+{write [ram.1] usrio.out3}
+
+//signed integer tests
+var slong slong_test
+
+slong_test = 1 + 1
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 2
+  fail("slong 1 fail",line)
+  line++
+
+slong_test = 1 - 1
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 0
+  fail("slong 2 fail",line)
+  line++
+
+slong_test = 1 >>
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 0
+  fail("slong 3 fail",line)
+  line++
+
+slong_test = 1 <<
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 2
+  fail("slong 4 fail",line)
+  line++
+
+slong_test = 1 * 1
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 1
+  fail("slong 5 fail",line)
+  line++
+
+slong_test = 1 / 1
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 1
+  fail("slong 6 fail",line)
+  line++
+
+slong_test = 2 * 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 4
+  fail("slong 7 fail",line)
+  line++
+
+slong_test = 4 / 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 2
+  fail("slong 8 fail",line)
+  line++
+
+slong_test = 7 * 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 14
+  fail("slong 9 fail",line)
+  line++
+
+slong_test = 14 / 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 7
+  fail("slong 10 fail",line)
+  line++
+
+slong_test = 4 ^ 4
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 256
+  fail("slong 11 fail",line)
+  line++
+
+slong_test = 63 % 4
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 3
+  fail("slong 12 fail",line)
+  line++
+
+slong_test = 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test > 3
+  fail("slong 13 fail",line)
+  line++
+
+slong_test = 3
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test < 2
+  fail("slong 14 fail",line)
+  line++
+
+slong_test = 3
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test <= 2
+  fail("slong 15 fail",line)
+  line++
+
+slong_test = 2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test >= 3
+  fail("slong 16 fail",line)
+  line++
+
+slong_test = -2 * -2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 4
+  fail("slong 17 fail",line)
+  line++
+
+slong_test = -2 / -2
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 1
+  fail("slong 18 fail",line)
+  line++
+
+const slong slong_minus10 -10
+const slong slong_minus50 -50
+const slong slong_minus5 -5
+
+slong_test = slong_minus50 / slong_minus10
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 5
+  fail("slong 19 fail",line)
+  line++
+
+slong_test = slong_minus50 / 10
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != slong_minus5
+  fail("slong 20 fail",line)
+  line++
+
+slong_test = 50 / slong_minus10
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != slong_minus5
+  fail("slong 21 fail",line)
+  line++
+
+slong_test = 147 * 147
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 21609
+  fail("slong 22 fail",line)
+  line++
+
+slong_test = 9 ^ 4
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 6561
+  fail("slong 23 fail",line)
+  line++
+
+const slong slong_minus9 -9
+const slong slong_minus729 -729
+
+slong_test = slong_minus9  ^ 4
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != 6561
+  fail("slong 24 fail",line)
+  line++
+
+
+slong_test = slong_minus9  ^ 3
+
+test++
+{write [ram.1] usrio.out3}
+if slong_test != slong_minus729
+  fail("slong 25 fail",line)
+  line++
+
+if line == 0
+  sys.print_int(test)
+  sys.print_string("tests OK",3)
+else if line < 16
+  sys.print_string("some failures !",0,line)

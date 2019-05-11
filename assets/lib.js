@@ -1,4 +1,4 @@
-function loadFile(e, target) {
+function load_file(e, target) {
     var file = e.target.files[0];
     if (!file) {
         return;

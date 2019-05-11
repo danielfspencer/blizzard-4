@@ -1,10 +1,8 @@
-const path = "../assets/example_programs/"
+const path = "example_programs/"
 
-$(document).ready(init)
-
-function init() {
-  $.getJSON(path+"index.json", function(data) {
-    $.each(data, function(key,value) {
+$(document).ready( () => {
+  $.getJSON(path+"index.json", (data) => {
+    $.each(data, (key,value) => {
       var html = "";
       html += "<div class='card entry' id="+key+">"
       html += "<div class='img-container'><div class='img-box'>"
@@ -18,21 +16,22 @@ function init() {
               </div></div>"
       $("#content").append(html)
       $("#" + key + " > .button-container > .run").click( () => {
-        view_or_run(key,true)
+        view_or_run(key, true, value.clock_speed)
       })
       $("#" + key + " > .button-container > .src").click( () => {
-        view_or_run(key,false)
+        view_or_run(key,false, value.clock_speed)
       })
     })
   })
-}
+})
 
-function view_or_run(name,run) {
+function view_or_run(name, run, clock_speed) {
   $.ajax({
     url: path + name + ".b4cl",
     dataType: "text",
-    success: function(data) {
-        parent.postMessage(["menu-item-cmp",data,run],"*")
+    success: (data) => {
+        console.log(data)
+        parent.postMessage(["menu-item-cmp", data, run, clock_speed],"*")
     }
   })
 }

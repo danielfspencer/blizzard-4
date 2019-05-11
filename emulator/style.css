@@ -29,16 +29,29 @@ table {
 
 #front_panel {
   padding-top: 4px;
-  width: 970px;
+  width: 934px;
   display: inline-block;
 }
 
 #front_panel > .card {
   padding-top: 2px;
+  width: 100%;
   padding-bottom: 2px;
 }
 
+#control_panel > table {
+  width: 100%;
+}
+
+.right_align {
+  margin-left: auto;
+}
+
 #controls > .button {
+  display: inline-block;
+}
+
+#bus_controls > .button {
   display: inline-block;
 }
 
@@ -48,6 +61,15 @@ table {
 
 #clock-actual {
   width: 80px;
+}
+
+#alu-lables {
+  display: flex;
+  padding-left: 5px;
+}
+
+#alu-lables > a {
+  flex-grow: 1;
 }
 
 input {

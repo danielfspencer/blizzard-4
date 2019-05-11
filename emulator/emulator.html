@@ -84,7 +84,7 @@
           </table>
         </td>
         <td>
-          <table>
+          <table class="right_align"> 
             <tr>
               <td></td>
               <td>fetch load exe</td>
@@ -238,6 +238,13 @@
               <div class="led green"></div><div class="led green"></div><div class="led green"></div><div class="led green"></div>
             </div>
           </td>
+          <td></td>
+          <td></td>
+          <td rowspan="3" id="bus_controls">
+            <div id="read" class="button">read</div>
+            <div id="write" class="button">write</div>
+            <div id="copy" class="button">copy</div>
+          </td>
         </tr><tr>
           <td>out #2</td>
           <td>
@@ -296,7 +303,9 @@
                   </div>
                 </td>
                 <td rowspan="2">
-                  16-way split <input id="16-way-split" type="checkbox" checked>
+                  <div id="ram_addr_mode_leds" class="led_row">
+                    direct addr.<div class="led blue"></div>
+                  </div>
                 </td>
               </tr><tr>
                 <td>write</td>
@@ -331,7 +340,7 @@
                   </div>
                 </td>
                 <td rowspan="2">
-                  write protect <input id="rom_write_protect" type="checkbox" checked>
+                  write protect <input id="rom_write_protect" type="checkbox">
                 </td>
               </tr><tr>
                 <td>write</td>
@@ -362,7 +371,7 @@
         <td></td>
         <td>#1 #2</td>
         <td></td>
-        <td>+ - >> << AND OR NOT > < = ov.</td>
+        <td id="alu-lables"><a>+</a> <a>-</a> <a>&gt;&gt;</a> <a>&lt;&lt;</a> <a>∧</a> <a>∨</a> <a>¬</a>  <a>&gt;</a>  <a>&lt;</a> <a>=</a> <a>ov</a></pre></td>
       </tr><tr>
         <td>alu #2</td>
         <td>

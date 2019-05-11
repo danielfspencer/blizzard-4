@@ -5,12 +5,13 @@ function handleMsg(data) {
             break
         case "result":
             if (assemble_when_compiled) {
-              parent.postMessage(["menu-item-asm",data[1],true],"*")
-              compiling = false
+              if (data[1] !== undefined) {
+                parent.postMessage(["menu-item-asm", data[1], true, target_clock_speed],"*")
+              }
             } else {
               $("#out").val(data[1])
-              compiling = false
             }
+            compiling = false
             break
         case "log":
             log(data[1],data[2])
@@ -40,34 +41,25 @@ function log(level,msg) {
     //~ $("#log").animate({scrollTop: $("#log")[0].scrollHeight - $("#log").height() - 1 }, 100)
 }
 
-function set_input([string,shouldAssemble]) {
+function set_input([string, shouldAssemble, clock_speed]) {
   document.getElementById("in").value = string
   if (shouldAssemble) {
     assemble_when_compiled = true;
+    target_clock_speed = clock_speed
   }
   compile()
 }
 
 var compiling = false
-var debug = false
 var realtime = true
 var assemble_when_compiled = false
+var target_clock_speed = 0
 
-$( document ).ready(function() {
-    $(function() {
-            $(".lined-dec").linedtextarea(
-            {selectedLine: 1, dec:true}
-        )
-    })
+$( document ).ready( () => {
+    $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
 
-    $(function() {
-            $(".lined").linedtextarea(
-            {selectedLine: 1, dec:true}
-        )
-    })
-
-    $("#load_in").change(function(e) {
-        loadFile(e, "in")
+    $("#load_in").change((e) => {
+        load_file(e, "in")
     })
 
     $(document).delegate('#in', 'keydown', function(e) {
@@ -85,43 +77,37 @@ $( document ).ready(function() {
       }
     })
 
-    $(document).on("keydown", function(e) {
+    $(document).on("keydown", (e) => {
         if ((e.keyCode == 10 || e.keyCode == 13) && e.ctrlKey) {
             compile()
         }
     })
 
-    $("#cmp").click(function() {
+    $("#cmp").click( () => {
         compile()
     })
 
-    $("#bench").click(function() {
+    $("#bench").click( () => {
        worker.postMessage(["bench",500])
     })
 
     $("#auto").change(function() {
-        if(this.checked) {
-            realtime = true
-        } else {
-            realtime = false
-        }
+        realtime = this.checked
     })
 
     $("#debug").change(function() {
-        if(this.checked) {
-            debug = true
-            worker.postMessage(["debug",debug])
-        } else {
-            debug = false
-            worker.postMessage(["debug",debug])
-        }
+        worker.postMessage(["debug",this.checked])
     })
 
-    $("#assemble").click(function() {
+    $("#assemble").click( () => {
         parent.postMessage(["menu-item-asm",$("#out").val()],"*")
     })
 
-    $("#in").on( "keyup", function(e) {
+    $("#run").click( () => {
+        parent.postMessage(["menu-item-asm",$("#out").val(),true],"*")
+    })
+
+    $("#in").on( "keyup", (e) => {
         if (!realtime) {return}
         if (![37,38,39,40].includes(e.keyCode)) {
             compile()
@@ -129,8 +115,8 @@ $( document ).ready(function() {
     })
 
     worker = new Worker("engine.js")
-    worker.onmessage = function(event) {
-        handleMsg(event.data)
+    worker.onmessage = (e) => {
+        handleMsg(e.data)
     }
 
     parent.input_data = set_input

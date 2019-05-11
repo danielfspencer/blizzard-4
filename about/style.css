@@ -1,3 +1,24 @@
-#ver {
-    display: inline;
+#version-string {
+  margin-top: 15px;
+}
+
+#version-string > div {
+  display: inline;
+}
+
+#version-name {
+  font-weight: bold;
+}
+
+#buttons {
+  display: flex;
+  margin-top: 20px
+}
+
+#buttons > div {
+  flex-grow: 1;
+}
+
+#copyright {
+  width: 200px;
 }

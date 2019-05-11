@@ -1,14 +1,18 @@
 let size_bytes = 0;
 
-$( document ).ready(function() { //connect all the butons to their actions!
-    $("#load_in").change(function(e) {
-        loadFile(e, "in")
+$( document ).ready( () => { //connect all the butons to their actions!
+    $("#load_in").change((e) => {
+        load_file(e, "in")
     })
 
     $("#cmp").click(run_assemble)
 
-    $("#run").click(function() {
+    $("#load").click( () => {
         parent.postMessage(["menu-item-emu",$("#out").val()],"*")
+    })
+
+    $("#run").click( () => {
+        parent.postMessage(["menu-item-emu",$("#out").val(),true],"*")
     })
 
     $("#auto").change(function() {
@@ -25,14 +29,10 @@ $( document ).ready(function() { //connect all the butons to their actions!
         }
     })
 
-    $(function() {
-        $(".lined").linedtextarea(
-        {selectedLine: 1}
-    )
-    })
+    $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
 
+    $(".lined").linedtextarea({selectedLine: 1, dec:false})
 
-    // $("out").val("")
     $("#in").on( "keyup", run_assemble)
 
     $("#in").on("keydown", function (e) {
@@ -62,9 +62,15 @@ function run_assemble() {
   $("#size").html(size_bytes +" B")
 }
 
-function set_input([string,shouldRun]) {
+function set_input([string, shouldRun, clock_speed]) {
     if (shouldRun) {
-        parent.postMessage(["menu-item-emu",assemble(string),true],"*")
+        var output = assemble(string)
+        if (!output.startsWith("error")) {
+          parent.postMessage(["menu-item-emu", output, true, clock_speed],"*")
+        } else {
+          $("#in").val(string)
+          $("#out").val(output)
+        }
     } else {
         document.getElementById("in").value = string
         run_assemble()
@@ -102,7 +108,12 @@ defs = {
     "usrio.out3" : 4101,
     "kbd.pop": 8192,
     "kbd.len": 8193,
-    "cnd" : 1
+    "ctl.cnd" : 1,
+    "ctl.addrmode" : 2,
+    "ctl.framenum" : 4,
+    "ctl.lowtimer" : 8,
+    "ctl.hightimer" : 16
+
 }
 
 function regToCode(id) {
@@ -124,6 +135,13 @@ function regToCode(id) {
         var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
         if ( number >= 0 && number <= 1023) {
             return number+24576//it's valid
+        } else {
+            return false
+        }
+    } else if (id.toLowerCase().startsWith("ram#.")) { //it's a direct ram address
+        var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
+        if ( number >= 0 && number < 16384) {
+            return number+16384//it's valid
         } else {
             return false
         }
@@ -265,6 +283,16 @@ function assemble(code) {
         var bin = numToBin(labels[key].toString())
         asm_string = asm_string.replace( RegExp("\\b"+key+"\\b","gi") , bin)
     }
-    size_bytes = (asm_string.split("\n").length - 1) * 2;
+
+    // check passing
+    var as_list = asm_string.split("\n")
+
+    for (var line of as_list) {
+      if (!   /^[0-1]{16}\n?$/.test(line) && line != "") {
+        asm_string = "error \n" + "'" + line + "'"
+      }
+    }
+
+    size_bytes = (as_list.length - 1) * 2;
     return asm_string
 }

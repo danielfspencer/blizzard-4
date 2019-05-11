@@ -96,19 +96,19 @@ var current_theme = {
     "content" : null
 }
 
-$( document ).ready(function() { //connect all the butons to their actions!
+$( document ).ready( () => { //connect all the butons to their actions!
     storage_get_key("starting-page", (page) => (menu("menu-item-"+page)), "dem")
     materialDesignHamburger()
 
-    $( ".material-design-hamburger" ).click(function() { //show or hide menu on button press
+    $( ".material-design-hamburger" ).click( () => { //show or hide menu on button press
         toggle_menu()
     })
 
-    $( "#close" ).click(function() {
+    $( "#close" ).click( () => {
         window.close()
     })
 
-    $( "#mini" ).click(function() {
+    $( "#mini" ).click( () => {
         switch (get_platform()) {
             case "chrome":
                 chrome.app.window.current().minimize()
@@ -119,7 +119,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
         }
     })
 
-    $( "#max" ).click(function() {
+    $( "#max" ).click( () => {
         switch (get_platform()) {
             case "chrome":
                 var page = chrome.app.window.current()
@@ -137,7 +137,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
 
     })
 
-    $( "#about" ).click(function() {
+    $( "#about" ).click( () => {
         toggle_overflow_menu()
         if (get_platform() == "chrome") {
             chrome.app.window.create('about/about.html', {
@@ -153,7 +153,7 @@ $( document ).ready(function() { //connect all the butons to their actions!
         }
     })
 
-    $( "#settings" ).click(function() {
+    $( "#settings" ).click( () => {
         toggle_overflow_menu()
         if (get_platform() == "chrome") {
             chrome.app.window.create('settings/settings.html', {
@@ -169,16 +169,16 @@ $( document ).ready(function() { //connect all the butons to their actions!
         }
     })
 
-    $( "#dim" ).click(function() { //or hide when user clicks off it
+    $( "#dim" ).click( () => { //or hide when user clicks off it
         toggle_hamburger()
         toggle_menu()
     })
 
-    $( "#overflow-menu" ).click(function() {
+    $( "#overflow-menu" ).click( () => {
         toggle_overflow_menu()
     })
 
-    $("#overflow-close").click( function () {
+    $("#overflow-close").click( () => {
         toggle_overflow_menu()
     })
 
@@ -188,10 +188,9 @@ $( document ).ready(function() { //connect all the butons to their actions!
         toggle_menu()
 	})
 
-    $.getJSON("manifest.json")
-        .done(function(data) {
-            $("#version").html("Version / " + data["version_name"])
-        })
+    $.getJSON("manifest.json").done( (data) => {
+      $("#version").html("Version / " + data["version_name"])
+    })
 
     window.onkeydown = (event) => {
         if (event.which === 123 && get_platform() === "electron") {

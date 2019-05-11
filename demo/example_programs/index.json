@@ -2,7 +2,7 @@
     "ping_pong": {
         "name": "Ping Pong",
         "desc": "A classic ping pong game. Player 1 uses keys A & D to move the paddle. Player 2 uses keys J & L to move the paddle. Optionally, one or both of the players can be computer controlled. Select the game mode by pressing number 1, 2 or 3 on the title screen.",
-        "clock_speed": 100000
+        "clock_speed": 100100
     },
     "snake_demo": {
         "name":"Snake Game Prototype",
@@ -32,6 +32,11 @@
     "type_test": {
         "name":"Text Editor Prototype",
         "desc":"Type text with your keyboard and watch it appear on screen. Press enter to start a new line and use backspace to remove characters as usual. Note: does not yet support the shift or caps-lock keys.",
+        "clock_speed": 100000
+    },
+    "int_tests": {
+        "name":"Integer Tests",
+        "desc":"Runs a series of sanity checks on the four different integer data types to check they behave as expected.",
         "clock_speed": 100000
     }
 }

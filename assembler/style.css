@@ -13,8 +13,13 @@ form {
     color: #fff;
 }
 
-#run {
+#load {
     background-color: #009688;
+    color: #fff;
+}
+
+#run {
+    background-color: #607DB8;
     color: #fff;
 }
 
@@ -22,6 +27,14 @@ form {
     border: 1px solid #C0C0C0;
     margin-right: 4px;
     float: right;
+}
+
+#two-button {
+    display: flex;
+}
+
+#two-button > div {
+    flex-grow: 1;
 }
 
 #prog-list {
