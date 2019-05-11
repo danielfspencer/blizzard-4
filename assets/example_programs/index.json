@@ -36,7 +36,7 @@
     },
     "int_tests": {
         "name":"Integer Tests",
-        "desc":"Runs a series of sanity checks on the three current integer data types to check they behave as expected.",
+        "desc":"Runs a series of sanity checks on the four different integer data types to check they behave as expected.",
         "clock_speed": 100000
     }
 }
