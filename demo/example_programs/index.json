@@ -1,42 +1,42 @@
 {
-    "ping_pong": {
-        "name": "Ping Pong",
-        "desc": "A classic ping pong game. Player 1 uses keys A & D to move the paddle. Player 2 uses keys J & L to move the paddle. Optionally, one or both of the players can be computer controlled. Select the game mode by pressing number 1, 2 or 3 on the title screen.",
-        "clock_speed": 100100
-    },
-    "snake_demo": {
-        "name":"Snake Game Prototype",
-        "desc":"Early prototype of a snake game implemented with circular buffers. There is currently no collision detecting or food for the snake. Use the arrow keys to steer the snake.",
-        "clock_speed": 100000
-    },
-    "space_invaders_demo": {
-        "name":"Space Invaders Prototype",
-        "desc":"Early prototype demonstrating the drawing and shifting of the sprites for a space-invaders style game. There are no controls for this demo.",
-        "clock_speed": 1000000
-    },
-    "shape_test": {
-        "name":"Shape Drawing Test",
-        "desc":"A continually-looping test of the square and circle drawing functions from the standard library. There are no controls for this demo.",
-        "clock_speed": 200000
-    },
-    "kerning_test": {
-        "name":"Character Drawing Test",
-        "desc":"A demonstration of the aesthetic advantages of drawing characters with proper spacing (kerning) over fixed spacing (monospace). However, the time consuming nature of this method can be seen by watching how fast the monospace rendering is by comparison.",
-        "clock_speed": 100000
-    },
-    "standard_library": {
-        "name":"Visualize the Standard Library",
-        "desc":"A simple program that imports the entire standard library and then draws the contents of the ROM to the display (VRAM).",
-        "clock_speed": 20000
-    },
-    "type_test": {
-        "name":"Text Editor Prototype",
-        "desc":"Type text with your keyboard and watch it appear on screen. Press enter to start a new line and use backspace to remove characters as usual. Note: does not yet support the shift or caps-lock keys.",
-        "clock_speed": 100000
-    },
-    "int_tests": {
-        "name":"Integer Tests",
-        "desc":"Runs a series of sanity checks on the four different integer data types to check they behave as expected.",
-        "clock_speed": 100000
-    }
+  "ping_pong": {
+    "name": "Ping Pong",
+    "desc": "A classic ping pong game. Player 1 uses keys A & D to move the paddle. Player 2 uses keys J & L to move the paddle. Optionally, one or both of the players can be computer controlled. Select the game mode by pressing number 1, 2 or 3 on the title screen.",
+    "clock_speed": 100100
+  },
+  "snake_demo": {
+    "name":"Snake Game Prototype",
+    "desc":"Early prototype of a snake game implemented with circular buffers. There is currently no collision detecting or food for the snake. Use the arrow keys to steer the snake.",
+    "clock_speed": 100000
+  },
+  "space_invaders_demo": {
+    "name":"Space Invaders Prototype",
+    "desc":"Early prototype demonstrating the drawing and shifting of the sprites for a space-invaders style game. There are no controls for this demo.",
+    "clock_speed": 1000000
+  },
+  "shape_test": {
+    "name":"Shape Drawing Test",
+    "desc":"A continually-looping test of the square and circle drawing functions from the standard library. There are no controls for this demo.",
+    "clock_speed": 200000
+  },
+  "kerning_test": {
+    "name":"Character Drawing Test",
+    "desc":"A demonstration of the aesthetic advantages of drawing characters with proper spacing (kerning) over fixed spacing (monospace). However, the time consuming nature of this method can be seen by watching how fast the monospace rendering is by comparison.",
+    "clock_speed": 100000
+  },
+  "standard_library": {
+    "name":"Visualize the Standard Library",
+    "desc":"A simple program that imports the entire standard library and then draws the contents of the ROM to the display (VRAM).",
+    "clock_speed": 20000
+  },
+  "type_test": {
+    "name":"Text Editor Prototype",
+    "desc":"Type text with your keyboard and watch it appear on screen. Press enter to start a new line and use backspace to remove characters as usual. Note: does not yet support the shift or caps-lock keys.",
+    "clock_speed": 100000
+  },
+  "int_tests": {
+    "name":"Integer Tests",
+    "desc":"Runs a series of sanity checks on the four different integer data types to check they behave as expected.",
+    "clock_speed": 100000
+  }
 }

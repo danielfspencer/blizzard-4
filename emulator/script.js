@@ -108,33 +108,33 @@ $(document).ready( () => {
 })
 
 function set_rom([string, shouldRun, clock_speed]) {
-    if (clock_speed !== undefined) {
-      $("#clock-target").val(clock_speed)
-      worker.postMessage(["set_clock",clock_speed])
-    }
-    worker.postMessage(["set_rom",string])
-    if (shouldRun) {
-        worker.postMessage(["start"])
-    }
+  if (clock_speed !== undefined) {
+    $("#clock-target").val(clock_speed)
+    worker.postMessage(["set_clock",clock_speed])
+  }
+  worker.postMessage(["set_rom",string])
+  if (shouldRun) {
+    worker.postMessage(["start"])
+  }
 }
 
 function send_user_input(event){
-    var inputs = [$("#usr1_input").val(),$("#usr2_input").val(),$("#usr3_input").val()]
-    var formatted_inputs = [0,0,0]
-    for (var i = 0; i < 3; i++) {
-      var integer = parseInt(inputs[i])
-      if (integer > 65535) {
-          integer = 65535
-      } else if (integer < 0) {
-          integer = 0
-      }
-      formatted_inputs[i] = integer
+  var inputs = [$("#usr1_input").val(),$("#usr2_input").val(),$("#usr3_input").val()]
+  var formatted_inputs = [0,0,0]
+  for (var i = 0; i < 3; i++) {
+    var integer = parseInt(inputs[i])
+    if (integer > 65535) {
+      integer = 65535
+    } else if (integer < 0) {
+      integer = 0
     }
+    formatted_inputs[i] = integer
+  }
 
-    display_number_on_leds("inp1_leds", formatted_inputs[0])
-    display_number_on_leds("inp2_leds", formatted_inputs[1])
-    display_number_on_leds("inp3_leds", formatted_inputs[2])
-    worker.postMessage(["user_input_update",formatted_inputs])
+  display_number_on_leds("inp1_leds", formatted_inputs[0])
+  display_number_on_leds("inp2_leds", formatted_inputs[1])
+  display_number_on_leds("inp3_leds", formatted_inputs[2])
+  worker.postMessage(["user_input_update",formatted_inputs])
 }
 
 function handle_message(message) {
