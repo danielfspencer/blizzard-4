@@ -140,11 +140,8 @@ const execute_microcode = [
   [0,0,0,0,0,0,0,1,0,1,0,1]
 ]
 
-onmessage = function(event) {
-  handle_message(event.data)
-}
-
-function handle_message(message) {
+onmessage = (event) => {
+  var message = event.data
   switch (message[0]) {
     case "start":
       start()
