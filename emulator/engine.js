@@ -617,7 +617,9 @@ function simulate_effect_of_write_bus_change() {
           activity_indicators["ram_frame_offset"] = 4
           break
         default:
-          halt_error("invalid frame offset requested")
+          // invalid frame offset - undefined behaviour
+          // but likely results in a zero offset
+          address += 0
           break
       }
 
