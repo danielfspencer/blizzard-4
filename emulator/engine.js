@@ -453,10 +453,9 @@ function simulate_effect_of_read_bus_change() {
           address += (frame_number + 1) * 1024
           activity_indicators["ram_frame_offset"] = 4
           break
-        default:
-          // invalid frame offset - undefined behaviour
-          // but likely results in a zero offset
-          address += 0
+        case 3:  //top frame
+          address += 15 * 1024
+          //activity_indicators["ram_frame_offset"] = 8      need to add a new indicator
           break
       }
 
@@ -616,10 +615,9 @@ function simulate_effect_of_write_bus_change() {
           address += (frame_number + 1) * 1024
           activity_indicators["ram_frame_offset"] = 4
           break
-        default:
-          // invalid frame offset - undefined behaviour
-          // but likely results in a zero offset
-          address += 0
+        case 3:  //top frame
+          address += 15 * 1024
+          //activity_indicators["ram_frame_offset"] = 8      need to add a new indicator
           break
       }
 
