@@ -72,6 +72,15 @@ table {
   flex-grow: 1;
 }
 
+#ram-addr-mode-lables {
+  display: flex;
+  width: 88px;
+}
+
+#ram-addr-mode-lables > a {
+  flex-grow: 1;
+}
+
 input {
   width: 65px;
   height: 12px;

@@ -443,19 +443,19 @@ function simulate_effect_of_read_bus_change() {
       switch (frame_offset_selector) {
         case 0:   //frame below
           address += (frame_number - 1) * 1024
-          activity_indicators["ram_frame_offset"] = 1
+          activity_indicators["ram_frame_offset"] = 2
           break
         case 1:   //current frame
           address += frame_number * 1024
-          activity_indicators["ram_frame_offset"] = 2
+          activity_indicators["ram_frame_offset"] = 4
           break
         case 2:   //frame above
           address += (frame_number + 1) * 1024
-          activity_indicators["ram_frame_offset"] = 4
+          activity_indicators["ram_frame_offset"] = 8
           break
         case 3:  //top frame
           address += 15 * 1024
-          //activity_indicators["ram_frame_offset"] = 8      need to add a new indicator
+          activity_indicators["ram_frame_offset"] = 1
           break
       }
 
@@ -605,19 +605,19 @@ function simulate_effect_of_write_bus_change() {
       switch (frame_offset_selector) {
         case 0:   //frame below
           address += (frame_number - 1) * 1024
-          activity_indicators["ram_frame_offset"] = 1
+          activity_indicators["ram_frame_offset"] = 2
           break
         case 1:   //current frame
           address += frame_number * 1024
-          activity_indicators["ram_frame_offset"] = 2
+          activity_indicators["ram_frame_offset"] = 4
           break
         case 2:   //frame above
           address += (frame_number + 1) * 1024
-          activity_indicators["ram_frame_offset"] = 4
+          activity_indicators["ram_frame_offset"] = 8
           break
         case 3:  //top frame
           address += 15 * 1024
-          //activity_indicators["ram_frame_offset"] = 8      need to add a new indicator
+          activity_indicators["ram_frame_offset"] = 1
           break
       }
 
