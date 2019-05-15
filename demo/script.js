@@ -33,7 +33,6 @@ function view_or_run(name, run, clock_speed) {
   url: path + name + ".b4cl",
   dataType: "text",
   success: (data) => {
-    console.log(data)
     parent.postMessage(["menu-item-cmp", data, run, clock_speed],"*")
   }
  })
