@@ -81,9 +81,7 @@ function init_emulator() {
 function init_buffered_instructions() {
   buffered_instructions = {
     "increment_mode": false,
-    "decrement_arg_counter": false,
-    "clock_stop": false,
-    "increment_frame_no": false
+    "decrement_arg_counter": false
   }
 }
 
@@ -132,8 +130,8 @@ const execute_microcode = [
   [0,1,0,0,0,0,0,0,1,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,1,0,0,0,0,0,1],
-  [0,0,0,0,0,1,0,0,0,0,0,1],
-  [0,0,1,0,1,0,0,0,0,0,1,0],
+  [0,0,0,0,1,1,0,0,0,0,0,1],
+  [0,0,1,0,0,0,0,0,0,0,1,0],
   [0,0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,1,0,0,1,0,1],
   [0,0,0,0,0,0,0,0,0,0,0,0],
@@ -776,20 +774,6 @@ function run_buffered_instructions() {
     args_remaining--
   }
 
-  if (buffered_instructions["clock_stop"]) {
-    debug && console.debug("clock_stop")
-    stop()
-  }
-
-  if (buffered_instructions["increment_frame_no"]) {
-    debug && console.debug("increment_frame_no")
-    if (frame_number < 15) {
-      frame_number++
-    } else {
-      frame_number = 0
-    }
-  }
-
   init_buffered_instructions() //this sets them all to false because we are finished
 }
 
@@ -867,8 +851,8 @@ function decrement_arg_counter() {
 }
 
 function clock_stop() {
-  debug && console.debug("queue: clock_stop")
-  buffered_instructions["clock_stop"] = true
+  debug && console.debug("clock_stop")
+  stop()
 }
 
 function pc_to_data_bus() {
@@ -909,8 +893,12 @@ function decrement_frame_no() {
 }
 
 function increment_frame_no() {
-  debug && console.debug("queue: increment_frame_no")
-  buffered_instructions["increment_frame_no"]  = true
+  debug && console.debug("increment_frame_no")
+  if (frame_number < 15) {
+    frame_number++
+  } else {
+    frame_number = 0
+  }
 }
 
 function data_bus_to_pc() {
