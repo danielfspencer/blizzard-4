@@ -1,7 +1,7 @@
 #main {
-    margin-left: auto;
-    margin-right: auto;
-    width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 1500px;
 }
 
 /* progress::progress-value {
@@ -13,116 +13,116 @@ progress::-webkit-progress-value {
 } */
 
 .ram-bar {
-    height: 11px;
-    width: 95%;
+  height: 11px;
+  width: 95%;
 }
 
 .ram-bar, progress[role][aria-valuenow] {
-    background: #fafafa
+  background: #fafafa
 }
 
 .item,src {
-    margin-left: 19px;
-    display: block;
+  margin-left: 19px;
+  display: block;
 }
 
 #log {
-    border: 1px solid #C0C0C0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    height: 302px;
-    width: 397px;
+  border: 1px solid #C0C0C0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 302px;
+  width: 397px;
 }
 
 form {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 #assemble {
-    background-color: #009688;
-    color: #fff;
+  background-color: #009688;
+  color: #fff;
 }
 
 #two-button {
-    display: flex;
+  display: flex;
 }
 
 #two-button > div {
-    flex-grow: 1;
+  flex-grow: 1;
 }
 
 #run {
-    background-color: #607DB8;
-    color: #fff;
+  background-color: #607DB8;
+  color: #fff;
 }
 
 #cmp {
-    background-color: #607DB8;
-    color: #fff;
+  background-color: #607DB8;
+  color: #fff;
 }
 
 #bench {
-    background-color: #717171;
-    color: #fff;
-    width: 150px;
-    float: right;
-    margin-top: 2px;
-    display: inline;
+  background-color: #717171;
+  color: #fff;
+  width: 150px;
+  float: right;
+  margin-top: 2px;
+  display: inline;
 }
 
 #name {
-    border: 1px solid #C0C0C0;
-    float: right;
+  border: 1px solid #C0C0C0;
+  float: right;
 }
 
 #toggles {
-    float: left;
-    display: inline;
-    clear: none;
+  float: left;
+  display: inline;
+  clear: none;
 }
 
 #auto {
-    margin-top: 3px;
+  margin-top: 3px;
 }
 
 #debug {
-    margin-top: 5px;
+  margin-top: 5px;
 }
 
 .item {
-    font-family: robotomono;
-    font-size: 10pt;
-    border-bottom: 1px solid grey;
-    padding-bottom: 4px;
-    padding-top: 4px;
-    padding-left: 4px;
-    margin-left: 0px;
+  font-family: robotomono;
+  font-size: 10pt;
+  border-bottom: 1px solid grey;
+  padding-bottom: 4px;
+  padding-top: 4px;
+  padding-left: 4px;
+  margin-left: 0px;
 }
 
 .debug {
-    opacity: 0.6;
+  opacity: 0.6;
 }
 
 .info {
-    background: #EAEAEA;
+  background: #EAEAEA;
 }
 
 .warn {
-    background: #FFE271;
+  background: #FFE271;
 }
 
 .error {
-    color: #FFFFFF;
-    background: #8C1E1E;
+  color: #FFFFFF;
+  background: #8C1E1E;
 }
 
 .img {
-    margin-top: 0px;
-    margin-right: 4px;
-    margin-left: -3px;
-    float: left;
-    width: 18px;
-    height: 18px;
+  margin-top: 0px;
+  margin-right: 4px;
+  margin-left: -3px;
+  float: left;
+  width: 18px;
+  height: 18px;
 }
 
 progress, progress[role] {
@@ -143,9 +143,9 @@ progress[value]::-moz-progress-bar {
 }
 
 progress, progress[role][aria-valuenow] {
-   background: #b4cceb !important;
+  background: #b4cceb !important;
 }
 
 progress::-webkit-progress-bar {
-    background: #b4cceb;
+  background: #b4cceb;
 }
