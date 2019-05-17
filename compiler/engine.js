@@ -35,7 +35,7 @@ var token_dump = []
 
 importScripts("libraries.js")
 
-const data_types = {"int":1,"sint":1,"long":2,"slong":2,"float":2,"bool":1,"str":1,"array":4}
+const data_type_size = {"int":1,"sint":1,"long":2,"slong":2,"float":2,"bool":1,"str":1,"array":4}
 const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys":"","array":"","return":""}
 
 function CompError(message) {
@@ -323,7 +323,7 @@ function alloc_global_block(size) {
 }
 
 function check_datatype(type) {
-  if (!(type in data_types)) {
+  if (!(type in data_type_size)) {
     throw new CompError("Data type '" + type + "' unknown")
   } else {
     return type
@@ -730,7 +730,7 @@ function translate(token, ctx_type) {
       if ("expr" in args) {
         var token = args["expr"]
       } else if (args["type"] == "str") {
-        var token = tokenise('" "')
+        var token = tokenise('""')
       } else {
         var token = tokenise("0")
       }
@@ -767,7 +767,7 @@ function translate(token, ctx_type) {
       if ("expr" in args) {
         var token = args["expr"]
       } else if (args["type"] == "str") {
-        var token = tokenise('" "')
+        var token = tokenise('""')
       } else {
         var token = tokenise("0")
       }
@@ -813,7 +813,7 @@ function translate(token, ctx_type) {
       if ("expr" in args) {
         var token = args["expr"]
       } else if (args["type"] == "str") {
-        var token = tokenise('" "')
+        var token = tokenise('""')
       } else {
         var token = tokenise("0")
       }
@@ -855,7 +855,7 @@ function translate(token, ctx_type) {
       if ("expr" in args) {
         var token = args["expr"]
       } else if (args["type"] == "str") {
-        var token = tokenise('" "')
+        var token = tokenise('""')
       } else {
         var token = tokenise("0")
       }
@@ -970,7 +970,7 @@ function translate(token, ctx_type) {
       var prefix = prefix_value_type[0]
       var regs = prefix_value_type[1]
       var type = prefix_value_type[2]
-      var size = data_types[type]
+      var size = data_type_size[type]
 
       result = prefix
 
