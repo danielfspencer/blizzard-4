@@ -16,7 +16,7 @@ console.error = (msg) => {
 
 function send_log(message, level) {
   if (!log || (level == "debug" && !debug)) {
-    return false;
+    return false
   }
   if (typeof message == 'object') {
     var text = (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />'
@@ -260,10 +260,7 @@ function is_argument(name) {
   if (arg_map[scope] === undefined) {
     return false
   }
-  if (name in arg_map[scope]) {
-    return true
-  }
-  return false
+  return name in arg_map[scope]
 }
 
 function gen_id(type) {
@@ -305,7 +302,7 @@ function alloc_block(size) {
   }
 
   if (!scope.startsWith("sys.")) {
-    var allocated_slots = 1023 - free_ram[scope].length;
+    var allocated_slots = 1023 - free_ram[scope].length
     if (allocated_slots > max_allocated_ram_slots) {
       max_allocated_ram_slots = allocated_slots
     }
