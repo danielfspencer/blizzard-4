@@ -1,44 +1,48 @@
 <!DOCTYPE html>
-<html><head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <link rel="stylesheet" type="text/css" href="../assets/lib.css">
-    <link rel="stylesheet" type="text/css" href="../style.css">
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <script src="../assets/jquery.min.js"></script>
-    <script src="../assets/lib.js"></script>
-    <script src="script.js"></script>
-    <title>Settings</title>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" type="text/css" href="../assets/lib.css">
+  <link rel="stylesheet" type="text/css" href="../style.css">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script src="../assets/jquery.min.js"></script>
+  <script src="../assets/lib.js"></script>
+  <script src="script.js"></script>
+  <title>Settings</title>
 </head>
 <body>
-    <script src="../assets/set_theme.js"></script>
-    <div id="statusbar" class="light-accent" >
-        <div id="drag-region"></div>
-        <img id="close" src="../assets/icons/close.svg"/>
-    </div>
-    <div id="content">
-        <div class="card">
-            <h3>General</h3>
-            <div class="settings">
-                <div class="paper-toggle"><input id="dark-theme" class="switch" type="checkbox"/>
-                    <label for="dark-theme">Dark Theme</label>
-                </div>
+  <script src="../assets/set_theme.js"></script>
 
-                <a>Starting page</a>
-                <select id="starting-page">
-                    <option value="emu">Emulator</option>
-                    <option value="asm">Assembler</option>
-                    <option value="cmp">Compiler</option>
-                    <option value="dem">Demo Programs</option>
-                    <option value="man">Manual</option>
-               </select>
-               <div class="button" id="reset">reset to defaults</div>
-            </div>
+  <div id="statusbar" class="light-accent" >
+    <div id="drag-region"></div>
+    <img id="close" src="../assets/icons/close.svg"/>
+  </div>
+
+  <div id="content">
+    <div class="card">
+      <h3>General</h3>
+      <div class="settings">
+        <div class="paper-toggle"><input id="dark-theme" class="switch" type="checkbox"/>
+          <label for="dark-theme">Dark Theme</label>
         </div>
 
-        <div class="card">
-            <h3>Debug Info</h3>
-            <a>Current platform:</a>
-            <a id="platform"></a>
-        </div>
+        <a>Starting page</a>
+        <select id="starting-page">
+          <option value="emu">Emulator</option>
+          <option value="asm">Assembler</option>
+          <option value="cmp">Compiler</option>
+          <option value="dem">Demo Programs</option>
+          <option value="man">Manual</option>
+        </select>
+        <div class="button" id="reset">reset to defaults</div>
+      </div>
     </div>
+
+    <div class="card">
+      <h3>Debug Info</h3>
+      <a>Current platform:</a>
+      <a id="platform"></a>
+    </div>
+  </div>
+
 </body></html>
