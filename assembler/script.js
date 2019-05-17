@@ -143,6 +143,13 @@ function regToCode(id) {
     } else {
       return false
     }
+  } else if (id.toLowerCase().startsWith("ram^.")) { //it's a direct ram (top frame)
+    var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
+    if ( number >= 0 && number < 16384) {
+      return number+28672//it's valid
+    } else {
+      return false
+    }
   } else if (id.toLowerCase().startsWith("rom.")) { //it's rom
     var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
     if ( number >= 0 && number <= 32767) {
