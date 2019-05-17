@@ -21,7 +21,7 @@ function get_platform() {
   }
 
   if (typeof ref !== 'undefined') {
-    return "chrome"
+    return "chrome_app"
   }
 
   if (typeof require !== 'undefined') {
@@ -32,7 +32,7 @@ function get_platform() {
 }
 
 function storage_set_key(key,value) {
-  if (get_platform() == "chrome") {
+  if (get_platform() == "chrome_app") {
     var obj = {}
     obj[key] = value
     chrome.storage.local.set(obj)
@@ -42,7 +42,7 @@ function storage_set_key(key,value) {
 }
 
 function storage_get_key(key,callback,default_value) {
-  if (get_platform() == "chrome") {
+  if (get_platform() == "chrome_app") {
     chrome.storage.local.get([key], (items) => {
       var result = items[key]
       if (result === undefined) {
@@ -63,7 +63,7 @@ function storage_get_key(key,callback,default_value) {
 }
 
 function storage_clear(key,value) {
-  if (get_platform() == "chrome") {
+  if (get_platform() == "chrome_app") {
     chrome.storage.local.clear()
   } else {
     localStorage.clear()

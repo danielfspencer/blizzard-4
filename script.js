@@ -112,7 +112,7 @@ $( document ).ready( () => { //connect all the butons to their actions!
 
   $( "#mini" ).click( () => {
     switch (get_platform()) {
-      case "chrome":
+      case "chrome_app":
         chrome.app.window.current().minimize()
         break
       case "electron":
@@ -123,7 +123,7 @@ $( document ).ready( () => { //connect all the butons to their actions!
 
   $( "#max" ).click( () => {
     switch (get_platform()) {
-      case "chrome":
+      case "chrome_app":
         var page = chrome.app.window.current()
         break
       case "electron":
@@ -141,7 +141,7 @@ $( document ).ready( () => { //connect all the butons to their actions!
 
   $( "#about" ).click( () => {
     toggle_overflow_menu()
-    if (get_platform() == "chrome") {
+    if (get_platform() == "chrome_app") {
       chrome.app.window.create('about/about.html', {
         "frame": "none",
         "resizable": false,
@@ -157,7 +157,7 @@ $( document ).ready( () => { //connect all the butons to their actions!
 
   $( "#settings" ).click( () => {
     toggle_overflow_menu()
-    if (get_platform() == "chrome") {
+    if (get_platform() == "chrome_app") {
       chrome.app.window.create('settings/settings.html', {
         "frame": "none",
         "resizable": false,

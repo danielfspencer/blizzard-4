@@ -28,10 +28,10 @@ $( document ).ready( () => {
 
   $( "#platform" ).html( () => {
     switch (get_platform()) {
-      case "electron": return "Electron App"
-      case "chrome":   return "Chrome App"
-      case "website":  return "Website"
-      default:         return "Unknown"
+      case "electron":   return "Electron App"
+      case "chrome_app": return "Chrome App"
+      case "website":    return "Website"
+      default:           return "Unknown"
     }
   })
 })

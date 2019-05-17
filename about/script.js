@@ -7,7 +7,7 @@ $( document ).ready( () => {
   $.ajaxSetup({ cache: false }) // do not cache requests to check for latest version!
 
   $( "#licence" ).click( () => {
-    if (get_platform() == "chrome") {
+    if (get_platform() == "chrome_app") {
       chrome.app.window.create('../licence.html', {
         "resizable": true,
         "bounds": {
