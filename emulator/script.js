@@ -418,11 +418,6 @@ function draw_screen_updates() {
   }
 }
 
-
-function clear_screen() {
-  canvas_context.clearRect(0,0,128,128)
-}
-
 function on_key_down(event) {
   if (updates_running) {
     var key_name = event.code
