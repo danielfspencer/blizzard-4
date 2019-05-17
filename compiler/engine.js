@@ -1,17 +1,17 @@
-console.debug = function(message) {
-  send_log(message,"debug")
+console.debug = (msg) => {
+  send_log(msg,"debug")
 }
 
-console.log = function(message) {
-  send_log(message,"info")
+console.log = (msg) => {
+  send_log(msg,"info")
 }
 
-console.warn = function(message) {
-  send_log(message,"warn")
+console.warn = (msg) => {
+  send_log(msg,"warn")
 }
 
-console.error = function(message) {
-  send_log(message,"error")
+console.error = (msg) => {
+  send_log(msg,"error")
 }
 
 function send_log(message, level) {
@@ -178,7 +178,7 @@ function set_token(name, operation, exprs, line) {
   return set_var
 }
 
-onmessage = function(msg) {
+onmessage = (msg) => {
   switch(msg.data[0]) {
     case "input":
       input = msg.data[1]

@@ -58,7 +58,7 @@ var target_clock_speed = 0
 $( document ).ready( () => {
   $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
 
-  $("#load_in").change((e) => {
+  $("#load_in").change( (e) => {
     load_file(e, "in")
   })
 
@@ -75,8 +75,8 @@ $( document ).ready( () => {
     }
   })
 
-  $(document).on("keydown", (e) => {
-    if ((e.keyCode == 10 || e.keyCode == 13) && e.ctrlKey) {
+  $(document).on("keydown", (event) => {
+    if ((event.keyCode == 10 || event.keyCode == 13) && event.ctrlKey) {
       compile()
     }
   })
@@ -105,9 +105,9 @@ $( document ).ready( () => {
     parent.postMessage(["menu-item-asm",$("#out").val(),true],"*")
   })
 
-  $("#in").on( "keyup", (e) => {
+  $("#in").on( "keyup", (event) => {
     if (!realtime) {return}
-    if (![37,38,39,40].includes(e.keyCode)) {
+    if (![37,38,39,40].includes(event.keyCode)) {
       compile()
     }
   })

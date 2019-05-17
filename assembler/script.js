@@ -23,8 +23,8 @@ $( document ).ready( () => { //connect all the butons to their actions!
     }
   })
 
-  $(document).on("keydown", function(e) {
-    if ((e.keyCode == 10 || e.keyCode == 13) && e.ctrlKey) {
+  $(document).on("keydown", (event) => {
+    if ((event.keyCode == 10 || event.keyCode == 13) && event.ctrlKey) {
       run_assemble()
     }
   })
