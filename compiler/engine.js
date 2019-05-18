@@ -207,7 +207,7 @@ function init_vars() {
   return_map = {}
   consts = []
   func = {}
-  require = {}
+  required = {}
   max_allocated_ram_slots = 0
   structures = {"if":0,"for":0,"while":0,"str":0,"expr_array":0}
 }
@@ -354,10 +354,10 @@ function load_lib(name) {
   if (!(name in libs)) {
     throw new CompError("Library '" + name + "' not found")
   }
-  if (name in require) {
+  if (name in required) {
     console.debug("↳ already loaded")
   } else {
-    require[name] = ""
+    required[name] = ""
     console.debug("↳ compiling")
     var prev_state = log
     log = false
@@ -2820,7 +2820,7 @@ function compile(input, nested) {
     }
 
     var ram_percent = Math.round((max_allocated_ram_slots / 1023) * 100)
-    var standard_libs_used = Object.keys(require).length
+    var standard_libs_used = Object.keys(required).length
 
     if (var_number > 0) {
       console.warn(var_number + " variable(s) are never deallocated")
