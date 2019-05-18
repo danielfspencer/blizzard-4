@@ -89,42 +89,30 @@ function CSVToArray(strData, strDelimiter){
   return(arrData)
 }
 
-function benchmark(iter) {
+function benchmark(iterations) {
   postMessage(["update",-1])
-  log = false
-  var times = []
-  var text = []
-  var counter = 0
-  var total_defs = 0
-  for (var item in libs) {
-    if (libs[item].length != 0) {
-      total_defs++
-      text.push("def "+ counter)
-      text.push.apply(text,libs[item].slice(1))
-      counter++
-    }
+
+  var lines = 0
+  for (var lib of Object.values(libs)) {
+    lines += lib.length
   }
 
-  token_dump = text
-  for (var i = 0; i < iter; i++) {
+  log = false
+  var total_time = 0
+  for (var i = 0; i < iterations; i++) {
     init_vars()
     var t0 = performance.now()
     compile(["include *"],true)
     var t1 = performance.now()
-    times.push(t1-t0)
-    if (Math.round((i+1) % (iter/50)) == 0 ) {
-      postMessage(["update",(i+1)/iter*100])
+    total_time += t1 - t0
+    if (Math.round((i+1) % (iterations/50)) == 0 ) {
+      postMessage(["update",(i+1)/iterations*100])
     }
   }
-
-  var total_time = 0
-  for (var i = 0; i < times.length; i++) {
-    total_time += times[i]
-  }
-
-  var avg_time = total_time / iter
   log = true
-  return Math.round(text.length / (avg_time/1000)) + " ("+total_defs+")"
+
+  var avg_time = total_time / iterations
+  return Math.round(lines / (avg_time/1000))
 }
 
 function all_matches(pattern, string) {
