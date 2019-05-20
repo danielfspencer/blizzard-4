@@ -16,6 +16,7 @@ $(document).ready( () => {
 
   canvas = document.getElementById("screen")
   canvas_context = canvas.getContext("2d", { alpha: false })
+  clear_screen()
 
   led_strips = {
     "alu1_leds":null,
@@ -208,7 +209,7 @@ function benchmark() {
 }
 
 function clear_screen() {
-  canvas_context.fillStyle = "rgb(0, 0, 0)"
+  canvas_context.fillStyle = "rgb(" + pixel_off_colour + ", " + pixel_off_colour + ", " + pixel_off_colour + ")"
   canvas_context.fillRect(0, 0, 128, 128)
 }
 
