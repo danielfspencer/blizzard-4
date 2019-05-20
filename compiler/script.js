@@ -116,6 +116,12 @@ $( document ).ready( () => {
   worker.onmessage = (e) => {
     handleMsg(e.data)
   }
+  
+  worker.onerror = (e) => {
+    msg = "Internal uncaught error, line "  +e.lineno + ": <br>"
+    msg += e.message
+    log("error",msg)
+  }
 
   parent.input_data = set_input
   parent.child_page_loaded()
