@@ -15,9 +15,13 @@ console.error = (msg) => {
 }
 
 function send_log(message, level) {
-  if (!log || (level == "debug" && !debug)) {
-    return false
+  if (level != "error") {
+    if (!show_log_messages || (level == "debug" && !debug)) {
+      return
+    }
+
   }
+
   if (typeof message == 'object') {
     var text = (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />'
   } else {
@@ -26,11 +30,10 @@ function send_log(message, level) {
   postMessage(["log",level,text])
 }
 
-var log = true
+var show_log_messages = true
 var progress = 0
 var debug = false
 var input = []
-var compiling = false
 var token_dump = []
 
 importScripts("libraries.js")
@@ -38,21 +41,13 @@ importScripts("libraries.js")
 const data_type_size = {"int":1,"sint":1,"long":2,"slong":2,"float":2,"bool":1,"str":1,"array":4}
 const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys":"","array":"","return":""}
 
-function CompError(message) {
+function CompError(message, line) {
   this.message = message
+  this.line = line
 }
 
-function log_internal_error(err,line) {
-  var msg = ""
-  if (err instanceof CompError) {
-    msg += "line " + line + ": <br>"
-  } else if (err instanceof Error) {
-    if (err.lineNumber !== undefined) {
-      msg += "Internal error, line "+err.lineNumber+": <br>"
-    } else {
-      msg += "Internal error, line (unknown): <br>"
-    }
-  }
+function log_error(err) {
+  var msg = "line " + err.line + ": <br>"
   console.error(msg + err.message)
 }
 
@@ -97,19 +92,22 @@ function benchmark(iterations) {
     lines += lib.length
   }
 
-  log = false
   var total_time = 0
   for (var i = 0; i < iterations; i++) {
     init_vars()
     var t0 = performance.now()
-    compile(["include *"],true)
+    try {
+      show_log_messages = false
+      compile(["include *"], true)
+    } finally {
+      show_log_messages = true
+    }
     var t1 = performance.now()
     total_time += t1 - t0
     if (Math.round((i+1) % (iterations/50)) == 0 ) {
       postMessage(["update",(i+1)/iterations*100])
     }
   }
-  log = true
 
   var avg_time = total_time / iterations
   return Math.round(lines / (avg_time/1000))
@@ -172,14 +170,17 @@ onmessage = (msg) => {
       input = msg.data[1]
       break
     case "compile":
-      if (!compiling) {
-        compiling = true
-        try {
-          postMessage(["result",compile(input,false)])
-        } catch (error) {
-          log_internal_error(error)
+      var output = ""
+      try {
+        output = compile(input, false)
+      } catch (error) {
+        if (error instanceof CompError) {
+          log_error(error)
+        } else {
+          throw error
         }
-        compiling = false
+      } finally {
+        postMessage(["result",output])
       }
       break
     case "debug":
@@ -189,7 +190,12 @@ onmessage = (msg) => {
       try {
         postMessage(["score",benchmark(msg.data[1])])
       } catch (error) {
-        log_internal_error(error)
+        if (error instanceof CompError) {
+          console.error("Benchmark failed:")
+          log_error(error)
+        } else {
+          throw error
+        }
       }
       break
     default:
@@ -334,9 +340,17 @@ function translate_body(tokens) {
   }
   for (var i = 0; i < tokens.length; i++) {
     if (tokens[i]["type"] == "expression" && tokens[i]["name"] != "function" || typeof tokens[i] === undefined) {
-      throw new CompError("line " + (tokens[i]["line"]+i) + ": " + "<br> Unexpected token")
+      throw new CompError("Unexpected expression", tokens[i].line)
     } else {
-      var command = translate(tokens[i])
+      try {
+        var command = translate(tokens[i])
+      } catch (error) {
+        if (error instanceof CompError && error.line === undefined) { // if this is CompError with no line info
+          throw new CompError(error.message, tokens[i].line) // add the line number to it
+        } else {
+          throw error
+        }
+      }
       if (tokens[i]["name"] == "function") {
         command = command[0] // if it is a function call (which is an expression) take only the prefix and bin the result register [[tokens],result] -> [tokens]
       }
@@ -350,7 +364,7 @@ function translate_body(tokens) {
 }
 
 function load_lib(name) {
-  console.debug("loading: " + name)
+  console.debug("loading library object: " + name)
   if (!(name in libs)) {
     throw new CompError("Library '" + name + "' not found")
   }
@@ -359,10 +373,20 @@ function load_lib(name) {
   } else {
     required[name] = ""
     console.debug("↳ compiling")
-    var prev_state = log
-    log = false
-    compile(libs[name],true)
-    log = prev_state
+    try {
+      var old_log_status = show_log_messages
+      show_log_messages = false
+      compile(libs[name], true)
+    } catch (error) {
+      if (error instanceof CompError) { // if this is CompError with no line info
+        // let the user know the error in the standard library - and not their fault
+        throw new CompError(error.message, error.line + " [in library obj. '" + name + "']")
+      } else {
+        throw error
+      }
+    } finally {
+      show_log_messages = old_log_status
+    }
   }
 }
 
@@ -2632,14 +2656,12 @@ function translate(token, ctx_type) {
 function compile(input, nested) {
   //init
     !nested && init_vars()
-    var error = false
     if (input == "") {
-      console.error("Compilation failed, no input")
-      return
+      throw new CompError("No input", 0)
     }
 
   //tokenise
-    !nested && console.log("Tokenising...")
+    console.log("Tokenising...")
     var t0 = performance.now()
     var tokens = []
     var prev_type = ""
@@ -2664,42 +2686,36 @@ function compile(input, nested) {
       curr_indent = Math.floor(input[i].search(/\S|$/)/2)
 
       if (input[i].search(/\S|$/) % 2 != 0) {
-        !nested && console.error("line " + i + ": " + input[i] + "<br> Indents must be 2 spaces")
-        error = true
-        break
+        throw new CompError("Indents must be 2 spaces", i + 1)
       }
 
       if (expect_indent && !(curr_indent > prev_indent)) {
-        !nested && console.error("line " + i + ": " + input[i] + "<br> Expected indent")
-        error = true
-        break
+        throw new CompError("Expected indent", i + 1)
       }
 
       if (!expect_indent && (curr_indent > prev_indent)) {
-        !nested && console.error("line " + i + ": " + input[i] + "<br> Unexpected indent")
-        error = true
-        break
+        throw new CompError("Unexpected indent", i + 1)
       }
 
       if (curr_indent > prev_indent) {
-        !nested && console.debug("indent ↑ " + prev_indent + " -> " + curr_indent)
+        console.debug("indent ↑ " + prev_indent + " -> " + curr_indent)
         expect_indent = false  //we've got an indent so no need to throw an error
       } else if (curr_indent < prev_indent) {
-        !nested && console.debug("indent ↓ " + prev_indent + " -> " + curr_indent)
+        console.debug("indent ↓ " + prev_indent + " -> " + curr_indent)
         if (line.trim().startsWith("else")) {
           for (var j = 0; j < (prev_indent - curr_indent)-1; j++) {
             targ.pop()
           }
-          !nested && console.debug("same target [if statement extension]")
+          console.debug("same target [if statement extension]")
           expect_indent = true
         } else {
           for (var j = 0; j < (prev_indent - curr_indent); j++) {
             targ.pop()             //set 'target' token to the previous one in the stack
           }
           if (targ[targ.length-1] instanceof Array) {
-            !nested && console.debug("new target ↓ [root]")
+            console.debug("new target ↓ [root]")
           } else {
-            !nested && console.debug("new target ↓ " + targ[targ.length-1]["name"])
+            console.debug("new target ↓ " + targ[targ.length-1]["name"])
           }
         }
       }  // if no indnet, carry on passing into current target
@@ -2713,53 +2729,43 @@ function compile(input, nested) {
         }
 
         if (token["type"] == "structure" && !(token["name"] in {"else":"","else if":""})) {     //when a structure header is parsed, set it to be target and expect indent
-          !nested && console.debug("new target ↑ " + token["name"])
+          console.debug("new target ↑ " + token["name"])
           expect_indent = true
           targ.push(token)
         }
-
-      } catch (msg) {
-        log_internal_error(msg,i+1)
-        error = true
-        break
+      } catch (error) {
+        if (error instanceof CompError) {        // if this is CompError and not a JS error
+          throw new CompError(error.message, i + 1)  // add the current line number
+        } else {
+          throw error
+        }
       }
 
-      if (Math.round((i+1) % (input.length/100)) == 0 ) {
-        !nested && postMessage(["update",(((i+1)/input.length)*100)-50])
+      if (!nested && Math.round((i+1) % (input.length/100)) == 0 ) {
+        postMessage(["update",(((i+1)/input.length)*100)-50])
       }
 
       prev_indent = Math.floor(input[i].search(/\S|$/)/2)
     }
 
-    if (error && nested) {
-      throw new CompError("Library tokenisation failed: ")
-      return
-    }
-
     var t1 = performance.now()
 
-    if (error) {
-      !nested && console.error("↳ Tokenisation failed")
-      return
-    } else {
-      !nested && console.log("↳ success, "+ input.length + " line(s) in "+  Math.round(t1-t0) + "ms")
-    }
+    console.log("↳ success, "+ input.length + " line(s) in "+  Math.round(t1-t0) + "ms")
 
   if (!nested) {
     token_dump = tokens
   }
 
   //translate
-    !nested && console.log("Tranlsating...")
+    console.log("Tranlsating...")
     var t0 = performance.now()
     var output = ""
     var command = []
     for (var i = 0; i < tokens.length; i++) {
       if (tokens[i]["type"] == "expression" && tokens[i]["name"] != "function") {
-        !nested && console.error("line " + tokens[i]["line"] + ": " + "<br> Unexpected token")
-        error = true
-        break
+        throw new CompError("Unexpected expression", tokens[i].line)
       }
+
       try {
         command = translate(tokens[i])
         if (tokens[i]["name"] == "function") {
@@ -2769,30 +2775,22 @@ function compile(input, nested) {
           output += command.join("\n")
           output += "\n"
         }
-      } catch (msg) {
-        log_internal_error(msg,tokens[i]["line"])
-        error = true
-        break
+      } catch (error) {
+        if (error instanceof CompError && error.line === undefined) { // if this is CompError with no line info
+          throw new CompError(error.message, tokens[i].line) // add the line number to it
+        } else {
+          throw error
+        }
       }
 
-      if (Math.round((i+1) % (tokens.length/100)) == 0 ) {
-        !nested && postMessage(["update",(((i+1)/tokens.length)*100)+50])
+      if (!nested && Math.round((i+1) % (tokens.length/100)) == 0 ) {
+        postMessage(["update",(((i+1)/tokens.length)*100)+50])
       }
     }
     output += "stop"
+
     var t1 = performance.now()
-
-    if (error && nested) {
-      throw new CompError("Library translation failed: ")
-      return
-    }
-
-    if (error) {
-      !nested && console.error("↳ Translation failed")
-      return
-    } else {
-      !nested && console.log("↳ success, "+ tokens.length +" token(s) in "+  Math.round(t1-t0) + "ms")
-    }
+    console.log("↳ success, "+ tokens.length +" token(s) in "+  Math.round(t1-t0) + "ms")
 
   //add consts
     for (var i = 0; i < consts.length; i++) {

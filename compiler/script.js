@@ -4,6 +4,7 @@ function handleMsg(data) {
       $("#progress").attr("value",data[1])
       break
     case "result":
+      compiling = false
       if (assemble_when_compiled) {
         if (data[1] !== undefined) {
         parent.postMessage(["menu-item-asm", data[1], true, target_clock_speed],"*")
@@ -11,7 +12,6 @@ function handleMsg(data) {
       } else {
         $("#out").val(data[1])
       }
-      compiling = false
       break
     case "log":
       log(data[1],data[2])
@@ -25,12 +25,12 @@ function handleMsg(data) {
 }
 
 function compile() {
-  if (compiling) {return}
-  worker.postMessage(["input",$("#in").val().split("\n")])
-  $("#progress").attr("value",0)
-  $("#log").empty()
-  worker.postMessage(["compile"])
-  compiling = true
+  if (!compiling) {
+    worker.postMessage(["input",$("#in").val().split("\n")])
+    $("#log").empty()
+    worker.postMessage(["compile"])
+    compiling = true
+  }
 }
 
 function log(level,msg) {
@@ -50,8 +50,8 @@ function set_input([string, shouldAssemble, clock_speed]) {
   compile()
 }
 
-var compiling = false
 var realtime = true
+var compiling = false
 var assemble_when_compiled = false
 var target_clock_speed = 0
 
@@ -116,10 +116,9 @@ $( document ).ready( () => {
   worker.onmessage = (e) => {
     handleMsg(e.data)
   }
-  
+
   worker.onerror = (e) => {
-    msg = "Internal uncaught error, line "  +e.lineno + ": <br>"
-    msg += e.message
+    msg = "Internal compiler error, line " + e.lineno + ": <br>" + e.message
     log("error",msg)
   }
 
