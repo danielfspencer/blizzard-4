@@ -15,19 +15,17 @@ console.error = (msg) => {
 }
 
 function send_log(message, level) {
-  if (level != "error") {
-    if (!show_log_messages || (level == "debug" && !debug)) {
-      return
-    }
-
+  if (level != "error" && !show_log_messages || (level == "debug" && !debug)) {
+    return
   }
 
-  if (typeof message == 'object') {
-    var text = (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />'
+  var text
+  if (typeof message == "object") {
+    text = JSON.stringify(message)
   } else {
-    var text = message + "\n"
+    text = message
   }
-  postMessage(["log",level,text])
+  postMessage(["log", level, text])
 }
 
 var show_log_messages = true
@@ -46,9 +44,8 @@ function CompError(message, line) {
   this.line = line
 }
 
-function log_error(err) {
-  var msg = "line " + err.line + ": <br>"
-  console.error(msg + err.message)
+CompError.prototype.toString = function() {
+  return "line " + this.line + ": <br>" + this.message
 }
 
 function pad(string, width) {
@@ -175,7 +172,7 @@ onmessage = (msg) => {
         output = compile(input, false)
       } catch (error) {
         if (error instanceof CompError) {
-          log_error(error)
+          console.error(error.toString())
         } else {
           throw error
         }
@@ -191,8 +188,8 @@ onmessage = (msg) => {
         postMessage(["score",benchmark(msg.data[1])])
       } catch (error) {
         if (error instanceof CompError) {
-          console.error("Benchmark failed:")
-          log_error(error)
+          console.error("Benchmark could not be run because the standard library did not compile:")
+          console.error(error.toString())
         } else {
           throw error
         }
