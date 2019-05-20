@@ -4,8 +4,8 @@ $(document).ready( () => {
     handle_message(e.data)
   }
 
-  document.addEventListener("keydown", on_key_down)
-  document.addEventListener("keyup", on_key_up)
+  document.addEventListener("keydown", (event) => { on_key_event(event, "keydown") })
+  document.addEventListener("keyup", (event) => { on_key_event(event, "keyup") })
 
   vram_changes_buffer = []
   pixel_on_colour = 255
@@ -419,42 +419,26 @@ function draw_screen_updates() {
   }
 }
 
-function on_key_down(event) {
-  if (updates_running) {
-    var key_name = event.code
-    var scancodes = keycode_to_scancode[key_name]
-
-    if (event.target != document.body) {
-      return
-    }
-
-    event.preventDefault()
-
-    if (scancodes === undefined) {
-      console.warn("Can't find make code for key '" + key_name + "'")
-    } else {
-      var codes = scancodes[0]
-      worker.postMessage(["key_code",codes])
-    }
+function on_key_event(event, mode) {
+  if (!updates_running || event.target !== document.body) {
+    return
   }
-}
 
-function on_key_up(event) {
-  if (updates_running) {
-    var key_name = event.code
-    var scancodes = keycode_to_scancode[key_name]
+  event.preventDefault()
 
-    if (event.target != document.body) {
-      return
+  var key_name = event.code
+  var scancodes = keycode_to_scancode[key_name]
+
+  if (scancodes === undefined) {
+    console.warn("Can't find scancodes for key '" + key_name + "'")
+  } else {
+    var codes = []
+
+    if (mode === "keydown") {
+      codes = scancodes[0]
+    } else if (mode === "keyup") {
+      codes = scancodes[1]
     }
-
-    event.preventDefault()
-
-    if (scancodes === undefined) {
-      console.warn("Can't find break code for key '" + key_name + "'")
-    } else {
-      var codes = scancodes[1]
-      worker.postMessage(["key_code",codes])
-    }
+    worker.postMessage(["key_code",codes])
   }
 }
