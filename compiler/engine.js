@@ -2477,7 +2477,7 @@ function translate(token, ctx_type) {
       var clause_number = 0
       var target = main_tokens[0]
 
-      for (item of token["body"]) {
+      for (var item of token["body"]) {
         if (item["name"] == "else if") {
           clause_number++
           main_tokens.push([])
@@ -2800,8 +2800,8 @@ function compile(input, nested) {
     }
 
   //add function defs
-    for (item in func) {
-      for (line of func[item]) {
+    for (var item in func) {
+      for (var line of func[item]) {
         output += "\n" + line
       }
     }

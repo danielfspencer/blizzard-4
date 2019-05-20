@@ -284,7 +284,7 @@ function assemble(code) {
   var asm_string = assembled.join("") //join it all into one string
 
   //2nd pass
-  for (key in labels) {
+  for (var key in labels) {
     var bin = numToBin(labels[key].toString())
     asm_string = asm_string.replace( RegExp("\\b"+key+"\\b","gi") , bin)
   }
