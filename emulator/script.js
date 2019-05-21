@@ -1,4 +1,8 @@
 $(document).ready( () => {
+  canvas = document.getElementById("screen")
+  canvas_context = canvas.getContext("2d", { alpha: false })
+  storage_get_key("emulator-display-colour", set_screen_theme, "white-black")
+
   worker = new Worker("engine.js")
   worker.onmessage = (e) => {
     handle_message(e.data)
@@ -8,15 +12,8 @@ $(document).ready( () => {
   document.addEventListener("keyup", (event) => { on_key_event(event, "keyup") })
 
   vram_changes_buffer = []
-  pixel_on_colour = 255
-  pixel_off_colour = 0
   front_panel_info = {}
-
   updates_running = false
-
-  canvas = document.getElementById("screen")
-  canvas_context = canvas.getContext("2d", { alpha: false })
-  clear_screen()
 
   led_strips = {
     "alu1_leds":null,
@@ -107,6 +104,19 @@ $(document).ready( () => {
   parent.input_data = set_rom
   parent.child_page_loaded()
 })
+
+function set_screen_theme(theme) {
+  let mapping = {
+    "white-black": [[255,255,255],[0,0,0]],
+    "white-grey":  [[255,255,255],[21,21,21]],
+    "black-white": [[0,0,0],[255,255,255]],
+    "green-black": [[58,181,58],[0,0,0]],
+    "green-grey":  [[58,181,58],[21,21,21]]
+  }
+  pixel_on_colours = mapping[theme][0]
+  pixel_off_colours = mapping[theme][1]
+  clear_screen()
+}
 
 function set_rom([string, shouldRun, clock_speed]) {
   if (clock_speed !== undefined) {
@@ -209,7 +219,8 @@ function benchmark() {
 }
 
 function clear_screen() {
-  canvas_context.fillStyle = "rgb(" + pixel_off_colour + ", " + pixel_off_colour + ", " + pixel_off_colour + ")"
+  let [red, green, blue] = pixel_off_colours
+  canvas_context.fillStyle = "rgb("+ red +","+ green +","+ blue +")"
   canvas_context.fillRect(0, 0, 128, 128)
 }
 
@@ -407,13 +418,13 @@ function draw_screen_updates() {
       var mask = 1 << (15 - (i/4))
 
       if ((word & mask) != 0) {
-        value = pixel_on_colour
+        var [red, green, blue] = pixel_on_colours
       } else {
-        value = pixel_off_colour
+        var [red, green, blue] = pixel_off_colours
       }
-      img_data.data[i]     = value
-      img_data.data[i + 1] = value
-      img_data.data[i + 2] = value
+      img_data.data[i]     = red
+      img_data.data[i + 1] = green
+      img_data.data[i + 2] = blue
       img_data.data[i + 3] = 255
     }
     canvas_context.putImageData(img_data,x,y)

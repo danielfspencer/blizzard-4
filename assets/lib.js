@@ -37,7 +37,7 @@ function storage_set_key(key,value) {
     obj[key] = value
     chrome.storage.local.set(obj)
   } else {
-    localStorage.setItem(key,value)
+    localStorage.setItem(key, JSON.stringify(value))
   }
 }
 
@@ -54,10 +54,10 @@ function storage_get_key(key,callback,default_value) {
 
   } else {
     var result = localStorage.getItem(key)
-    if (result === null) {
+    if (result == null) {
       callback(default_value)
     } else {
-      callback(result)
+      callback(JSON.parse(result))
     }
   }
 }

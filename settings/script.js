@@ -3,8 +3,17 @@ if (get_platform() == "electron") {
 }
 
 $( document ).ready( () => {
-  storage_get_key("starting-page",get_starting_page,"dem")
-  storage_get_key("theme",get_theme,"light")
+  storage_get_key("starting-page", (val) => {
+    $("#starting-page").val(val)
+  } ,"dem")
+
+  storage_get_key("theme", (val) => {
+    $("#dark-theme").prop('checked', val == "dark")
+  } ,"light")
+
+  storage_get_key("emulator-display-colour", (val) => {
+    $("#emulator-display-colour").val(val)
+  } ,"white-black")
 
   $( "#close" ).click( () => {
     window.close()
@@ -26,6 +35,10 @@ $( document ).ready( () => {
     storage_set_key("starting-page",$(this).val())
   })
 
+  $("#emulator-display-colour").change(function() {
+    storage_set_key("emulator-display-colour", $(this).val())
+  })
+
   $( "#platform" ).html( () => {
     switch (get_platform()) {
       case "electron":   return "Electron App"
@@ -35,15 +48,6 @@ $( document ).ready( () => {
     }
   })
 })
-
-
-function get_theme(theme) {
-  $("#dark-theme").prop('checked', theme == "dark")
-}
-
-function get_starting_page(page) {
-  $("#starting-page").val(page)
-}
 
 /* theme setting */
 
