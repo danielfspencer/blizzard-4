@@ -57,7 +57,11 @@ function storage_get_key(key,callback,default_value) {
     if (result == null) {
       callback(default_value)
     } else {
-      callback(JSON.parse(result))
+      try {
+        callback(JSON.parse(result))
+      } catch (e) {
+        callback(result)
+      }
     }
   }
 }
