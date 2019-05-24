@@ -109,7 +109,7 @@ function set_screen_theme(theme) {
   let mapping = {
     "white-black": [[255,255,255],[0,0,0]],
     "white-grey":  [[255,255,255],[21,21,21]],
-    "black-white": [[0,0,0],[255,255,255]],
+    "black-white": [[0,0,0],[250,250,250]],
     "green-black": [[58,181,58],[0,0,0]],
     "green-grey":  [[58,181,58],[21,21,21]]
   }
