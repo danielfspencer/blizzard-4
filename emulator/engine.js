@@ -72,7 +72,7 @@ function init_emulator() {
   vram_addresses_changed = {}
   vram_changes_buffer = []
 
-  timer_register_zeroing_offset = 0
+  cycle_count_when_timer_last_reset = 0
 
   init_activity_indicators()
   init_buffered_instructions()
@@ -299,16 +299,18 @@ function vram_change(address, new_data) {
 }
 
 function get_timer_value() {
-  var value = (performance.now() - timer_register_zeroing_offset) * 8.192
+  let cycles = total_cycles - cycle_count_when_timer_last_reset
+  let time_sec = cycles / actual_cycles_per_second
+  let value = time_sec * 8192   // 8192 counts per second
 
-  var low_word = value & 0xffff
-  var high_word = (value >> 16) & 0xffff
-
+  let low_word = value & 0xffff
+  let high_word = (value >> 16) & 0xffff
+  
   return [low_word,high_word]
 }
 
 function reset_timer() {
-  timer_register_zeroing_offset = performance.now()
+  cycle_count_when_timer_last_reset = total_cycles
 }
 
 function start() {
