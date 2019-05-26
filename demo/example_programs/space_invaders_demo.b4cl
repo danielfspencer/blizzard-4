@@ -102,99 +102,213 @@ def draw_8x8
   vram_addr += 8
 
 def shift_right
-  var int vram_addr 7168
-  var bool carry
-  while vram_addr > 6144
-    {copy [ram.0] alu.1}
-    {copy alu.>> [ram.0]}
-    vram_addr--
-    {copy [ram.0] ram.1}
-    if carry
-      vram_addr++
-      {copy [ram.0] alu.1}
-      {write 0b1000000000000000 alu.2}
-      {copy alu.| [ram.0]}
-      vram_addr--
+  arg int start 6144
+  arg int end 7167
+  while end > start
+    {write 1 alu.2}
+
+    {copy [ram.1] alu.1}
+    {copy alu.>> [ram.1]}
+    {write [ram.1] alu.1}
+    {write [alu.-] ram.1}
+
+    {copy [ram.1] alu.1}
+    {copy alu.>> [ram.1]}
+    {write [ram.1] alu.1}
+    {write [alu.-] ram.1}
+
+    {copy [ram.1] alu.1}
+    {copy alu.>> [ram.1]}
+    {write [ram.1] alu.1}
+    {write [alu.-] ram.1}
+
+    {copy [ram.1] alu.1}
+    {copy alu.>> [ram.1]}
+    {write [ram.1] alu.1}
+    {write [alu.-] ram.1}
+
+    {copy [ram.1] alu.1}
+    {copy alu.>> [ram.1]}
+    {write [ram.1] alu.1}
+    {write [alu.-] ram.1}
+
+    {copy [ram.1] alu.1}
+    {copy alu.>> [ram.1]}
+    {write [ram.1] alu.1}
+    {write [alu.-] ram.1}
+
+    {copy [ram.1] alu.1}
+    {copy alu.>> [ram.1]}
+    {write [ram.1] alu.1}
+    {write [alu.-] ram.1}
+
+    {copy [ram.1] alu.1}
+    {copy alu.>> [ram.1]}
+    {write [ram.1] alu.1}
+    {write [alu.-] ram.1}
+
 
 def shift_left
-  var int vram_addr 6144
-  var bool carry
-  while vram_addr < 7168
+  arg int start 6144
+  arg int end 7167
+  while start < end
+    {write 1 alu.2}
+
     {copy [ram.0] alu.1}
     {copy alu.<< [ram.0]}
-    vram_addr++
+    {write [ram.0] alu.1}
+    {write [alu.+] ram.0}
+
     {copy [ram.0] alu.1}
-    {write 0b1000000000000000 alu.2}
-    {copy alu.ov ram.1}
-    if carry
-      vram_addr--
-      {copy [ram.0] alu.1}
-      {write 0b0000000000000001 alu.2}
-      {copy alu.| [ram.0]}
-      vram_addr++
+    {copy alu.<< [ram.0]}
+    {write [ram.0] alu.1}
+    {write [alu.+] ram.0}
+
+    {copy [ram.0] alu.1}
+    {copy alu.<< [ram.0]}
+    {write [ram.0] alu.1}
+    {write [alu.+] ram.0}
+
+    {copy [ram.0] alu.1}
+    {copy alu.<< [ram.0]}
+    {write [ram.0] alu.1}
+    {write [alu.+] ram.0}
+
+    {copy [ram.0] alu.1}
+    {copy alu.<< [ram.0]}
+    {write [ram.0] alu.1}
+    {write [alu.+] ram.0}
+
+    {copy [ram.0] alu.1}
+    {copy alu.<< [ram.0]}
+    {write [ram.0] alu.1}
+    {write [alu.+] ram.0}
+
+    {copy [ram.0] alu.1}
+    {copy alu.<< [ram.0]}
+    {write [ram.0] alu.1}
+    {write [alu.+] ram.0}
+
+    {copy [ram.0] alu.1}
+    {copy alu.<< [ram.0]}
+    {write [ram.0] alu.1}
+    {write [alu.+] ram.0}
+
 
 def shift_down
-  var int vram_addr 7167
-  while vram_addr > 6144
-    {copy ram.0 alu.1}
+  arg int start 6144
+  arg int end 7167
+  while end > start
+    {copy ram.1 alu.1}
     {write 32 alu.2}
-    {copy [ram.0] [alu.+]}
-    vram_addr--
+    {copy [ram.1] [alu.+]}
+    {write 1 alu.2}
+    {write [alu.-] ram.1}
+
+    {copy ram.1 alu.1}
+    {write 32 alu.2}
+    {copy [ram.1] [alu.+]}
+    {write 1 alu.2}
+    {write [alu.-] ram.1}
+
+    {copy ram.1 alu.1}
+    {write 32 alu.2}
+    {copy [ram.1] [alu.+]}
+    {write 1 alu.2}
+    {write [alu.-] ram.1}
+
+    {copy ram.1 alu.1}
+    {write 32 alu.2}
+    {copy [ram.1] [alu.+]}
+    {write 1 alu.2}
+    {write [alu.-] ram.1}
+
+    {copy ram.1 alu.1}
+    {write 32 alu.2}
+    {copy [ram.1] [alu.+]}
+    {write 1 alu.2}
+    {write [alu.-] ram.1}
+
+    {copy ram.1 alu.1}
+    {write 32 alu.2}
+    {copy [ram.1] [alu.+]}
+    {write 1 alu.2}
+    {write [alu.-] ram.1}
+
+    {copy ram.1 alu.1}
+    {write 32 alu.2}
+    {copy [ram.1] [alu.+]}
+    {write 1 alu.2}
+    {write [alu.-] ram.1}
+
+    {copy ram.1 alu.1}
+    {write 32 alu.2}
+    {copy [ram.1] [alu.+]}
+    {write 1 alu.2}
+    {write [alu.-] ram.1}
 
 var int space_invader
 var int offset
-var int limit 440
 
+var int start_row 16
+var int end_row 264
+var int start_addr 6144
+var int end_addr 6400
+
+// draw space invaders
 {write sprite ram.0}
-for var int row 16; row < 440; row += 88
-  for var int col 1; col < 15; col += 2
+for var int row start_row; row < end_row; row += 88
+  for var int col 2; col < 14; col += 2
     draw_8x8(space_invader,col,row)
   space_invader += 8
 free row
 free col
 
-while true
+while end_addr < 7168
   for var int i; i < 8; i++
-    shift_right()
-
-  {write sprite ram.0}
-  for var int row 16 + offset; row < limit; row += 88
-    for var int col 2; col < 15; col += 2
-      draw_8x8(space_invader,col,row)
-    space_invader += 8
-  free row
-  free col
-
-  offset += 32
-  limit += 32
-
-  shift_down()
-
+    shift_right(start_addr,end_addr)
   free i
-  for var int i; i < 8; i++
-    shift_left()
 
   {write sprite ram.0}
-  for var int row 16 + offset; row < limit; row += 88
-    for var int col 1; col < 15; col += 2
+  for var int row start_row; row < end_row; row += 88
+    for var int col 3; col < 14; col += 4
       draw_8x8(space_invader,col,row)
     space_invader += 8
   free row
   free col
 
-  offset += 32
-  limit += 32
+  shift_down(start_addr-17,end_addr)
 
+  start_row += 32
+  end_row += 32
+  start_addr += 32
+  end_addr += 32
 
-  shift_down()
+  for var int i; i < 8; i++
+    shift_left(start_addr,end_addr)
+  free i
 
+  {write sprite ram.0}
+  for var int row start_row; row < end_row; row += 88
+    for var int col 2; col < 14; col += 4
+      draw_8x8(space_invader,col,row)
+    space_invader += 8
+  free row
+  free col
+
+  shift_down(start_addr-17,end_addr)
+
+  start_row += 32
+  end_row += 32
+  start_addr += 32
+  end_addr += 32
 
 ///
 sprite:
 0b0001100000011000
 0b0011110000111100
 0b0111111001111110
-0b1101101101011011
+0b1101101111011011
 0b1111111111111111
 0b0010010000100100
 0b0100001001011010

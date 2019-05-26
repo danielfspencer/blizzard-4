@@ -12,7 +12,7 @@
   "space_invaders_demo": {
     "name":"Space Invaders Prototype",
     "desc":"Early prototype demonstrating the drawing and shifting of the sprites for a space-invaders style game. There are no controls for this demo.",
-    "clock_speed": 1000000
+    "clock_speed": 100000
   },
   "shape_test": {
     "name":"Shape Drawing Test",
