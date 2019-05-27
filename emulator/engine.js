@@ -21,7 +21,7 @@ function init_memory() {
   read_bus = 0
 
   //control unit registers
-  program_counter = 0
+  program_counter = 32768  // 1st word of ROM
   command_word = 0
   control_mode = 0
   args_remaining = 0
@@ -305,7 +305,7 @@ function get_timer_value() {
 
   let low_word = value & 0xffff
   let high_word = (value >> 16) & 0xffff
-  
+
   return [low_word,high_word]
 }
 
@@ -794,7 +794,7 @@ function arg1_to_data_bus() {
 
 function arg2_to_pc() {
   debug && console.debug("arg2_to_pc")
-  program_counter = arg_regs[1] & 0b0111111111111111
+  program_counter = arg_regs[1] & 0xffff
 }
 
 function arg2_to_write_bus() {
@@ -845,6 +845,7 @@ function increment_mode() {
 function increment_pc() {
   debug && console.debug("increment_pc")
   program_counter++
+  program_counter = program_counter & 0xffff
 }
 
 function decrement_arg_counter() {
@@ -859,7 +860,7 @@ function clock_stop() {
 
 function pc_to_data_bus() {
   debug && console.debug("pc_to_data_bus")
-  data_bus = program_counter + 32768
+  data_bus = program_counter
 }
 
 function data_bus_to_cmd_reg() {
@@ -870,7 +871,7 @@ function data_bus_to_cmd_reg() {
 
 function pc_to_read_bus() {
   debug && console.debug("pc_to_read_bus")
-  read_bus = program_counter + 32768
+  read_bus = program_counter
 }
 
 function ram_caller_pointer_to_read_bus() {
@@ -905,5 +906,5 @@ function increment_frame_no() {
 
 function data_bus_to_pc() {
   debug && console.debug("data_bus_to_pc")
-  program_counter = data_bus & 0b0111111111111111
+  program_counter = data_bus & 0xffff
 }
