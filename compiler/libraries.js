@@ -1879,5 +1879,10 @@ var libs = {
     "0b0000000000000010",
     "0b0000000000000001",
     "///"
+  ],
+
+  "sys.get_lib_version":[
+    "def sys.get_lib_version",
+    "  return \"0.44.1\"",
   ]
 }
