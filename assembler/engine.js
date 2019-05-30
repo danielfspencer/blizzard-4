@@ -9,12 +9,13 @@ onmessage = (msg) => {
         result = assemble(as_array)
       } catch (error) {
         if (error instanceof AsmError) {
-          console.error(e.toString())
+          console.error(error.toString())
         } else {
           throw error
         }
+      } finally {
+        postMessage(['result',result])
       }
-      postMessage(['result',result])
       break
     case "debug":
       debug = msg.data[1]

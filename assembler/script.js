@@ -1,5 +1,6 @@
 let run_when_assembled = false
 let clock_speed = 100000
+let assembling = false
 
 $( document ).ready( () => { //connect all the butons to their actions!
   $("#load_in").change((e) => {
@@ -67,7 +68,10 @@ $( document ).ready( () => { //connect all the butons to their actions!
 })
 
 function assemble() {
-  worker.postMessage(['assemble',$("#in").val()])
+  if (!assembling) {
+    assembling = true
+    worker.postMessage(['assemble',$("#in").val()])
+  }
 }
 
 function set_input([string, shouldRun, target_clock_speed]) {
