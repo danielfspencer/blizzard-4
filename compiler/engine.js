@@ -169,22 +169,19 @@ function set_token(name, operation, exprs, line) {
 
 onmessage = (msg) => {
   switch(msg.data[0]) {
-    case "input":
-      input = msg.data[1]
-      break
     case "compile":
-      var output = ""
+      let result = ""
       try {
-        output = compile(input, false)
+        let as_array = msg.data[1].split('\n')
+        result = compile(as_array, false)
       } catch (error) {
         if (error instanceof CompError) {
           console.error(error.toString())
         } else {
           throw error
         }
-      } finally {
-        postMessage(["result",output])
       }
+      postMessage(["result",result])
       break
     case "debug":
       debug = msg.data[1]

@@ -16,16 +16,13 @@ function handleMsg(data) {
     case "log":
       log(data[1],data[2])
       break
-    default:
-      break
   }
 }
 
 function compile() {
   if (!compiling) {
-    worker.postMessage(["input",$("#in").val().split("\n")])
     $("#log").empty()
-    worker.postMessage(["compile"])
+    worker.postMessage(["compile",$("#in").val()])
     compiling = true
   }
 }
