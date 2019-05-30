@@ -180,8 +180,9 @@ onmessage = (msg) => {
         } else {
           throw error
         }
+      } finally {
+        postMessage(["result",result])
       }
-      postMessage(["result",result])
       break
     case "debug":
       debug = msg.data[1]
