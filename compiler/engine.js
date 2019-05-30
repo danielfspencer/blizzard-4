@@ -14,6 +14,12 @@ console.error = (msg) => {
   send_log(msg,"error")
 }
 
+if (typeof window === 'undefined') {  // if we are running under nodejs define performance.now
+  try {
+    performance = require('perf_hooks').performance
+  } catch (e) {}
+}
+
 function send_log(message, level) {
   if (level != "error" && !show_log_messages || (level == "debug" && !debug)) {
     return
@@ -185,7 +191,7 @@ onmessage = (msg) => {
       break
     case "bench":
       try {
-        postMessage(["score",benchmark(msg.data[1])])
+        console.log(benchmark(msg.data[1]) + " lines/second")
       } catch (error) {
         if (error instanceof CompError) {
           console.error("Benchmark could not be run because the standard library did not compile:")
@@ -2827,4 +2833,4 @@ function compile(input, nested) {
   return output
 }
 
-console.log("Worker thread started, " + Object.keys(libs).length + " standard functions loaded")
+console.log("Compiler thread started, " + Object.keys(libs).length + " standard functions loaded")

@@ -16,9 +16,6 @@ function handleMsg(data) {
     case "log":
       log(data[1],data[2])
       break
-    case "score":
-      log("info",data[1] + " lines/second")
-      break
     default:
       break
   }
