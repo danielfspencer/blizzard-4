@@ -1,7 +1,22 @@
 if (typeof window === 'undefined') {  // if we are running under nodejs define performance.now
   try {
-    performance = {now:require('performance-now')}
-  } catch (e) {}
+    performance = { now : require('performance-now') }
+
+    // bad hacks to work around nodejs
+    if (process.pkg) { // packaged node mode
+      let path = '/snapshot/b4c/compiler/libraries.js'
+      if (process.platform === "win32") {
+        path = "C:" + path
+      }
+      importScripts(path)
+    } else {  // normal node mode
+      importScripts('compiler/libraries.js')
+    }
+  } catch (e) {
+    throw e
+  }
+} else {  // running in browser (the sane one)
+  importScripts('libraries.js')
 }
 
 const log = {
@@ -28,10 +43,7 @@ function send_log(message, level) {
 var show_log_messages = true
 var progress = 0
 var debug = false
-var input = []
 var token_dump = []
-
-importScripts("libraries.js")
 
 const data_type_size = {"int":1,"sint":1,"long":2,"slong":2,"float":2,"bool":1,"str":1,"array":4}
 const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys":"","array":"","return":""}

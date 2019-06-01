@@ -29,7 +29,7 @@ function AsmError(message, line) {
 }
 
 AsmError.prototype.toString = function() {
-  return "word " + this.line + ": <br>" + this.message
+  return "word " + this.line + ": \n'" + this.message + "' is not defined"
 }
 
 const log = {
@@ -284,5 +284,3 @@ function assemble(lines) {
   log.info("Output size: "+ size_bytes +" bytes")
   return asm_string
 }
-
-log.info("Assembler thread started")
