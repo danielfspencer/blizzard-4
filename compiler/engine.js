@@ -1,23 +1,14 @@
-console.debug = (msg) => {
-  send_log(msg,"debug")
-}
-
-console.log = (msg) => {
-  send_log(msg,"info")
-}
-
-console.warn = (msg) => {
-  send_log(msg,"warn")
-}
-
-console.error = (msg) => {
-  send_log(msg,"error")
-}
-
 if (typeof window === 'undefined') {  // if we are running under nodejs define performance.now
   try {
-    performance = require('perf_hooks').performance
+    performance = {now:require('performance-now')}
   } catch (e) {}
+}
+
+const log = {
+  debug: (msg) => send_log(msg,"debug"),
+  info: (msg) => send_log(msg,"info"),
+  warn: (msg) => send_log(msg,"warn"),
+  error: (msg) => send_log(msg,"error")
 }
 
 function send_log(message, level) {
@@ -25,7 +16,7 @@ function send_log(message, level) {
     return
   }
 
-  var text
+  let text
   if (typeof message == "object") {
     text = JSON.stringify(message)
   } else {
@@ -51,7 +42,7 @@ function CompError(message, line) {
 }
 
 CompError.prototype.toString = function() {
-  return "line " + this.line + ": <br>" + this.message
+  return "line " + this.line + ": \n" + this.message
 }
 
 function pad(string, width) {
@@ -176,7 +167,7 @@ onmessage = (msg) => {
         result = compile(as_array, false)
       } catch (error) {
         if (error instanceof CompError) {
-          console.error(error.toString())
+          log.error(error.toString())
         } else {
           throw error
         }
@@ -189,11 +180,11 @@ onmessage = (msg) => {
       break
     case "bench":
       try {
-        console.log(benchmark(msg.data[1]) + " lines/second")
+        log.info(benchmark(msg.data[1]) + " lines/second")
       } catch (error) {
         if (error instanceof CompError) {
-          console.error("Benchmark could not be run because the standard library did not compile:")
-          console.error(error.toString())
+          log.error("Benchmark could not be run because the standard library did not compile:")
+          log.error(error.toString())
         } else {
           throw error
         }
@@ -287,7 +278,7 @@ function write_operand(expr,type) {
 }
 
 function alloc_block(size) {
-  console.debug("Request for " + size + " words(s) of RAM")
+  log.debug("Request for " + size + " words(s) of RAM")
   var addrs = []
   if (size > free_ram[scope].length) {
     throw new CompError("Out of memory, " + size + " word(s) requested ("+ free_ram[scope].length +" free)")
@@ -334,7 +325,7 @@ function get_temp_word() {
 }
 
 function translate_body(tokens) {
-  console.debug("nested translate: " + tokens.length + " token(s)")
+  log.debug("nested translate: " + tokens.length + " token(s)")
   var result = []
   if (tokens.length == 0) {
     return result
@@ -365,15 +356,15 @@ function translate_body(tokens) {
 }
 
 function load_lib(name) {
-  console.debug("loading library object: " + name)
+  log.debug("loading library object: " + name)
   if (!(name in libs)) {
     throw new CompError("Library '" + name + "' not found")
   }
   if (name in required) {
-    console.debug("↳ already loaded")
+    log.debug("↳ already loaded")
   } else {
     required[name] = ""
-    console.debug("↳ compiling")
+    log.debug("↳ compiling")
     try {
       var old_log_status = show_log_messages
       show_log_messages = false
@@ -416,7 +407,7 @@ function tokenise(input, line) {
       if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError("Invalid name: '"+list[2]+"'")}
       token = {"name":"var_alloc","type":"command","arguments":{"type":list[1],"name":list[2]}}
     } else {
-      throw new CompError("Variable decleration syntax: <br> var [type] [name] <expr>")
+      throw new CompError("Variable decleration syntax: \n var [type] [name] <expr>")
     }
 
   } else if (list[0] == "arg") {                      // arg [type] [name] <expr>
@@ -428,7 +419,7 @@ function tokenise(input, line) {
       if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError("Invalid name: '"+list[2]+"'")}
       token = {"name":"arg_alloc","type":"command","arguments":{"type":list[1],"name":list[2]}}
     } else {
-      throw new CompError("Argument decleration syntax: <br> arg [type] [name] <expr>")
+      throw new CompError("Argument decleration syntax: \n arg [type] [name] <expr>")
     }
 
   } else if (list[0] == "const") {             // const [type] [name] [expr]
@@ -440,7 +431,7 @@ function tokenise(input, line) {
       if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError("Invalid name: '"+list[2]+"'")}
       token = {"name":"const_alloc","type":"command","arguments":{"type":list[1],"name":list[2]}}
     } else {
-      throw new CompError("Constant decleration syntax: <br> const [type] [name] <expr>")
+      throw new CompError("Constant decleration syntax: \n const [type] [name] <expr>")
     }
 
   } else if (list[0] == "global") {             // global [type] [name] [expr]
@@ -452,7 +443,7 @@ function tokenise(input, line) {
       if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError("Invalid name: '"+list[2]+"'")}
       token = {"name":"global_alloc","type":"command","arguments":{"type":list[1],"name":list[2]}}
     } else {
-      throw new CompError("Global decleration syntax: <br> global [type] [name] <expr>")
+      throw new CompError("Global decleration syntax: \n global [type] [name] <expr>")
     }
 
   } else if (list[0] == "if") {               // if [bool]
@@ -543,7 +534,7 @@ function tokenise(input, line) {
 
   } else if (/^\((.*)\)$/.test(input)) {  // it is an expression that is in brackets
     var expression = /^\((.*)\)$/.exec(input)[1]
-    console.warn("tokenising '" + expression + "'")
+    log.warn("tokenising '" + expression + "'")
     var token = tokenise(expression,line)
     if (token["type"] != "expression") {
       throw new CompError("Only expressions may be placed in brackets")
@@ -753,7 +744,7 @@ function translate(token, ctx_type) {
       }
       var type = args["type"]
       var size = registers.length
-      console.debug("var alloc '"+type+"', size '"+size+"'")
+      log.debug("var alloc '"+type+"', size '"+size+"'")
 
       var memory = alloc_block(size)
 
@@ -793,7 +784,7 @@ function translate(token, ctx_type) {
       }
       var type = args["type"]
       var size = registers.length
-      console.debug("const alloc '"+type+"', size '"+size+"'")
+      log.debug("const alloc '"+type+"', size '"+size+"'")
 
       var id = "const_" + args["name"]
       var memory = []
@@ -836,7 +827,7 @@ function translate(token, ctx_type) {
       }
       var type = args["type"]
       var size = registers.length
-      console.debug("global alloc '"+type+"', size '"+size+"'")
+      log.debug("global alloc '"+type+"', size '"+size+"'")
 
       var memory = alloc_global_block(size)
 
@@ -878,7 +869,7 @@ function translate(token, ctx_type) {
       }
       var type = args["type"]
       var size = registers.length
-      console.debug("arg alloc '"+type+"', size '"+size+"'")
+      log.debug("arg alloc '"+type+"', size '"+size+"'")
 
       var memory = alloc_block(size)
 
@@ -912,7 +903,7 @@ function translate(token, ctx_type) {
       name_type_map[scope][args["name"]+".contained_type"] = name_type_map[scope][base_addr]
       name_type_map[scope][args["name"]+".contained_size"] = item_size
 
-      console.debug("var_array alloc type '" + name_type_map[scope][base_addr] + "' length " + max_length)
+      log.debug("var_array alloc type '" + name_type_map[scope][base_addr] + "' length " + max_length)
 
       var header_memory = alloc_block(4)
       var array_memory = alloc_block(max_length * item_size)
@@ -992,7 +983,7 @@ function translate(token, ctx_type) {
         throw new CompError("Pointers must be of type int, got '" + pointer_prefix_value_type[2] + "'")
       }
 
-      console.debug("type: '"+type+"', size: '"+size+"'")
+      log.debug("type: '"+type+"', size: '"+size+"'")
 
       result.push("write " + regs[0] + " " + pointer_regs[0])
 
@@ -1297,7 +1288,7 @@ function translate(token, ctx_type) {
                                               //number types
     case "number": // a generic number that can be turned into the type required by the context
       if (ctx_type === undefined) {
-        console.warn("line " + token["line"] + ":<br>No context-specified type for '" + args["value"] + "'<br> assuming '" + args["type_guess"] + "''")
+        log.warn("line " + token["line"] + ":\nNo context-specified type for '" + args["value"] + "'\n assuming '" + args["type_guess"] + "''")
         type = args["type_guess"]
       } else {
         type = ctx_type
@@ -1485,7 +1476,7 @@ function translate(token, ctx_type) {
 
                                         //arithmetic operations
     case "+":   //add
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
       types = [translate(args["expr1"],ctx_type)[2],translate(args["expr2"],ctx_type)[2]]
       if (types[0] != types[1]) {
         throw new CompError("Expected '"+ ctx_type +"', got '"+types[0]+"' & '"+types[1]+"'")
@@ -1520,7 +1511,7 @@ function translate(token, ctx_type) {
       break
 
     case "-":   //subtract
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
       types = [translate(args["expr1"],ctx_type)[2],translate(args["expr2"],ctx_type)[2]]
       if (types[0] != types[1]) {
         throw new CompError("Expected '"+ ctx_type +"', got '"+types[0]+"' & '"+types[1]+"'")
@@ -1555,7 +1546,7 @@ function translate(token, ctx_type) {
       break
 
     case "*":   //multiply
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
       types = [translate(args["expr1"],ctx_type)[2],translate(args["expr2"],ctx_type)[2]]
       if (types[0] != types[1]) {
         throw new CompError("Expected '"+ ctx_type +"', got '"+types[0]+"' & '"+types[1]+"'")
@@ -1600,7 +1591,7 @@ function translate(token, ctx_type) {
       break
 
     case "/":   //divide
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
       types = [translate(args["expr1"],ctx_type)[2],translate(args["expr2"],ctx_type)[2]]
       if (types[0] != types[1]) {
         throw new CompError("Expected '"+ ctx_type +"', got '"+types[0]+"' & '"+types[1]+"'")
@@ -1645,7 +1636,7 @@ function translate(token, ctx_type) {
       break
 
     case "^":   //exponent
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
       types = [translate(args["expr1"],ctx_type)[2],translate(args["expr2"],ctx_type)[2]]
       if (types[0] != types[1]) {
         throw new CompError("Expected '"+ ctx_type +"', got '"+types[0]+"' & '"+types[1]+"'")
@@ -1690,7 +1681,7 @@ function translate(token, ctx_type) {
       break
 
     case "%":   //modulo
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
       types = [translate(args["expr1"],ctx_type)[2],translate(args["expr2"],ctx_type)[2]]
       if (types[0] != types[1]) {
         throw new CompError("Expected '"+ ctx_type +"', got '"+types[0]+"' & '"+types[1]+"'")
@@ -1735,7 +1726,7 @@ function translate(token, ctx_type) {
       break
                                           //comparison expressions
     case ">":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       ctx_type = find_type_priority(args["expr1"],args["expr2"])
       switch (ctx_type) {
@@ -1781,7 +1772,7 @@ function translate(token, ctx_type) {
       break
 
     case "<":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       ctx_type = find_type_priority(args["expr1"],args["expr2"])
       switch (ctx_type) {
@@ -1827,7 +1818,7 @@ function translate(token, ctx_type) {
       break
 
     case ">=":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       ctx_type = find_type_priority(args["expr1"],args["expr2"])
       switch (ctx_type) {
@@ -1914,7 +1905,7 @@ function translate(token, ctx_type) {
       break
 
     case "<=":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       ctx_type = find_type_priority(args["expr1"],args["expr2"])
       switch (ctx_type) {
@@ -2001,7 +1992,7 @@ function translate(token, ctx_type) {
       break
 
     case "==":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       ctx_type = find_type_priority(args["expr1"],args["expr2"])
       switch (ctx_type) {
@@ -2037,10 +2028,10 @@ function translate(token, ctx_type) {
       break
 
     case "!=":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       ctx_type = find_type_priority(args["expr1"],args["expr2"])
-      console.debug("ctx_type: " + ctx_type)
+      log.debug("ctx_type: " + ctx_type)
       switch (ctx_type) {
         case "bool":
         case "int":
@@ -2076,7 +2067,7 @@ function translate(token, ctx_type) {
       break
                                     //bit-wise operations, only needs to test word length
     case "&":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
       types = [translate(args["expr1"])[2],translate(args["expr2"])[2]]
 
       prefix = write_operands(args["expr1"],args["expr2"],ctx_type)
@@ -2084,7 +2075,7 @@ function translate(token, ctx_type) {
       break
 
     case "|":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
       types = [translate(args["expr1"])[2],translate(args["expr2"])[2]]
 
       prefix = write_operands(args["expr1"],args["expr2"],ctx_type)
@@ -2092,7 +2083,7 @@ function translate(token, ctx_type) {
       break
 
     case ">>":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       switch (ctx_type) {
         case "bool":
@@ -2132,7 +2123,7 @@ function translate(token, ctx_type) {
       break
 
     case "<<":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       switch (ctx_type) {
         case "bool":
@@ -2165,14 +2156,14 @@ function translate(token, ctx_type) {
       break
 
     case "!":   //(not)
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       prefix = write_operand(args["expr"],ctx_type)
       registers = ["[alu.!]"]
       break
 
     case "..":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       var expr1 = translate(args["expr1"],ctx_type)
       var expr1_prefix = expr1[0]
@@ -2187,7 +2178,7 @@ function translate(token, ctx_type) {
       break
 
     case ":": //word selector
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       var expr = translate(args["expr1"],ctx_type)
       prefix = expr[0]
@@ -2205,7 +2196,7 @@ function translate(token, ctx_type) {
       break
                                   //others
     case "is_odd":
-      console.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
+      log.debug("op: "+token["name"]+" , targ: '" + ctx_type + "'")
 
       var prefix_and_value = translate(args["expr"],"int")
       prefix = prefix_and_value[0]
@@ -2233,7 +2224,7 @@ function translate(token, ctx_type) {
         var contained_type = args["exprs"][0]["arguments"]["type_guess"]
       } else {
         var contained_type = ctx_type
-        console.log("context given type is "+ contained_type)
+        log.info("context given type is "+ contained_type)
       }
       var max_length = length
 
@@ -2248,7 +2239,7 @@ function translate(token, ctx_type) {
       }
 
       if (ctx_type === undefined && given_type_size === undefined) {
-        console.warn("Inferring type as '"+ contained_type +"' from first element of array.")
+        log.warn("Inferring type as '"+ contained_type +"' from first element of array.")
       }
 
       name_type_map[scope][id] = contained_type
@@ -2419,7 +2410,7 @@ function translate(token, ctx_type) {
       if (actual_arg_no > target_arg_no) {
         throw new CompError("'" + args["name"] + "' takes at most " + target_arg_no + " arg(s)")
       }
-      console.debug("call '" + args["name"] + "' " + actual_arg_no + "/" + target_arg_no + " arg(s)")
+      log.debug("call '" + args["name"] + "' " + actual_arg_no + "/" + target_arg_no + " arg(s)")
 
       for (var i = 0; i < actual_arg_no; i++) {
         var target_type = name_type_map[args["name"]][Object.keys(target_args)[i]]
@@ -2440,7 +2431,7 @@ function translate(token, ctx_type) {
       }
 
       if (actual_arg_no != 0) {
-        console.debug(args["name"] + ": skip def of " + Object.keys(target_args)[actual_arg_no-1])
+        log.debug(args["name"] + ": skip def of " + Object.keys(target_args)[actual_arg_no-1])
         label += "_" + Object.keys(target_args)[actual_arg_no-1]
       }
 
@@ -2476,7 +2467,7 @@ function translate(token, ctx_type) {
       } else if (ctx_type !== undefined) {
         type = ctx_type
       } else {
-        console.warn("No explicit cast or context-given type for pointer lookup, defaulting to 'int'")
+        log.warn("No explicit cast or context-given type for pointer lookup, defaulting to 'int'")
         type = "int"
       }
       break
@@ -2535,7 +2526,7 @@ function translate(token, ctx_type) {
         var prefix = prefix_and_value[0]
         var value = prefix_and_value[1]
         if (prefix_and_value[2] != "bool") {
-          console.warn("Structure expession expected type 'bool', got '"+ prefix_and_value[2] +"'")
+          log.warn("Structure expession expected type 'bool', got '"+ prefix_and_value[2] +"'")
         }
         result.push.apply(result,prefix)
         result.push("write " + value[0] + " ctl.cnd")
@@ -2572,7 +2563,7 @@ function translate(token, ctx_type) {
       var expr_prefix = expr_prefix_and_value[0]
       var expr_value = expr_prefix_and_value[1][0]
       if (expr_prefix_and_value[2] != "bool") {
-        console.warn("Structure: expected type 'bool', got '"+ expr_prefix_and_value[2] +"'")
+        log.warn("Structure: expected type 'bool', got '"+ expr_prefix_and_value[2] +"'")
       }
       result.push.apply(result,expr_prefix)
       result.push("write " + expr_value + " ctl.cnd")
@@ -2598,7 +2589,7 @@ function translate(token, ctx_type) {
       var prefix = prefix_and_value[0]
       var value = prefix_and_value[1][0]
       if (prefix_and_value[2] != "bool") {
-        console.warn("Structure: expected type 'bool', got '"+ prefix_and_value[2] +"'")
+        log.warn("Structure: expected type 'bool', got '"+ prefix_and_value[2] +"'")
       }
       result.push.apply(result,prefix)
       result.push("write " + value + " ctl.cnd")
@@ -2630,15 +2621,15 @@ function translate(token, ctx_type) {
       free_ram[scope] = gen_free_ram_map()
 
       if (args["type"] !== undefined) {
-        console.debug("explicit function type detected")
+        log.debug("explicit function type detected")
         name_type_map[scope][scope] = args["type"]
       }
-      console.debug("namespace -> " + scope)
+      log.debug("namespace -> " + scope)
 
       target.push.apply(target,translate_body(token["body"]))
 
       scope = old_scope
-      console.debug("namespace -> " + scope)
+      log.debug("namespace -> " + scope)
       if (target[target.length -1] != "return") {
         target.push("return")
       }
@@ -2662,7 +2653,7 @@ function compile(input, nested) {
     }
 
   //tokenise
-    console.log("Tokenising...")
+    log.info("Tokenising...")
     var t0 = performance.now()
     var tokens = []
     var prev_type = ""
@@ -2699,24 +2690,24 @@ function compile(input, nested) {
       }
 
       if (curr_indent > prev_indent) {
-        console.debug("indent ↑ " + prev_indent + " -> " + curr_indent)
+        log.debug("indent ↑ " + prev_indent + " -> " + curr_indent)
         expect_indent = false  //we've got an indent so no need to throw an error
       } else if (curr_indent < prev_indent) {
-        console.debug("indent ↓ " + prev_indent + " -> " + curr_indent)
+        log.debug("indent ↓ " + prev_indent + " -> " + curr_indent)
         if (line.trim().startsWith("else")) {
           for (var j = 0; j < (prev_indent - curr_indent)-1; j++) {
             targ.pop()
           }
-          console.debug("same target [if statement extension]")
+          log.debug("same target [if statement extension]")
           expect_indent = true
         } else {
           for (var j = 0; j < (prev_indent - curr_indent); j++) {
             targ.pop()             //set 'target' token to the previous one in the stack
           }
           if (targ[targ.length-1] instanceof Array) {
-            console.debug("new target ↓ [root]")
+            log.debug("new target ↓ [root]")
           } else {
-            console.debug("new target ↓ " + targ[targ.length-1]["name"])
+            log.debug("new target ↓ " + targ[targ.length-1]["name"])
           }
         }
       }  // if no indnet, carry on passing into current target
@@ -2730,7 +2721,7 @@ function compile(input, nested) {
         }
 
         if (token["type"] == "structure" && !(token["name"] in {"else":"","else if":""})) {     //when a structure header is parsed, set it to be target and expect indent
-          console.debug("new target ↑ " + token["name"])
+          log.debug("new target ↑ " + token["name"])
           expect_indent = true
           targ.push(token)
         }
@@ -2751,14 +2742,14 @@ function compile(input, nested) {
 
     var t1 = performance.now()
 
-    console.log("↳ success, "+ input.length + " line(s) in "+  Math.round(t1-t0) + "ms")
+    log.info("↳ success, "+ input.length + " line(s) in "+  Math.round(t1-t0) + "ms")
 
   if (!nested) {
     token_dump = tokens
   }
 
   //translate
-    console.log("Tranlsating...")
+    log.info("Tranlsating...")
     var t0 = performance.now()
     var output = ""
     var command = []
@@ -2791,7 +2782,7 @@ function compile(input, nested) {
     output += "stop"
 
     var t1 = performance.now()
-    console.log("↳ success, "+ tokens.length +" token(s) in "+  Math.round(t1-t0) + "ms")
+    log.info("↳ success, "+ tokens.length +" token(s) in "+  Math.round(t1-t0) + "ms")
 
   //add consts
     for (var i = 0; i < consts.length; i++) {
@@ -2804,6 +2795,8 @@ function compile(input, nested) {
         output += "\n" + line
       }
     }
+
+    output += "\n"
 
   //feedback
 
@@ -2822,13 +2815,19 @@ function compile(input, nested) {
     var standard_libs_used = Object.keys(required).length
 
     if (var_number > 0) {
-      console.warn(var_number + " variable(s) are never deallocated")
+      log.warn(var_number + " variable(s) are never deallocated")
     }
-    console.log("RAM use: " + ram_percent + "% (" + max_allocated_ram_slots + "/1023 words) <progress value="+max_allocated_ram_slots+" max=\"1023\" class=\"ram-bar\"></progress>")
-    console.log("Standard library functions used: " + standard_libs_used)
+
+    let ram_message = "RAM use: " + ram_percent + "% (" + max_allocated_ram_slots + "/1023 words)"
+
+    if (typeof window !== 'undefined') { // if we are running in a browser not nodejs
+      ram_message += "<progress value="+max_allocated_ram_slots+" max=\"1023\" class=\"ram-bar\"></progress>"
+    }
+    log.info(ram_message)
+    log.info("Standard library functions used: " + standard_libs_used)
   }
 
   return output
 }
 
-console.log("Compiler thread started, " + Object.keys(libs).length + " standard functions loaded")
+log.info("Compiler thread started, " + Object.keys(libs).length + " standard functions loaded")

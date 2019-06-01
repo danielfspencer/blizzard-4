@@ -90,6 +90,7 @@ form {
 }
 
 .item {
+  white-space: pre-line;
   font-family: robotomono;
   font-size: 10pt;
   border-bottom: 1px solid grey;

@@ -9,7 +9,7 @@ onmessage = (msg) => {
         result = assemble(as_array)
       } catch (error) {
         if (error instanceof AsmError) {
-          console.error(error.toString())
+          log.error(error.toString())
         } else {
           throw error
         }
@@ -29,7 +29,28 @@ function AsmError(message, line) {
 }
 
 AsmError.prototype.toString = function() {
-  return "line " + this.line + ": <br>" + this.message
+  return "word " + this.line + ": <br>" + this.message
+}
+
+const log = {
+  debug: (msg) => send_log(msg,"debug"),
+  info: (msg) => send_log(msg,"info"),
+  warn: (msg) => send_log(msg,"warn"),
+  error: (msg) => send_log(msg,"error")
+}
+
+function send_log(message, level) {
+  if (level == "debug" && !debug) {
+    return
+  }
+
+  let text
+  if (typeof message == "object") {
+    text = JSON.stringify(message)
+  } else {
+    text = message
+  }
+  postMessage(["log", level, text])
 }
 
 const opDefs = {
@@ -167,7 +188,7 @@ function assemble(lines) {
   var adr = 0
   var labels = {}
 
-  //1st pass
+  log.info("1st Pass...")
   for (var i = 0; i < lines.length; i++) {
     if (lines[i] == "" ) {continue} // skip empty lines
     if (/\s*\/\//.test(lines[i])) {continue} // skip comments
@@ -177,7 +198,9 @@ function assemble(lines) {
 
     if (line.length == 1 && !(line[0] in opDefs)) { // if it's one string
       if (line[0].endsWith(":")) { // ends with : means it is a label
-        labels[line[0].substr(0, line[0].length - 1)] = adr + 32768
+        let label = line[0].substr(0, line[0].length - 1)
+        labels[label] = adr + 32768
+        log.debug("addr 0x" +  adr.toString(16) + " new label '" + label + "'")
         continue
       } else if (line[0].match(/[a-z]/) && !line[0].startsWith("0")) { // label
         assembled[i] = line[0] + "\n"
@@ -235,26 +258,31 @@ function assemble(lines) {
       adr += args.length +1
     }
   }
+  log.info("↳ success, " + lines.length + " lines(s) parsed")
 
   var asm_string = assembled.join("") //join it all into one string
 
-  //2nd pass
+  log.info("2nd Pass...")
   for (var key in labels) {
     var bin = numToBin(labels[key].toString())
     asm_string = asm_string.replace( RegExp("\\b"+key+"\\b","gi") , bin)
   }
+  log.info("↳ success, " + Object.keys(labels).length + " label(s) replaced")
 
-  // 3rd check pass
+  log.info("3rd Pass...")
   var as_list = asm_string.split("\n")
 
-  for (var line of as_list) {
+  for (let i = 0; i < as_list.length; i++) {
+    let line = as_list[i]
     if (!   /^[0-1]{16}\n?$/.test(line) && line != "") {
-      asm_string = "error \n" + "'" + line + "'"
+      throw new AsmError(line, i)
     }
   }
+  log.info("↳ success, " + (as_list.length - 1) + " word(s) checked")
 
   size_bytes = (as_list.length - 1) * 2;
+  log.info("Output size: "+ size_bytes +" bytes")
   return asm_string
 }
 
-console.log("Assembler thread started")
+log.info("Assembler thread started")
