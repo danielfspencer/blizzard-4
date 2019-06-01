@@ -1,4 +1,4 @@
-if (typeof window === 'undefined') {  // if we are running under nodejs define performance.now
+if (typeof process !== 'undefined') {  // if we are running under nodejs define performance.now
   try {
     performance = { now : require('performance-now') }
 
@@ -12,9 +12,7 @@ if (typeof window === 'undefined') {  // if we are running under nodejs define p
     } else {  // normal node mode
       importScripts('compiler/libraries.js')
     }
-  } catch (e) {
-    throw e
-  }
+  } catch (e) {}
 } else {  // running in browser (the sane one)
   importScripts('libraries.js')
 }
