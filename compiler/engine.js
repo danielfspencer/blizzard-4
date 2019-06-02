@@ -17,6 +17,50 @@ if (typeof process !== 'undefined') {  // if we are running under nodejs define 
   importScripts('libraries.js')
 }
 
+let show_log_messages = true
+let debug = false
+let token_dump = []
+
+const data_type_size = {"int":1,"sint":1,"long":2,"slong":2,"float":2,"bool":1,"str":1,"array":4}
+const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys":"","array":"","return":""}
+
+onmessage = (msg) => {
+  switch(msg.data[0]) {
+    case "compile":
+      let result = ""
+      try {
+        let as_array = msg.data[1].split('\n')
+        result = compile(as_array, false)
+      } catch (error) {
+        if (error instanceof CompError) {
+          log.error(error.toString())
+        } else {
+          throw error
+        }
+      } finally {
+        postMessage(["result",result])
+      }
+      break
+    case "debug":
+      debug = msg.data[1]
+      break
+    case "bench":
+      try {
+        log.info(benchmark(msg.data[1]) + " lines/second")
+      } catch (error) {
+        if (error instanceof CompError) {
+          log.error("Benchmark could not be run because the standard library did not compile:")
+          log.error(error.toString())
+        } else {
+          throw error
+        }
+      }
+      break
+    default:
+      break
+  }
+}
+
 const log = {
   debug: (msg) => send_log(msg,"debug"),
   info: (msg) => send_log(msg,"info"),
@@ -38,20 +82,27 @@ function send_log(message, level) {
   postMessage(["log", level, text])
 }
 
-var show_log_messages = true
-var progress = 0
-var debug = false
-var token_dump = []
-
-const data_type_size = {"int":1,"sint":1,"long":2,"slong":2,"float":2,"bool":1,"str":1,"array":4}
-const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys":"","array":"","return":""}
-
 function CompError(message, line) {
   this.message = message
   this.line = line
   this.toString = () => {
     return "line " + this.line + ": \n" + this.message
   }
+}
+
+function init_vars() {
+  scope = "[root]"
+  free_ram = {"[root]":gen_free_ram_map(),"[global]":gen_free_ram_map()}
+  var_map = {"[root]":{},"[global]":{}}
+  arg_map = {}
+  name_type_map = {"[root]":{},"[global]":{}}
+  const_map = {}
+  return_map = {}
+  consts = []
+  func = {}
+  required = {}
+  max_allocated_ram_slots = 0
+  structures = {"if":0,"for":0,"while":0,"str":0,"expr_array":0}
 }
 
 function pad(string, width) {
@@ -165,58 +216,6 @@ function set_token(name, operation, exprs, line) {
   var add = {"name":operation,"type":"expression","arguments":{"expr1":exprs[0],"expr2":exprs[1]}}
   var set_var = {"name":"set","type":"command","arguments":{"expr":add,"name":name},"line":line}
   return set_var
-}
-
-onmessage = (msg) => {
-  switch(msg.data[0]) {
-    case "compile":
-      let result = ""
-      try {
-        let as_array = msg.data[1].split('\n')
-        result = compile(as_array, false)
-      } catch (error) {
-        if (error instanceof CompError) {
-          log.error(error.toString())
-        } else {
-          throw error
-        }
-      } finally {
-        postMessage(["result",result])
-      }
-      break
-    case "debug":
-      debug = msg.data[1]
-      break
-    case "bench":
-      try {
-        log.info(benchmark(msg.data[1]) + " lines/second")
-      } catch (error) {
-        if (error instanceof CompError) {
-          log.error("Benchmark could not be run because the standard library did not compile:")
-          log.error(error.toString())
-        } else {
-          throw error
-        }
-      }
-      break
-    default:
-      break
-  }
-}
-
-function init_vars() {
-  scope = "[root]"
-  free_ram = {"[root]":gen_free_ram_map(),"[global]":gen_free_ram_map()}
-  var_map = {"[root]":{},"[global]":{}}
-  arg_map = {}
-  name_type_map = {"[root]":{},"[global]":{}}
-  const_map = {}
-  return_map = {}
-  consts = []
-  func = {}
-  required = {}
-  max_allocated_ram_slots = 0
-  structures = {"if":0,"for":0,"while":0,"str":0,"expr_array":0}
 }
 
 function gen_free_ram_map() {
