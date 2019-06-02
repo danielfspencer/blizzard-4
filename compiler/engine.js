@@ -2191,13 +2191,13 @@ function translate(token, ctx_type) {
 
       var expr = translate(args["expr1"],ctx_type)
       prefix = expr[0]
-      expr_regs = expr[1]
+      var expr_regs = expr[1]
 
       var index = translate(args["expr2"],"int")
       if (index[2] != "int") {
         throw new CompError("Word selector index must be of type 'int'") //should also be static (ie. number token)
       }
-      if (index[1][0] > expr_regs.length) {
+      if (index[1][0] >= expr_regs.length) {
         throw new CompError("Index out of range")
       }
 
