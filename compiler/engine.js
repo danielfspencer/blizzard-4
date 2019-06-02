@@ -56,8 +56,6 @@ onmessage = (msg) => {
         }
       }
       break
-    default:
-      break
   }
 }
 
