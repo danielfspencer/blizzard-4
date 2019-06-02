@@ -2470,17 +2470,6 @@ function translate(token, ctx_type) {
       if (prefix_value_type[2] != "int") {
         throw new CompError("Pointers must be of type int, got '" + prefix_value_type[2] +"'")
       }
-      prefix.push.apply(prefix,prefix_value_type[0])
-
-      //write address to temp word
-      var address_int = get_temp_word()
-      prefix.push("write " + prefix_value_type[1] + " " + address_int[1])
-
-      var lookup_value = get_temp_word()
-      prefix.push("copy [" + address_int[1] + "] " + lookup_value[1])
-
-      registers = ["["+lookup_value[1]+"]"]
-      free_block(address_int[0])
 
       if (args["type_cast"] !== undefined) {
         type = args["type_cast"]
@@ -2489,6 +2478,35 @@ function translate(token, ctx_type) {
       } else {
         log.warn("No explicit cast or context-given type for pointer lookup, defaulting to 'int'")
         type = "int"
+      }
+
+      var size = data_type_size[type]
+      var temp_buffer = alloc_block(size)
+
+      // make pointer value available
+      prefix.push.apply(prefix,prefix_value_type[0])
+
+      // copy pointer value into temp ram word
+      var pointer_addr = get_temp_word()
+      prefix.push("write " + prefix_value_type[1] + " " + pointer_addr[1])
+
+      // lookup pointer value and copy into temp buffer
+      prefix.push("copy [" + pointer_addr[1] + "] ram." + temp_buffer[0])
+
+      // if the target type is more than one word, copy more words
+      if (size > 1) {
+        prefix.push("copy " + pointer_addr[1] + " alu.1")
+
+        for (var i = 1; i < size; i++) {
+          prefix.push("write " + i + " alu.2")
+          prefix.push("copy [alu.+] ram." + temp_buffer[i])
+        }
+      }
+
+      // output refisters are the values of the temp buffer
+      registers = []
+      for (var addr of temp_buffer) {
+        registers.push("[ram." + addr + "]")
       }
       break
 
