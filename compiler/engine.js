@@ -55,7 +55,6 @@ function CompError(message, line) {
 }
 
 function pad(string, width) {
- string = string + ''
  return string.length >= width ? string : new Array(width - string.length + 1).join("0") + string
 }
 
@@ -118,6 +117,7 @@ function benchmark(iterations) {
 
 function all_matches(pattern, string) {
   var list = []
+  let m
   do {
     m = pattern.exec(string)
     if (m) {
@@ -1438,7 +1438,7 @@ function translate(token, ctx_type) {
       if (args["value"][0] != "\"" || args["value"][args["value"].length-1] != "\"") {
         throw new CompError("Strings must be quoted")
       }
-      string = args["value"].slice(1,-1)
+      var string = args["value"].slice(1,-1)
 
       var id = gen_id("str")
       id = "str_" + id
@@ -2176,11 +2176,11 @@ function translate(token, ctx_type) {
 
       var expr1 = translate(args["expr1"],ctx_type)
       var expr1_prefix = expr1[0]
-      expr1_reg = expr1[1]
+      var expr1_reg = expr1[1]
       prefix = expr1_prefix
       var expr2 = translate(args["expr2"],ctx_type)
       var expr2_prefix = expr2[0]
-      expr2_reg = expr2[1]
+      var expr2_reg = expr2[1]
       prefix.push.apply(prefix,expr2_prefix)
       registers = expr1_reg
       registers.push.apply(registers,expr2_reg)
