@@ -314,6 +314,14 @@ function alloc_global_block(size) {
   return addrs
 }
 
+function free_global_block(addrs) {
+  var old_scope = scope
+  scope = "[global]"
+  free_block(addrs)
+  scope = old_scope
+}
+
+
 function check_datatype(type) {
   if (!(type in data_type_size)) {
     throw new CompError("Data type '" + type + "' unknown")
@@ -1207,6 +1215,10 @@ function translate(token, ctx_type) {
         free_block(var_map[scope][name])
         delete var_map[scope][name]
         delete name_type_map[scope][name]
+      } else if (name in var_map["[global]"]) {
+        free_global_block(var_map["[global]"][name])
+        delete var_map["[global]"][name]
+        delete name_type_map["[global]"][name]
       } else {
         throw new CompError("Can't free variable: '" + args["name"] + "' is undefined")
       }
