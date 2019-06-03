@@ -93,8 +93,8 @@ function handleMsg(data) {
 function compile() {
   if (!compiling) {
     $("#log").empty()
-    worker.postMessage(["compile",$("#in").val()])
     compiling = true
+    worker.postMessage(["compile",$("#in").val()])
   }
 }
 
