@@ -1,7 +1,57 @@
 #main {
   margin-left: auto;
   margin-right: auto;
-  width: 1260px;
+  width: 1500px;
+}
+
+.item,src {
+  margin-left: 19px;
+  display: block;
+}
+
+#log {
+  border: 1px solid #C0C0C0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 302px;
+  width: 397px;
+}
+
+.item {
+  white-space: pre-line;
+  font-family: robotomono;
+  font-size: 10pt;
+  border-bottom: 1px solid grey;
+  padding-bottom: 4px;
+  padding-top: 4px;
+  padding-left: 4px;
+  margin-left: 0px;
+}
+
+.debug {
+  opacity: 0.6;
+}
+
+.info {
+  background: #EAEAEA;
+}
+
+.warn {
+  background: #FFE271;
+}
+
+.error {
+  color: #FFFFFF;
+  background: #8C1E1E;
+}
+
+.img {
+  margin-top: 0px;
+  margin-right: 4px;
+  margin-left: -3px;
+  float: left;
+  width: 18px;
+  height: 18px;
 }
 
 form {

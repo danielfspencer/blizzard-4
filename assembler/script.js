@@ -15,6 +15,10 @@ $( document ).ready( () => { //connect all the butons to their actions!
     parent.postMessage(["menu-item-emu",$("#out").val(),true],"*")
   })
 
+  $("#debug").change(function() {
+    worker.postMessage(["debug",this.checked])
+  })
+
   $("#auto").change(function() {
     if(this.checked) {
       $("#in").on( "keyup", assemble)
@@ -65,18 +69,6 @@ $( document ).ready( () => { //connect all the butons to their actions!
   parent.child_page_loaded()
 })
 
-function assemble() {
-  if (!assembling) {
-    assembling = true
-    worker.postMessage(['assemble',$("#in").val()])
-  }
-}
-
-function set_input(string) {
-  $("#in").val(string)
-  assemble()
-}
-
 function handleMsg(data) {
   switch(data[0]) {
     case "result":
@@ -84,7 +76,27 @@ function handleMsg(data) {
       $("#out").val(data[1])
       break
     case "log":
-      console.log(data[1],data[2])
+      log(data[1],data[2])
       break
   }
+}
+
+function assemble() {
+  if (!assembling) {
+    $("#log").empty()
+    assembling = true
+    worker.postMessage(['assemble',$("#in").val()])
+  }
+}
+
+function log(level,msg) {
+  var first = "<div class='item "+level+"'><img class='img' src='../assets/icons/"+level+".svg'/><src>"
+  var second = "</src></div>"
+  $("#log").append(first+msg+second)
+  $("#log").scrollTop($("#log")[0].scrollHeight - $("#log").height())
+}
+
+function set_input(string) {
+  $("#in").val(string)
+  assemble()
 }
