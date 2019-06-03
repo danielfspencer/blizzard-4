@@ -1,0 +1,41 @@
+.item,src {
+  margin-left: 19px;
+  display: block;
+}
+
+.item {
+  white-space: pre-line;
+  font-family: robotomono;
+  font-size: 10pt;
+  border-bottom: 1px solid grey;
+  padding-bottom: 4px;
+  padding-top: 4px;
+  padding-left: 4px;
+  margin-left: 0px;
+}
+
+.debug {
+  opacity: 0.6;
+}
+
+.info {
+  background: #EAEAEA;
+}
+
+.warn {
+  background: #FFE271;
+}
+
+.error {
+  color: #FFFFFF;
+  background: #8C1E1E;
+}
+
+.img {
+  margin-top: 0px;
+  margin-right: 4px;
+  margin-left: -3px;
+  float: left;
+  width: 18px;
+  height: 18px;
+}
