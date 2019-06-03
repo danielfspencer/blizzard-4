@@ -2856,7 +2856,7 @@ function compile(input, nested) {
 
     let ram_message = "RAM use: " + ram_percent + "% (" + max_allocated_ram_slots + "/1023 words)"
 
-    if (typeof window !== 'undefined') { // if we are running in a browser not nodejs
+    if (typeof process === 'undefined') { // if we are running in a browser not nodejs
       ram_message += "<progress value="+max_allocated_ram_slots+" max=\"1023\" class=\"ram-bar\"></progress>"
     }
     log.info(ram_message)
