@@ -1,5 +1,3 @@
-let run_when_assembled = false
-let target_clock_speed = 100000
 let assembling = false
 
 $( document ).ready( () => { //connect all the butons to their actions!
@@ -74,10 +72,8 @@ function assemble() {
   }
 }
 
-function set_input([string, shouldRun, clock_speed]) {
+function set_input(string) {
   $("#in").val(string)
-  run_when_assembled = shouldRun
-  target_clock_speed = clock_speed
   assemble()
 }
 
@@ -85,17 +81,7 @@ function handleMsg(data) {
   switch(data[0]) {
     case "result":
       assembling = false
-      let result = data[1]
-
-      if (run_when_assembled) {
-        if (result.startsWith("error")) {
-          $("#out").val(result)
-        } else {
-          parent.postMessage(["menu-item-emu", result, true, target_clock_speed],"*")
-        }
-      } else {
-        $("#out").val(result)
-      }
+      $("#out").val(data[1])
       break
     case "log":
       console.log(data[1],data[2])

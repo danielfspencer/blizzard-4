@@ -1,7 +1,5 @@
 let realtime = true
 let compiling = false
-let assemble_when_compiled = false
-let target_clock_speed = 0
 
 $( document ).ready( () => {
   $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
@@ -50,7 +48,10 @@ $( document ).ready( () => {
   })
 
   $("#run").click( () => {
-    parent.postMessage(["menu-item-asm",$("#out").val(),true],"*")
+    let asm = $("#out").val()
+    assemble(asm, (bin) => {
+      switch_emu(bin)
+    }, () => switch_asm(asm))
   })
 
   $("#in").on( "keyup", (event) => {
@@ -81,13 +82,7 @@ function handleMsg(data) {
       break
     case "result":
       compiling = false
-      if (assemble_when_compiled) {
-        if (data[1] !== undefined) {
-        parent.postMessage(["menu-item-asm", data[1], true, target_clock_speed],"*")
-        }
-      } else {
-        $("#out").val(data[1])
-      }
+      $("#out").val(data[1])
       break
     case "log":
       log(data[1],data[2])
@@ -103,6 +98,29 @@ function compile() {
   }
 }
 
+function assemble(input, success, fail) {
+  let assembler = new Worker('../assembler/engine.js')
+  assembler.onmessage = (msg) => {
+    let data = msg.data
+    if (data[0] === 'result') {
+      if (data[1] === '') {
+        fail()
+      } else {
+        success(data[1])
+      }
+    }
+  }
+  assembler.postMessage(['assemble',input])
+}
+
+function switch_emu(input) {
+  parent.postMessage(["menu-item-emu", input, true],"*")
+}
+
+function switch_asm(input) {
+  parent.postMessage(["menu-item-asm", input],"*")
+}
+
 function log(level,msg) {
   var first = "<div class='item "+level+"'><img class='img' src='../assets/icons/"+level+".svg'/><src>"
   var second = "</src></div>"
@@ -110,11 +128,7 @@ function log(level,msg) {
   $("#log").scrollTop($("#log")[0].scrollHeight - $("#log").height())
 }
 
-function set_input([string, shouldAssemble, clock_speed]) {
-  document.getElementById("in").value = string
-  if (shouldAssemble) {
-  assemble_when_compiled = true;
-  target_clock_speed = clock_speed
-  }
+function set_input(string) {
+  $("#in").val(string)
   compile()
 }
