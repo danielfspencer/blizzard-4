@@ -1883,6 +1883,6 @@ var libs = {
 
   "sys.get_lib_version":[
     "def sys.get_lib_version",
-    "  return \"0.44.1\"",
+    "  return \"0.45.0\"",
   ]
 }
