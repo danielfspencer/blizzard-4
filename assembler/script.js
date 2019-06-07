@@ -61,8 +61,8 @@ $( document ).ready( () => { //connect all the butons to their actions!
   }
 
   worker.onerror = (e) => {
-    msg = "Internal assembler error, line " + e.lineno + ": <br>" + e.message
-    console.error(msg)
+    msg = "Internal assembler error, line " + e.lineno + ":\n" + e.message
+    log("error",msg)
   }
 
   parent.input_data = set_input
