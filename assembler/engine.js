@@ -284,3 +284,5 @@ function assemble(lines) {
   log.info("Output size: "+ size_bytes +" bytes")
   return asm_string
 }
+
+log.info("Assembler thread started")

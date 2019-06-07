@@ -1,7 +1,15 @@
 #main {
   margin-left: auto;
   margin-right: auto;
-  width: 1260px;
+  width: 1500px;
+}
+
+#log {
+  border: 1px solid #C0C0C0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 324px;
+  width: 397px;
 }
 
 form {
