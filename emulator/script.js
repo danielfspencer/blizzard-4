@@ -1,21 +1,19 @@
 $(document).ready( () => {
+  canvas = document.getElementById("screen")
+  canvas_context = canvas.getContext("2d", { alpha: false })
+  storage_get_key("emulator-display-colour", set_screen_theme, "white-black")
+
   worker = new Worker("engine.js")
   worker.onmessage = (e) => {
     handle_message(e.data)
   }
 
-  document.addEventListener("keydown", on_key_down)
-  document.addEventListener("keyup", on_key_up)
+  document.addEventListener("keydown", (event) => { on_key_event(event, "keydown") })
+  document.addEventListener("keyup", (event) => { on_key_event(event, "keyup") })
 
   vram_changes_buffer = []
-  pixel_on_colour = 255
-  pixel_off_colour = 0
   front_panel_info = {}
-
   updates_running = false
-
-  canvas = document.getElementById("screen")
-  canvas_context = canvas.getContext("2d", { alpha: false })
 
   led_strips = {
     "alu1_leds":null,
@@ -107,34 +105,47 @@ $(document).ready( () => {
   parent.child_page_loaded()
 })
 
+function set_screen_theme(theme) {
+  let mapping = {
+    "white-black": [[255,255,255],[0,0,0]],
+    "white-grey":  [[255,255,255],[21,21,21]],
+    "black-white": [[0,0,0],[250,250,250]],
+    "green-black": [[58,181,58],[0,0,0]],
+    "green-grey":  [[58,181,58],[21,21,21]]
+  }
+  pixel_on_colours = mapping[theme][0]
+  pixel_off_colours = mapping[theme][1]
+  clear_screen()
+}
+
 function set_rom([string, shouldRun, clock_speed]) {
-    if (clock_speed !== undefined) {
-      $("#clock-target").val(clock_speed)
-      worker.postMessage(["set_clock",clock_speed])
-    }
-    worker.postMessage(["set_rom",string])
-    if (shouldRun) {
-        worker.postMessage(["start"])
-    }
+  if (clock_speed !== undefined) {
+    $("#clock-target").val(clock_speed)
+    worker.postMessage(["set_clock",clock_speed])
+  }
+  worker.postMessage(["set_rom",string])
+  if (shouldRun) {
+    worker.postMessage(["start"])
+  }
 }
 
 function send_user_input(event){
-    var inputs = [$("#usr1_input").val(),$("#usr2_input").val(),$("#usr3_input").val()]
-    var formatted_inputs = [0,0,0]
-    for (var i = 0; i < 3; i++) {
-      var integer = parseInt(inputs[i])
-      if (integer > 65535) {
-          integer = 65535
-      } else if (integer < 0) {
-          integer = 0
-      }
-      formatted_inputs[i] = integer
+  var inputs = [$("#usr1_input").val(),$("#usr2_input").val(),$("#usr3_input").val()]
+  var formatted_inputs = [0,0,0]
+  for (var i = 0; i < 3; i++) {
+    var integer = parseInt(inputs[i])
+    if (integer > 65535) {
+      integer = 65535
+    } else if (integer < 0) {
+      integer = 0
     }
+    formatted_inputs[i] = integer
+  }
 
-    display_number_on_leds("inp1_leds", formatted_inputs[0])
-    display_number_on_leds("inp2_leds", formatted_inputs[1])
-    display_number_on_leds("inp3_leds", formatted_inputs[2])
-    worker.postMessage(["user_input_update",formatted_inputs])
+  display_number_on_leds("inp1_leds", formatted_inputs[0])
+  display_number_on_leds("inp2_leds", formatted_inputs[1])
+  display_number_on_leds("inp3_leds", formatted_inputs[2])
+  worker.postMessage(["user_input_update",formatted_inputs])
 }
 
 function handle_message(message) {
@@ -208,7 +219,9 @@ function benchmark() {
 }
 
 function clear_screen() {
-  canvas_context.clearRect(0,0,128,128)
+  let [red, green, blue] = pixel_off_colours
+  canvas_context.fillStyle = "rgb("+ red +","+ green +","+ blue +")"
+  canvas_context.fillRect(0, 0, 128, 128)
 }
 
 function get_led_references(id) {
@@ -405,60 +418,39 @@ function draw_screen_updates() {
       var mask = 1 << (15 - (i/4))
 
       if ((word & mask) != 0) {
-        value = pixel_on_colour
+        var [red, green, blue] = pixel_on_colours
       } else {
-        value = pixel_off_colour
+        var [red, green, blue] = pixel_off_colours
       }
-      img_data.data[i]     = value
-      img_data.data[i + 1] = value
-      img_data.data[i + 2] = value
+      img_data.data[i]     = red
+      img_data.data[i + 1] = green
+      img_data.data[i + 2] = blue
       img_data.data[i + 3] = 255
     }
     canvas_context.putImageData(img_data,x,y)
   }
 }
 
-
-function clear_screen() {
-  canvas_context.clearRect(0,0,128,128)
-}
-
-function on_key_down(event) {
-  if (updates_running) {
-    var key_name = event.code
-    var scancodes = keycode_to_scancode[key_name]
-
-    if (event.target != document.body) {
-      return
-    }
-
-    event.preventDefault()
-
-    if (scancodes === undefined) {
-      console.warn("Can't find make code for key '" + key_name + "'")
-    } else {
-      var codes = scancodes[0]
-      worker.postMessage(["key_code",codes])
-    }
+function on_key_event(event, mode) {
+  if (!updates_running || event.target !== document.body) {
+    return
   }
-}
 
-function on_key_up(event) {
-  if (updates_running) {
-    var key_name = event.code
-    var scancodes = keycode_to_scancode[key_name]
+  event.preventDefault()
 
-    if (event.target != document.body) {
-      return
+  var key_name = event.code
+  var scancodes = keycode_to_scancode[key_name]
+
+  if (scancodes === undefined) {
+    console.warn("Can't find scancodes for key '" + key_name + "'")
+  } else {
+    var codes = []
+
+    if (mode === "keydown") {
+      codes = scancodes[0]
+    } else if (mode === "keyup") {
+      codes = scancodes[1]
     }
-
-    event.preventDefault()
-
-    if (scancodes === undefined) {
-      console.warn("Can't find break code for key '" + key_name + "'")
-    } else {
-      var codes = scancodes[1]
-      worker.postMessage(["key_code",codes])
-    }
+    worker.postMessage(["key_code",codes])
   }
 }

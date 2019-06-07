@@ -1,52 +1,51 @@
 #content {
-    max-width: 800px;
-    margin: 0 auto;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 body, html {
-    overflow-y: auto;
+  overflow-y: auto;
 }
 
 .entry {
-    width: 100%;
-    clear: both;
-    display: table;
+  width: 100%;
+  clear: both;
+  display: table;
 }
 
 .run {
-    background-color: #607DB8;
-    color: #fff;
-    margin-bottom: 5px;
+  background-color: #607DB8;
+  color: #fff;
+  margin-bottom: 5px;
 }
 
 h3 {
-    margin: 5px 0 10px 0;
+  margin: 5px 0 10px 0;
 }
 
 .text-container {
-    float: left;
-    width: 60%;
-
+  float: left;
+  width: 60%;
 }
 
 .text-box {
-    margin-right: 14px;
+  margin-right: 14px;
 }
 
 .img-container {
-    float: left;
-    width: 20%;
+  float: left;
+  width: 20%;
 }
 
 .img-box  {
-    margin-right: 14px;
+  margin-right: 14px;
 }
 
 .img-box > img {
-    width: 100%;
+  width: 100%;
 }
 
 .button-container {
-    float: left;
-    width: 20%;
+  float: left;
+  width: 20%;
 }

@@ -1,56 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" type="text/css" href="../assets/lib.css"/>
-    <link rel="stylesheet" type="text/css" href="../assets/jquery-linedtextarea.css"/>
-    <link rel="stylesheet" type="text/css" href="style.css"/>
-    <script src="../assets/jquery.min.js"></script>
-    <script src="../assets/jquery-linedtextarea.js"></script>
-    <script src="../assets/lib.js"></script>
-    <script src="script.js"></script>
-    <script src="libraries.js"></script>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../assets/lib.css"/>
+  <link rel="stylesheet" type="text/css" href="../assets/log.css"/>
+  <link rel="stylesheet" type="text/css" href="../assets/jquery-linedtextarea.css"/>
+  <link rel="stylesheet" type="text/css" href="style.css"/>
+  <script src="../assets/jquery.min.js"></script>
+  <script src="../assets/jquery-linedtextarea.js"></script>
+  <script src="../assets/lib.js"></script>
+  <script src="script.js"></script>
+  <script src="libraries.js"></script>
 </head>
 <body>
-    <script src="../assets/set_theme.js"></script>
+  <script src="../assets/set_theme.js"></script>
 
-    <div id="main">
+  <div id="main">
 
-        <div class="card">
-            <div style="margin-bottom: 4px;"><div class="title" style="display: inline;">In (high-level)</div><input style="display: inline;" type="text" id="name" placeholder="program name"></div>
-            <form><textarea spellcheck="false" class="lined-dec" style="width: 490px; height: 415px;" id="in"></textarea></form>
-            <div class="button" id="load"><input type="file" id="load_in"/></div>
-        </div>
-
-        <div style="float: left">
-            <div class="card" style="float: none;">
-                <div class="button" id="cmp">Compile</div>
-                <progress id="progress" max=100 value=0></progress>
-            </div>
-
-            <div class="card" style="float: none; margin-top: 8px;">
-                <div class="title">Log</div>
-                <div id="log"></div>
-            </div>
-
-            <div class="card" style="float: none; margin-top: 8px; height: 46px">
-                <div id="toggles">
-                    <div class="paper-toggle"><input id="auto" class="switch" type="checkbox" checked/><label for="auto">Realtime</label></div>
-                    <div class="paper-toggle"><input id="debug" class="switch" type="checkbox"/><label for="debug">Debug Mode</label></div>
-                </div>
-                <div class="button" id="bench">Benchmark</div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div style="margin-bottom: 4px;"><div class="title" style="display: inline;">Out (assembly)</div></div>
-            <form><textarea spellcheck="false" class="lined-dec" style="width: 490px; height: 415px;" id="out"></textarea></form>
-            <div id="two-button">
-                <div class="button" id="assemble">Assemble</div>
-                <div class="button" id="run">run</div>
-            </div>
-        </div>
+    <div class="card">
+      <div style="margin-bottom: 4px;"><div class="title" style="display: inline;">In (high-level)</div><input style="display: inline;" type="text" id="name" placeholder="program name"></div>
+      <form><textarea spellcheck="false" class="lined-dec" style="width: 490px; height: 415px;" id="in"></textarea></form>
+      <div class="button" id="load"><input type="file" id="load_in"/></div>
     </div>
+
+    <div style="float: left">
+      <div class="card" style="float: none;">
+        <div class="button" id="cmp">Compile</div>
+        <progress id="progress" max=100 value=0></progress>
+      </div>
+
+      <div class="card" style="float: none; margin-top: 8px;">
+        <div class="title">Log</div>
+        <div id="log"></div>
+      </div>
+
+      <div class="card" style="float: none; margin-top: 8px; height: 46px">
+        <div id="toggles">
+          <div class="paper-toggle"><input id="auto" class="switch" type="checkbox" checked/><label for="auto">Realtime</label></div>
+          <div class="paper-toggle"><input id="debug" class="switch" type="checkbox"/><label for="debug">Debug Mode</label></div>
+        </div>
+        <div class="button" id="bench">Benchmark</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom: 4px;"><div class="title" style="display: inline;">Out (assembly)</div></div>
+      <form><textarea spellcheck="false" class="lined-dec" style="width: 490px; height: 415px;" id="out"></textarea></form>
+      <div id="two-button">
+        <div class="button" id="assemble">Assemble</div>
+        <div class="button" id="run">run</div>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>

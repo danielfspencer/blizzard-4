@@ -21,7 +21,7 @@ function init_memory() {
   read_bus = 0
 
   //control unit registers
-  program_counter = 0
+  program_counter = 32768  // 1st word of ROM
   command_word = 0
   control_mode = 0
   args_remaining = 0
@@ -72,7 +72,7 @@ function init_emulator() {
   vram_addresses_changed = {}
   vram_changes_buffer = []
 
-  timer_register_zeroing_offset = 0
+  cycle_count_when_timer_last_reset = 0
 
   init_activity_indicators()
   init_buffered_instructions()
@@ -81,9 +81,7 @@ function init_emulator() {
 function init_buffered_instructions() {
   buffered_instructions = {
     "increment_mode": false,
-    "decrement_arg_counter": false,
-    "clock_stop": false,
-    "increment_frame_no": false
+    "decrement_arg_counter": false
   }
 }
 
@@ -132,19 +130,16 @@ const execute_microcode = [
   [0,1,0,0,0,0,0,0,1,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,1,0,0,0,0,0,1],
-  [0,0,0,0,0,1,0,0,0,0,0,1],
-  [0,0,1,0,1,0,0,0,0,0,1,0],
+  [0,0,0,0,1,1,0,0,0,0,0,1],
+  [0,0,1,0,0,0,0,0,0,0,1,0],
   [0,0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,1,0,0,1,0,1],
   [0,0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,0,1,0,1,0,1]
 ]
 
-onmessage = function(event) {
-  handle_message(event.data)
-}
-
-function handle_message(message) {
+onmessage = (event) => {
+  var message = event.data
   switch (message[0]) {
     case "start":
       start()
@@ -304,16 +299,18 @@ function vram_change(address, new_data) {
 }
 
 function get_timer_value() {
-  var value = (performance.now() - timer_register_zeroing_offset) * 8.192
+  let cycles = total_cycles - cycle_count_when_timer_last_reset
+  let time_sec = cycles / actual_cycles_per_second
+  let value = time_sec * 8192   // 8192 counts per second
 
-  var low_word = value & 0xffff
-  var high_word = (value >> 16) & 0xffff
+  let low_word = value & 0xffff
+  let high_word = (value >> 16) & 0xffff
 
   return [low_word,high_word]
 }
 
 function reset_timer() {
-  timer_register_zeroing_offset = performance.now()
+  cycle_count_when_timer_last_reset = total_cycles
 }
 
 function start() {
@@ -448,18 +445,19 @@ function simulate_effect_of_read_bus_change() {
       switch (frame_offset_selector) {
         case 0:   //frame below
           address += (frame_number - 1) * 1024
-          activity_indicators["ram_frame_offset"] = 1
+          activity_indicators["ram_frame_offset"] = 2
           break
         case 1:   //current frame
           address += frame_number * 1024
-          activity_indicators["ram_frame_offset"] = 2
+          activity_indicators["ram_frame_offset"] = 4
           break
         case 2:   //frame above
           address += (frame_number + 1) * 1024
-          activity_indicators["ram_frame_offset"] = 4
+          activity_indicators["ram_frame_offset"] = 8
           break
-        default:
-          halt_error("invalid frame offset requested")
+        case 3:  //top frame
+          address += 15 * 1024
+          activity_indicators["ram_frame_offset"] = 1
           break
       }
 
@@ -609,18 +607,19 @@ function simulate_effect_of_write_bus_change() {
       switch (frame_offset_selector) {
         case 0:   //frame below
           address += (frame_number - 1) * 1024
-          activity_indicators["ram_frame_offset"] = 1
+          activity_indicators["ram_frame_offset"] = 2
           break
         case 1:   //current frame
           address += frame_number * 1024
-          activity_indicators["ram_frame_offset"] = 2
+          activity_indicators["ram_frame_offset"] = 4
           break
         case 2:   //frame above
           address += (frame_number + 1) * 1024
-          activity_indicators["ram_frame_offset"] = 4
+          activity_indicators["ram_frame_offset"] = 8
           break
-        default:
-          halt_error("invalid frame offset requested")
+        case 3:  //top frame
+          address += 15 * 1024
+          activity_indicators["ram_frame_offset"] = 1
           break
       }
 
@@ -777,20 +776,6 @@ function run_buffered_instructions() {
     args_remaining--
   }
 
-  if (buffered_instructions["clock_stop"]) {
-    debug && console.debug("clock_stop")
-    stop()
-  }
-
-  if (buffered_instructions["increment_frame_no"]) {
-    debug && console.debug("increment_frame_no")
-    if (frame_number < 15) {
-      frame_number++
-    } else {
-      frame_number = 0
-    }
-  }
-
   init_buffered_instructions() //this sets them all to false because we are finished
 }
 
@@ -809,7 +794,7 @@ function arg1_to_data_bus() {
 
 function arg2_to_pc() {
   debug && console.debug("arg2_to_pc")
-  program_counter = arg_regs[1] & 0b0111111111111111
+  program_counter = arg_regs[1] & 0xffff
 }
 
 function arg2_to_write_bus() {
@@ -860,6 +845,7 @@ function increment_mode() {
 function increment_pc() {
   debug && console.debug("increment_pc")
   program_counter++
+  program_counter = program_counter & 0xffff
 }
 
 function decrement_arg_counter() {
@@ -868,13 +854,13 @@ function decrement_arg_counter() {
 }
 
 function clock_stop() {
-  debug && console.debug("queue: clock_stop")
-  buffered_instructions["clock_stop"] = true
+  debug && console.debug("clock_stop")
+  stop()
 }
 
 function pc_to_data_bus() {
   debug && console.debug("pc_to_data_bus")
-  data_bus = program_counter + 32768
+  data_bus = program_counter
 }
 
 function data_bus_to_cmd_reg() {
@@ -885,7 +871,7 @@ function data_bus_to_cmd_reg() {
 
 function pc_to_read_bus() {
   debug && console.debug("pc_to_read_bus")
-  read_bus = program_counter + 32768
+  read_bus = program_counter
 }
 
 function ram_caller_pointer_to_read_bus() {
@@ -910,11 +896,15 @@ function decrement_frame_no() {
 }
 
 function increment_frame_no() {
-  debug && console.debug("queue: increment_frame_no")
-  buffered_instructions["increment_frame_no"]  = true
+  debug && console.debug("increment_frame_no")
+  if (frame_number < 15) {
+    frame_number++
+  } else {
+    frame_number = 0
+  }
 }
 
 function data_bus_to_pc() {
   debug && console.debug("data_bus_to_pc")
-  program_counter = data_bus & 0b0111111111111111
+  program_counter = data_bus & 0xffff
 }

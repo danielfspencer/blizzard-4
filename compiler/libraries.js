@@ -1101,38 +1101,6 @@ var libs = {
    "",
    "  sys.print_long(abs_num,x,y,print_all_places)"
   ],
-  "sys.global.addr_calc": [
-    "def sys.global.addr_calc",
-    "  include sys.global.frame_offsets",
-    "  {write sys.global.frame_offsets alu.1}",
-    "  {write [ctl.framenum] alu.2}",
-    "  {copy [alu.+] ram.1022}",
-    "  {copy ram.1022 alu.1}",
-    "  {copy ram.1021 alu.2}",
-    "  {write [alu.+] ram.1022}",
-    "  {copy ram.1022 alu.1}"
-  ],
-  "sys.global.frame_offsets": [
-    "///",
-    "sys.global.frame_offsets:",
-    "0",
-    "0",
-    "1024",
-    "2048",
-    "3072",
-    "4096",
-    "5120",
-    "6144",
-    "7168",
-    "8192",
-    "9216",
-    "10240",
-    "11264",
-    "12288",
-    "13312",
-    "14336",
-    "///"
-  ],
 
   "sys.kbd.scancode_to_charcode": [
     "def sys.kbd.scancode_to_charcode",
@@ -1911,5 +1879,10 @@ var libs = {
     "0b0000000000000010",
     "0b0000000000000001",
     "///"
+  ],
+
+  "sys.get_lib_version":[
+    "def sys.get_lib_version",
+    "  return \"0.45.0\"",
   ]
 }

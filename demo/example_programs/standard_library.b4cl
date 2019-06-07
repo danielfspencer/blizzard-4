@@ -7,11 +7,9 @@ def rom_to_vram
     vram_addr = 6144
     for var int col; col < 8; col++
       for var int row; row < 128; row++
-        {copy [ram.0] [ram.1]}
+        *vram_addr = *rom_addr
         rom_addr++
         vram_addr += 8
       vram_addr -= 1023
-  free rom_addr
-  free vram_addr
 
 rom_to_vram()
