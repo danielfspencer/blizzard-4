@@ -38,7 +38,8 @@ onmessage = (msg) => {
           throw error
         }
       } finally {
-        postMessage(["result",result])
+        let ast = JSON.stringify(token_dump, null, 2)
+        postMessage(["result", result, ast])
       }
       break
     case "debug":

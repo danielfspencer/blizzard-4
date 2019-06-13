@@ -1,4 +1,4 @@
-var libs = {
+const libs = {
   "sys.int_multiply": [
     "def sys.int_multiply",
     "  arg int a",
