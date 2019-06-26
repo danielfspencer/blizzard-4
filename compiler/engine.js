@@ -819,7 +819,9 @@ function translate(token, ctx_type) {
     case "global_alloc":     //global [name] [type] <expr>
       check_datatype(args["type"])
       if (args["type"] == "array") {
-        throw new CompError("Not implemented")
+        token["name"] = "global_array_alloc"
+        result = translate(token)
+        break
       }
 
       if (!var_name_available(args["name"])) {
@@ -939,6 +941,43 @@ function translate(token, ctx_type) {
       result.push("call func_sys.rom_to_ram_copy_length")
       break
 
+    case "global_array_alloc":
+      if (!var_name_available(args["name"])) {
+        throw new CompError("Variable name: '" + args["name"] + "' is not available")
+      }
+
+      var array_information = translate(args["expr"])[1]
+
+      var base_addr = array_information[0]
+      var max_length = array_information[1]
+      var item_size = array_information[2]
+      var length = array_information[3]
+
+      name_type_map["[global]"][args["name"]] = "array"
+      name_type_map["[global]"][args["name"]+".contained_type"] = name_type_map["[root]"][base_addr]
+      name_type_map["[global]"][args["name"]+".contained_size"] = item_size
+
+      log.debug("global_array alloc type '" + name_type_map["[global]"][base_addr] + "' length " + max_length)
+
+      var header_memory = alloc_global_block(4)
+      var array_memory = alloc_global_block(max_length * item_size)
+
+      var_map["[global]"][args["name"]] = header_memory.slice()
+      result.push("write ram^." + array_memory[0] + " ram^."+header_memory.shift())
+      result.push("write " + max_length + " ram^."+header_memory.shift())
+      result.push("write " + item_size + " ram^."+header_memory.shift())
+      result.push("write " + length + " ram^."+header_memory.shift())
+
+      var_map["[global]"][args["name"]+".block"] = array_memory.slice()
+
+      //call function to copy inital values to array
+      load_lib("sys.rom_to_global_ram_copy")
+      result.push("write "+ base_addr +" ram+.0")
+      result.push("write ram."+ array_memory[0] +" ram+.1")
+      result.push("write "+ (length * item_size).toString() + " ram+.2")
+      result.push("call func_sys.rom_to_global_ram_copy_length")
+      break
+
     case "set":             //[name] = [expr]
       if (args["name"] in var_map[scope]) {
         var dst_regs = var_map[scope][args["name"]]
@@ -1014,22 +1053,38 @@ function translate(token, ctx_type) {
       break
 
     case "array_set":
+      // TODO make work with global arrays
       var array_name = args["name"]
-      var index = args["index_expr"]
+      var index_expr = args["index_expr"]
       var expr = args["expr"]
 
-      var prefix_value_type = translate(index,"int")
+      var prefix_value_type = translate(index_expr,"int")
       if (prefix_value_type[2] != "int") {
         throw new CompError("Array indexes must be of type 'int'")
       }
       result.push.apply(result,prefix_value_type[0])
 
-      var array_information = var_map[scope][array_name]
+      var scope_name
+      var ram_prefix
+      if (array_name in var_map[scope]) {
+        // this is a local array
+        scope_name = scope
+        ram_prefix = "ram."
+      } else if (array_name in var_map["[global]"]) {
+        // this is a global array
+        scope_name = "[global]"
+        ram_prefix = "ram^."
+      } else {
+        throw new CompError("Cannot find array named '" + array_name + "'")
+      }
+
+      var array_information = var_map[scope_name][array_name]
+      var array_type = name_type_map[scope_name][array_name+".contained_type"]
 
       var index = prefix_value_type[1]
-      var base_addr = "[ram."+array_information[0]+"]"
-      var item_size_as_register = "[ram."+array_information[2]+"]"
-      var item_size_as_number = name_type_map[scope][array_name+".contained_size"]
+      var base_addr = "["+ram_prefix+array_information[0]+"]"
+      var item_size_as_register = "["+ram_prefix+array_information[2]+"]"
+      var item_size_as_number = name_type_map[scope_name][array_name+".contained_size"]
 
       //calculate address of the specified index
       load_lib("sys.array_pointer")
@@ -1043,7 +1098,6 @@ function translate(token, ctx_type) {
       var target_addr = "["+temp_var[1]+"]"
 
       //evaluate the expression and put the result in a buffer area
-      var array_type = name_type_map[scope][array_name+".contained_type"]
       var prefix_value_type = translate(expr, array_type)
       if (prefix_value_type[2] != array_type) {
         throw new CompError("Array expected type '" +array_type+ "', got '" + prefix_value_type[2] + "'")
@@ -1059,11 +1113,18 @@ function translate(token, ctx_type) {
       var source_addr = "ram."+memory[0]
 
       //copy value of expr into correct position in array
-      load_lib("sys.ram_to_ram_copy")
       result.push("write "+source_addr+" ram+.0")
       result.push("write "+target_addr+" ram+.1")
       result.push("write "+item_size_as_register+ " ram+.2")
-      result.push("call func_sys.ram_to_ram_copy_length")
+
+      // if this is a global array we need a different copy function
+      if (scope_name === "[global]") {
+        load_lib("sys.ram_to_global_ram_copy")
+        result.push("call func_sys.ram_to_global_ram_copy_length")
+      } else {
+        load_lib("sys.ram_to_ram_copy")
+        result.push("call func_sys.ram_to_ram_copy_length")
+      }
 
       free_block(temp_var[0])
       free_block(memory)
@@ -1073,55 +1134,48 @@ function translate(token, ctx_type) {
       var array_name = args["name"]
       var operation = args["operation"]
 
+      var scope_name
+      var ram_prefix
+      if (array_name in var_map[scope]) {
+        // this is a local array
+        scope_name = scope
+        ram_prefix = "ram."
+      } else if (array_name in var_map["[global]"]) {
+        // this is a global array
+        scope_name = "[global]"
+        ram_prefix = "ram^."
+      } else {
+        throw new CompError("Cannot find array named '" + array_name + "'")
+      }
+
+      var array_information = var_map[scope_name][array_name]
+      var type = name_type_map[scope_name][array_name+".contained_type"]
+      var item_size_as_number = name_type_map[scope_name][array_name+".contained_size"]
+
       if (operation == "append") {
         var expr = args["exprs"][0]
         //append just puts the given value at the current end of the list, then adds 1 to the size of the list
-        var array_information = var_map[scope][array_name]
 
-        var index = "[ram."+array_information[3]+"]"
-        var base_addr = "[ram."+array_information[0]+"]"
-        var item_size_as_register = "[ram."+array_information[2]+"]"
-        var item_size_as_number = name_type_map[scope][array_name+".contained_size"]
+        var index = "["+ram_prefix+array_information[3]+"]"
+        var base_addr = "["+ram_prefix+array_information[0]+"]"
+        var item_size_as_register = "["+ram_prefix+array_information[2]+"]"
 
-        //calculate address of the specified index
-        load_lib("sys.array_pointer")
-        result.push("write "+index+" ram+.0")
-        result.push("write "+item_size_as_register+" ram+.1")
-        result.push("write "+base_addr+" ram+.2")
-        result.push("call func_sys.array_pointer_base_addr") //output is in ram+.3
-
-        var temp_var = get_temp_word()
-        result.push("write [ram+.3] " + temp_var[1])
-        var target_addr = "["+temp_var[1]+"]"
-
-        //evaluate the expression and put the result in a buffer area
-        var array_type = name_type_map[scope][array_name+".contained_type"]
-        var prefix_value_type = translate(expr, array_type)
-        if (prefix_value_type[2] != array_type) {
-          throw new CompError("Array expected type '" +array_type+ "', got '" + prefix_value_type[2] + "'")
-        }
-        result.push.apply(result,prefix_value_type[0])
-        var memory = alloc_block(item_size_as_number)
-        var buffer = memory.slice()
-
-        for (var register of prefix_value_type[1]) {
-          result.push("write " + register + " ram." + buffer.shift())
-        }
-
-        var source_addr = "ram."+memory[0]
-
-        //copy value of expr into correct position in array
-        load_lib("sys.ram_to_ram_copy")
-        result.push("write "+source_addr+" ram+.0")
-        result.push("write "+target_addr+" ram+.1")
-        result.push("write "+item_size_as_register+ " ram+.2")
-        result.push("call func_sys.ram_to_ram_copy_length")
-
-        free_block(temp_var[0])
-        free_block(memory)
+        //put item at the specified index by evaluating set token
+        var token = {"name":"array_set","type":"command","arguments":{
+          "name": array_name,
+          "index_expr": {
+            "name":"array_expression",
+            "type":"expression",
+            "arguments":{
+              "name":array_name,
+              "operation":"len"}
+            },
+          "expr": args["exprs"][0]
+        }}
+        result.push.apply(result,translate(token))
 
         //increment the curret length of the array to reflect the change
-        var current_index = "ram."+array_information[3]+""
+        var current_index = ram_prefix + array_information[3]
         result.push("write ["+ current_index +"] alu.1")
         result.push("write 1 alu.2")
         result.push("write [alu.+] " + current_index)
@@ -1137,13 +1191,10 @@ function translate(token, ctx_type) {
         }
         result.push.apply(result,prefix_value_type[0])
 
-        var array_information = var_map[scope][array_name]
-
         var index = prefix_value_type[1]
-        var base_addr = "[ram."+array_information[0]+"]"
-        var item_size_as_register = "[ram."+array_information[2]+"]"
-        var item_size_as_number = name_type_map[scope][array_name+".contained_size"]
-        var current_length = "[ram."+array_information[3]+"]"
+        var base_addr = "["+ram_prefix+array_information[0]+"]"
+        var item_size_as_register = "["+ram_prefix+array_information[2]+"]"
+        var current_length = "["+ram_prefix+array_information[3]+"]"
 
         var temp_var1 = get_temp_word()
         var temp_var2 = get_temp_word()
@@ -1172,11 +1223,18 @@ function translate(token, ctx_type) {
         var length_to_shift = "[ram+.2]"
 
         //shift entire array (that is below the specified poisiton) one item_size down
-        load_lib("sys.ram_to_ram_copy")
         result.push("write "+source_addr+" ram+.0")
         result.push("write "+target_addr+" ram+.1")
         result.push("write "+length_to_shift+ " ram+.2")
-        result.push("call func_sys.ram_to_ram_copy_length")
+
+        // if this is a global array we need a different copy function
+        if (scope_name === "[global]") {
+          load_lib("sys.global_ram_to_global_ram_copy")
+          result.push("call func_sys.global_ram_to_global_ram_copy_length")
+        } else {
+          load_lib("sys.ram_to_ram_copy")
+          result.push("call func_sys.ram_to_ram_copy_length")
+        }
 
         //put item at the specified index
         var token = {"name":"array_set","type":"command","arguments":{
@@ -1189,7 +1247,7 @@ function translate(token, ctx_type) {
         //add one to length
         result.push("write " + current_length + " alu.1")
         result.push("write 1 alu.2")
-        result.push("write [alu.+] ram."+ array_information[3])
+        result.push("write [alu.+] " +ram_prefix + array_information[3])
 
         free_block(temp_var1[0])
         free_block(temp_var2[0])
@@ -2318,7 +2376,23 @@ function translate(token, ctx_type) {
       var array_name = args["name"]
       var operation = args["operation"]
 
-      translate(tokenise(array_name))      // this will throw an error if the array is not defined
+      var scope_name
+      var ram_prefix
+      if (array_name in var_map[scope]) {
+        // this is a local array
+        scope_name = scope
+        ram_prefix = "ram."
+      } else if (array_name in var_map["[global]"]) {
+        // this is a global array
+        scope_name = "[global]"
+        ram_prefix = "ram^."
+      } else {
+        throw new CompError("Cannot find array named '" + array_name + "'")
+      }
+
+      var array_information = var_map[scope_name][array_name]
+      var type = name_type_map[scope_name][array_name+".contained_type"]
+      var item_size_as_number = name_type_map[scope_name][array_name+".contained_size"]
 
       if (operation == "index") {
         var index = args["expr"]
@@ -2328,12 +2402,9 @@ function translate(token, ctx_type) {
         }
         prefix.push.apply(prefix,prefix_value_type[0])
 
-        var array_information = var_map[scope][array_name]
-
         var index = prefix_value_type[1]
-        var base_addr = "[ram."+array_information[0]+"]"
-        var item_size_as_register = "[ram."+array_information[2]+"]"
-        var item_size_as_number = name_type_map[scope][array_name+".contained_size"]
+        var base_addr = "["+ram_prefix+array_information[0]+"]"
+        var item_size_as_register = "["+ram_prefix+array_information[2]+"]"
 
         //calculate address of item at the specified index
         load_lib("sys.array_pointer")
@@ -2345,46 +2416,46 @@ function translate(token, ctx_type) {
         var memory = alloc_block(item_size_as_number)
 
         //copy item from calculated address to allocated result registers
-        load_lib("sys.ram_to_ram_copy")
         prefix.push("write [ram+.3] ram+.0")
         prefix.push("write ram."+ memory[0] +" ram+.1")
         prefix.push("write "+item_size_as_register+ " ram+.2")
-        prefix.push("call func_sys.ram_to_ram_copy_length")
+
+        // if this is a global array we need a different copy function
+        if (scope_name === "[global]") {
+          load_lib("sys.global_ram_to_ram_copy")
+          prefix.push("call func_sys.global_ram_to_ram_copy_length")
+        } else {
+          load_lib("sys.ram_to_ram_copy")
+          prefix.push("call func_sys.ram_to_ram_copy_length")
+        }
 
         registers = []
         for (var word of memory) {
           registers.push("[ram."+word+"]")
         }
 
-        type = name_type_map[scope][array_name+".contained_type"]
-
       } else if (operation == "len") {
-        var array_information = var_map[scope][array_name]
-        var length = "[ram."+array_information[3]+"]"
-        registers = [length]
+        var value = "["+ram_prefix+array_information[3]+"]"
+        registers = [value]
         type = "int"
 
        } else if (operation == "max_len") {
-        var array_information = var_map[scope][array_name]
-        var length = "[ram."+array_information[1]+"]"
-        registers = [length]
+        var value = "["+ram_prefix+array_information[1]+"]"
+        registers = [value]
         type = "int"
 
       } else if (operation == "pop") {
         // simply take one away from the length of the array, then return the item at that index
 
-        var array_information = var_map[scope][array_name]
-
-        var array_length_register = "ram."+array_information[3]+""
+        var array_length_register = ram_prefix+array_information[3]+""
 
         prefix.push("copy "+ array_length_register +" alu.1")
         prefix.push("write 1 alu.2")
         prefix.push("write [alu.-] "+ array_length_register)
 
         var index = "["+array_length_register+"]"
-        var base_addr = "[ram."+array_information[0]+"]"
-        var item_size_as_register = "[ram."+array_information[2]+"]"
-        var item_size_as_number = name_type_map[scope][array_name+".contained_size"]
+        var base_addr = "["+ram_prefix+array_information[0]+"]"
+        var item_size_as_register = "["+ram_prefix+array_information[2]+"]"
 
         //calculate address of item at the specified index
         load_lib("sys.array_pointer")
@@ -2406,8 +2477,6 @@ function translate(token, ctx_type) {
         for (var word of memory) {
           registers.push("[ram."+word+"]")
         }
-
-        type = name_type_map[scope][array_name+".contained_type"]
 
       } else {
         throw new CompError("not implemented")

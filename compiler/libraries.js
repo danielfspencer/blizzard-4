@@ -58,7 +58,6 @@ const libs = {
     "  c = a - c",
     "  return c"
   ],
-
   "sys.sint_multiply": [
     "def sys.sint_multiply",
     "  arg sint a",
@@ -154,7 +153,6 @@ const libs = {
     "    {write [alu.|] ram.2}",
     "  return answer"
   ],
-
   "sys.long_add": [
     "def sys.long_add",
     "  arg long a",
@@ -353,7 +351,6 @@ const libs = {
     "  result = false",
     "  return result"
   ],
-
   "sys.slong_add": [
     "def sys.slong_add",
     "  arg slong a",
@@ -575,7 +572,6 @@ const libs = {
     "  ans = false",
     "  return ans"
   ],
-
   "sys.array_pointer": [
     "def sys.array_pointer",
     "  arg int index",
@@ -614,7 +610,64 @@ const libs = {
     "    target_address--",
     "    {copy [ram.0] [ram.1] }"
   ],
-
+  "sys.rom_to_global_ram_copy": [
+    "def sys.rom_to_global_ram_copy",
+    "  arg int origin_address ",
+    "  arg int target_address",
+    "  arg int length",
+    "",
+    "  target_address += 8192",
+    "  for var int i; i < length; i++",
+    "    {copy [ram.0] [ram.1] }",
+    "    origin_address++",
+    "    target_address++"
+  ],
+  "sys.global_ram_to_ram_copy": [
+    "def sys.global_ram_to_ram_copy",
+    "  arg int origin_address ",
+    "  arg int target_address",
+    "  arg int length",
+    "",
+    "  target_address -= 4096",
+    "",
+    "  origin_address += length",
+    "  target_address += length ",
+    "",
+    "  for var int i; i < length; i++",
+    "    origin_address--",
+    "    target_address--",
+    "    {copy [ram.0] [ram.1] }"
+  ],
+  "sys.ram_to_global_ram_copy": [
+    "def sys.ram_to_global_ram_copy",
+    "  arg int origin_address ",
+    "  arg int target_address",
+    "  arg int length",
+    "",
+    "  origin_address -= 4096",
+    "",
+    "  origin_address += length",
+    "  target_address += length ",
+    "",
+    "  for var int i; i < length; i++",
+    "    origin_address--",
+    "    target_address--",
+    "    {copy [ram.0] [ram.1] }"
+  ],
+  "sys.global_ram_to_global_ram_copy": [
+    "def sys.global_ram_to_global_ram_copy",
+    "  arg int origin_address ",
+    "  arg int target_address",
+    "  arg int length",
+    "",
+    "  origin_address += length",
+    "  target_address += length ",
+    "",
+    "  for var int i; i < length; i++",
+    "    origin_address--",
+    "    target_address--",
+    "    {copy [ram.0] [ram.1] }"
+  ],
   "sys.vram.or_word": [
     "def sys.vram.or_word",
     "  arg int word",
@@ -894,7 +947,6 @@ const libs = {
     "      err += dx",
     "      y0 += sy"
   ],
-
   "sys.print_string": [
     "def sys.print_string",
     "  arg str string",
@@ -1101,7 +1153,6 @@ const libs = {
    "",
    "  sys.print_long(abs_num,x,y,print_all_places)"
   ],
-
   "sys.kbd.scancode_to_charcode": [
     "def sys.kbd.scancode_to_charcode",
     "  include sys.kbd.scancode_charcode_table",
@@ -1880,7 +1931,6 @@ const libs = {
     "0b0000000000000001",
     "///"
   ],
-
   "sys.get_lib_version":[
     "def sys.get_lib_version",
     "  return \"0.45.0\"",
