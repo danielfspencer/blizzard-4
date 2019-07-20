@@ -21,7 +21,7 @@ let show_log_messages = true
 let debug = false
 let token_dump = []
 
-const data_type_size = {"int":1,"sint":1,"long":2,"slong":2,"float":2,"bool":1,"str":1,"array":4}
+const data_type_size = {"int":1,"sint":1,"long":2,"slong":2,"float":2,"bool":1,"str":1,"array":4,"none":0}
 const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys":"","array":"","return":""}
 
 onmessage = (msg) => {
@@ -521,7 +521,13 @@ function tokenise(input, line) {
     token = {"name":"pointer_set","type":"command","arguments":{"expr":expr,"name":matches[1]}}
 
   } else if (list[0] == "return") {                    // return
-    var expr = tokenise(list.slice(1).join(" "), line)
+    var expr = undefined
+    var expr_string = list.slice(1).join(" ")
+
+    if (expr_string !== "") {
+      expr = tokenise(expr_string, line)
+    }
+
     token = {"name":"return","type":"command","arguments":{"expr":expr}}
 
   } else if (list[1] == "+=") {                    // [name] += [expr]
@@ -1316,28 +1322,43 @@ function translate(token, ctx_type) {
       result = [args["comment"]]
       break
 
-    case "return":      //return [expr]
-      if (scope == "[root]") {
+    case "return":      //return [optional expr]
+      if (scope === "[root]") {
         throw new CompError("Statement 'return' can only be used in functions")
       }
-      var ctx_type = name_type_map[scope][scope]
-      var prefix_and_value = translate(args["expr"],ctx_type)
-      var prefix = prefix_and_value[0]
-      var value = prefix_and_value[1]
-      var type = prefix_and_value[2]
-      result = prefix
-      result.push("return")
-      var map = []
 
-      for (var item of value) {
-        var temp = item.replace("ram","ram+")
-        //this next replace prevents recursive function calls producing ram++++.x addresses
-        map.push(temp.replace("ram++","ram+"))
+      var func_type = name_type_map[scope][scope]
+      if (func_type === "none" && args["expr"] !== undefined) {
+        throw new CompError("Functions of type 'none' cannot return values")
       }
-      return_map[scope] = map
-      if (ctx_type === undefined) {
-        name_type_map[scope][scope] = type
+
+      // if the return statement should have an expression, evaluate it
+      if (func_type !== "none") {
+
+        var [prefix, value, expr_type] = translate(args["expr"], func_type)
+        if (func_type.startsWith('[') && func_type.endsWith(']')) {
+          // trim type to exclude square brackets
+          func_type = func_type.slice(1,-1)
+
+          // square brackets around the type means cast any return expression to this type, ignoring any mis-match
+          log.warn(`Casting return expression of type '${expr_type}' to '${func_type}'`)
+
+        } else if (expr_type !== func_type) {
+          // the type of the expression in the return statement does not match the data type of the function
+          throw new CompError(`Function returns type '${func_type}', but return expression is of type '${expr_type}'`)
+        }
+        result = prefix
+        
+        var map = []
+        for (var item of value) {
+          var temp = item.replace("ram","ram+")
+          //this next replace prevents recursive function calls producing ram++++.x addresses
+          map.push(temp.replace("ram++","ram+"))
+        }
+        return_map[scope] = map
       }
+
+      result.push("return")
       break
 
     case "include":
@@ -2525,9 +2546,12 @@ function translate(token, ctx_type) {
 
       prefix.push("call " + label)
 
-      if (typeof return_map[args["name"]] !== undefined) {
-        registers = return_map[args["name"]]
-        type = name_type_map[args["name"]][args["name"]]
+      registers = return_map[args["name"]]
+      type = name_type_map[args["name"]][args["name"]]
+
+      if (type.startsWith('[') && type.endsWith(']')) {
+        // trim type to exclude square brackets if present
+        type = type.slice(1,-1)
       }
       break
 
@@ -2726,8 +2750,9 @@ function translate(token, ctx_type) {
       name_type_map[scope] = {}
       free_ram[scope] = gen_free_ram_map()
 
-      if (args["type"] !== undefined) {
-        log.debug("explicit function type detected")
+      if (args["type"] === undefined) {
+        name_type_map[scope][scope] = "none"
+      } else {
         name_type_map[scope][scope] = args["type"]
       }
       log.debug("namespace -> " + scope)
