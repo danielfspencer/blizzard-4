@@ -2716,7 +2716,7 @@ function translate(token, ctx_type) {
         throw new CompError("Name '"+args["name"]+"' is not available")
       }
       func[args["name"]] = []
-      target = func[args["name"]]
+      var target = func[args["name"]]
       var label = "func_" + args["name"]
       target.push(label+":")
       var old_scope = scope
