@@ -1347,8 +1347,10 @@ function translate(token, ctx_type) {
           // the type of the expression in the return statement does not match the data type of the function
           throw new CompError(`Function returns type '${func_type}', but return expression is of type '${expr_type}'`)
         }
+
+        // include the code to evaluate the expression
         result = prefix
-        
+
         var map = []
         for (var item of value) {
           var temp = item.replace("ram","ram+")
@@ -1358,6 +1360,7 @@ function translate(token, ctx_type) {
         return_map[scope] = map
       }
 
+      // add the actual return instruction
       result.push("return")
       break
 
@@ -2504,10 +2507,12 @@ function translate(token, ctx_type) {
       }
       break
 
-    case "function":
+    case "function":      // function call
+      // functions begining with 'sys.' will need to be loaded from the standard library first
       if (args["name"].startsWith("sys.")) {
         load_lib(args["name"])
       }
+
       var label = "func_" + args["name"]
       if (!(args["name"] in var_map)) {
         throw new CompError("'"+args["name"]+"' is undefined")
