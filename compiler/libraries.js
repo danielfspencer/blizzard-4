@@ -1,6 +1,6 @@
 const libs = {
   "sys.int_multiply": [
-    "def sys.int_multiply",
+    "def sys.int_multiply int",
     "  arg int a",
     "  arg int b",
     "  var int c",
@@ -12,7 +12,7 @@ const libs = {
     "  return c"
   ],
   "sys.int_divide": [
-    "def sys.int_divide",
+    "def sys.int_divide int",
     "  arg int a",
     "  arg int b",
     "",
@@ -39,7 +39,7 @@ const libs = {
     "  return answer"
   ],
   "sys.int_exponent": [
-    "def sys.int_exponent",
+    "def sys.int_exponent int",
     "  arg int a",
     "  arg int b",
     "  var int c 1",
@@ -49,7 +49,7 @@ const libs = {
     "  return c"
   ],
   "sys.int_modulo": [
-    "def sys.int_modulo",
+    "def sys.int_modulo int",
     "  arg int a",
     "  arg int b",
     "  var int c",
@@ -59,7 +59,7 @@ const libs = {
     "  return c"
   ],
   "sys.sint_multiply": [
-    "def sys.sint_multiply",
+    "def sys.sint_multiply sint",
     "  arg sint a",
     "  arg sint b",
     "  var bool sign",
@@ -80,7 +80,7 @@ const libs = {
     "  return c"
   ],
   "sys.sint_divide": [
-    "def sys.sint_divide",
+    "def sys.sint_divide sint",
     "  arg sint a",
     "  arg sint b",
     "",
@@ -119,7 +119,7 @@ const libs = {
     "  return answer"
   ],
   "sys.sint_exponent": [
-    "def sys.sint_exponent",
+    "def sys.sint_exponent sint",
     "  arg sint a",
     "  arg sint b",
     "  var sint c 1",
@@ -129,7 +129,7 @@ const libs = {
     "  return c"
   ],
   "sys.sint_modulo": [
-    "def sys.sint_modulo",
+    "def sys.sint_modulo sint",
     "  arg sint a",
     "  arg sint b",
     "  var sint c",
@@ -139,7 +139,7 @@ const libs = {
     "  return c"
   ],
   "sys.sint_rshift": [
-    "def sys.sint_rshift",
+    "def sys.sint_rshift sint",
     "  arg sint a",
     "  var bool negative",
     "  var sint answer",
@@ -154,7 +154,7 @@ const libs = {
     "  return answer"
   ],
   "sys.long_add": [
-    "def sys.long_add",
+    "def sys.long_add long",
     "  arg long a",
     "  arg long b",
     "",
@@ -177,7 +177,7 @@ const libs = {
     "  return c"
   ],
   "sys.long_subtract": [
-    "def sys.long_subtract",
+    "def sys.long_subtract long",
     "  arg long a",
     "  arg long b",
     "  var int b_high b:0",
@@ -190,7 +190,7 @@ const libs = {
     "  return c"
   ],
   "sys.long_multiply": [
-    "def sys.long_multiply",
+    "def sys.long_multiply long",
     "  arg long a",
     "  arg long b",
     "  var long c",
@@ -206,7 +206,7 @@ const libs = {
     "  return c "
   ],
   "sys.long_divide": [
-    "def sys.long_divide",
+    "def sys.long_divide long",
     "  arg long a",
     "  arg long b",
     "",
@@ -233,7 +233,7 @@ const libs = {
     "  return answer"
   ],
   "sys.long_exponent": [
-    "def sys.long_exponent",
+    "def sys.long_exponent long",
     "  arg long a",
     "  arg long b",
     "  var long c 1",
@@ -243,7 +243,7 @@ const libs = {
     "  return c"
   ],
   "sys.long_modulo": [
-    "def sys.long_modulo",
+    "def sys.long_modulo long",
     "  arg long a",
     "  arg long b",
     "  var long c",
@@ -253,7 +253,7 @@ const libs = {
     "  return c"
   ],
   "sys.long_lshift": [
-    "def sys.long_lshift",
+    "def sys.long_lshift long",
     "  arg long a",
     "  var int a_high a:0",
     "  var int a_low a:1",
@@ -268,7 +268,7 @@ const libs = {
     "  return c"
   ],
   "sys.long_rshift": [
-    "def sys.long_rshift",
+    "def sys.long_rshift long",
     "  arg long a",
     "  var int a_high a:0",
     "  var int a_low a:1",
@@ -282,7 +282,7 @@ const libs = {
     "  return c"
   ],
   "sys.long_not_equal": [
-    "def sys.long_not_equal",
+    "def sys.long_not_equal bool",
     "  arg long a",
     "  arg long b",
     "  var int a_high a:1",
@@ -298,7 +298,7 @@ const libs = {
     "    return result"
   ],
   "sys.long_equal": [
-    "def sys.long_equal",
+    "def sys.long_equal bool",
     "  arg long a",
     "  arg long b",
     "  var int a_high a:1",
@@ -314,7 +314,7 @@ const libs = {
     "    return result"
   ],
   "sys.long_greater": [
-    "def sys.long_greater",
+    "def sys.long_greater bool",
     "  arg long a",
     "  arg long b",
     "  var int a_high a:0",
@@ -333,7 +333,7 @@ const libs = {
     "  return result"
   ],
   "sys.long_less": [
-    "def sys.long_less",
+    "def sys.long_less bool",
     "  arg long a",
     "  arg long b",
     "  var int a_high a:0",
@@ -352,7 +352,7 @@ const libs = {
     "  return result"
   ],
   "sys.slong_add": [
-    "def sys.slong_add",
+    "def sys.slong_add [slong]",
     "  arg slong a",
     "  arg slong b",
     "",
@@ -375,7 +375,7 @@ const libs = {
     "  return c"
   ],
   "sys.slong_subtract": [
-    "def sys.slong_subtract",
+    "def sys.slong_subtract [slong]",
     "  arg slong a",
     "  arg slong b",
     "  var int b_high b:0",
@@ -388,7 +388,7 @@ const libs = {
     "  return c"
   ],
   "sys.slong_multiply": [
-    "def sys.slong_multiply",
+    "def sys.slong_multiply slong",
     "  arg slong a",
     "  arg slong b",
     "  var bool sign",
@@ -409,7 +409,7 @@ const libs = {
     "  return c"
   ],
   "sys.slong_divide": [
-    "def sys.slong_divide",
+    "def sys.slong_divide slong",
     "  arg slong a",
     "  arg slong b",
     "",
@@ -448,7 +448,7 @@ const libs = {
     "  return answer"
   ],
   "sys.slong_exponent": [
-    "def sys.slong_exponent",
+    "def sys.slong_exponent slong",
     "  arg slong a",
     "  arg slong b",
     "  var slong c 1",
@@ -458,7 +458,7 @@ const libs = {
     "  return c"
   ],
   "sys.slong_modulo": [
-    "def sys.slong_modulo",
+    "def sys.slong_modulo slong",
     "  arg slong a",
     "  arg slong b",
     "  var slong c",
@@ -468,7 +468,7 @@ const libs = {
     "  return c"
   ],
   "sys.slong_lshift": [
-    "def sys.slong_lshift",
+    "def sys.slong_lshift [slong]",
     "  arg slong a",
     "  var int a_high a:0",
     "  var int a_low a:1",
@@ -483,7 +483,7 @@ const libs = {
     "  return c"
   ],
   "sys.slong_rshift": [
-    "def sys.slong_rshift slong",
+    "def sys.slong_rshift [slong]",
     "  arg slong a",
     "  var int a_high a:0",
     "  var int a_low a:1",
@@ -505,7 +505,7 @@ const libs = {
     "  return a_high..a_low"
   ],
   "sys.slong_not_equal": [
-    "def sys.slong_not_equal",
+    "def sys.slong_not_equal bool",
     "  arg slong a",
     "  arg slong b",
     "  var int a_high a:1",
@@ -521,7 +521,7 @@ const libs = {
     "    return result"
   ],
   "sys.slong_equal": [
-    "def sys.slong_equal",
+    "def sys.slong_equal bool",
     "  arg slong a",
     "  arg slong b",
     "  var int a_high a:1",
@@ -537,7 +537,7 @@ const libs = {
     "    return result"
   ],
   "sys.slong_greater": [
-    "def sys.slong_greater",
+    "def sys.slong_greater bool",
     "  arg slong a",
     "  arg slong b",
     "  var bool ans true",
@@ -555,7 +555,7 @@ const libs = {
     "  return ans"
   ],
   "sys.slong_less": [
-    "def sys.slong_less",
+    "def sys.slong_less bool",
     "  arg slong a",
     "  arg slong b",
     "  var bool ans true",
@@ -573,7 +573,7 @@ const libs = {
     "  return ans"
   ],
   "sys.array_pointer": [
-    "def sys.array_pointer",
+    "def sys.array_pointer int",
     "  arg int index",
     "  arg int item_size",
     "  arg int base_addr",
@@ -936,7 +936,7 @@ const libs = {
     "    minus_dx = 0 - dx",
     "    if x0 == x1 ",
     "      if y0 == y1",
-    "        return 0",
+    "        return",
     "",
     "    e2 = err",
     "    if e2 > minus_dx",
@@ -1154,7 +1154,7 @@ const libs = {
    "  sys.print_long(abs_num,x,y,print_all_places)"
   ],
   "sys.kbd.scancode_to_charcode": [
-    "def sys.kbd.scancode_to_charcode",
+    "def sys.kbd.scancode_to_charcode int",
     "  include sys.kbd.scancode_charcode_table",
     "  arg int scancode",
     "  arg bool shifted false",
@@ -1932,7 +1932,7 @@ const libs = {
     "///"
   ],
   "sys.get_lib_version":[
-    "def sys.get_lib_version",
+    "def sys.get_lib_version str",
     "  return \"0.45.0\"",
   ]
 }

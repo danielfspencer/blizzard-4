@@ -10,7 +10,7 @@ var int temp_y
 
 var int key_code
 
-def get_keypress
+def get_keypress int
   var int kbd 8192
   var int scancode *kbd
   var int char_code 0

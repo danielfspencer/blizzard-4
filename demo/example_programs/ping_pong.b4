@@ -34,7 +34,7 @@ def set_word
   addr += 6144
   {write [ram.0] [ram.1]}
 
-def get_key
+def get_key int
   var int scan_code
   var int kbd 8192
 
