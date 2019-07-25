@@ -21,7 +21,8 @@ let show_log_messages = true
 let debug = false
 let token_dump = []
 
-const data_type_size = {"int":1,"sint":1,"long":2,"slong":2,"float":2,"bool":1,"str":1,"array":4,"none":0}
+const data_type_size = {int:1,sint:1,long:2,slong:2,float:2,bool:1,str:1,array:4,none:0}
+const data_type_default_value = {int:"0",sint:"0",long:"0",slong:"0",float:"0",bool:"false",str:"\"\""}
 const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys":"","array":"","return":""}
 
 onmessage = (msg) => {
@@ -92,13 +93,10 @@ function CompError(message, line) {
 function init_vars() {
   scope = "[root]"
   free_ram = {"[root]":gen_free_ram_map(),"[global]":gen_free_ram_map()}
-  var_map = {"[root]":{},"[global]":{}}
-  arg_map = {}
-  name_type_map = {"[root]":{},"[global]":{}}
-  const_map = {}
-  return_map = {}
+  symbol_table = {"[root]":{},"[global]":{}}
+  function_table = {}
   consts = []
-  func = {}
+  funcs = {}
   required = {}
   max_allocated_ram_slots = 0
   structures = {"if":0,"for":0,"while":0,"str":0,"expr_array":0}
@@ -218,42 +216,33 @@ function set_token(name, operation, exprs, line) {
 }
 
 function gen_free_ram_map() {
-  var map = []
-  for (var x = 0; x < 1023; x++) { //last word of RAM is function return address
+  let map = []
+  for (let x = 0; x < 1023; x++) { //last word of RAM is function return address
     map.push(x)
   }
   return map
 }
 
-function var_name_available(name) {
-  if (name in const_map || name in var_map[scope]
-  || name in var_map || name in reserved_keywords || name in var_map["[global]"]) {
-    return false
-  }
-  if (typeof var_map[scope] === undefined) {
-    return true
-  }
-  return true
-}
+function assert_local_name_available(name) {
+  const places = [
+    symbol_table[scope],
+    reserved_keywords,
+    function_table // remove to allow var names to be the same as func names?
+  ]
 
-function const_name_available(name) {
-  if (name in const_map || name in var_map
-  || name in reserved_keywords) {
-    return false
-  }
-  for (var key in var_map) {
-    if (name in var_map[key]) {
-      return false
+  for (let place of places) {
+    if (place !== undefined && name in place) {
+      throw new CompError(`Name '${name}' is not available`)
     }
   }
-  return true
 }
 
-function is_argument(name) {
-  if (arg_map[scope] === undefined) {
-    return false
+function assert_global_name_available(name) {
+  assert_local_name_available(name)
+
+  if (name in symbol_table["[global]"]) {
+    throw new CompError(`Name '${name}' is not available`)
   }
-  return name in arg_map[scope]
 }
 
 function gen_id(type) {
@@ -304,9 +293,9 @@ function alloc_block(size) {
 }
 
 function alloc_global_block(size) {
-  var old_scope = scope
+  let old_scope = scope
   scope = "[global]"
-  var addrs = alloc_block(size)
+  let addrs = alloc_block(size)
   scope = old_scope
 
   return addrs
@@ -320,11 +309,9 @@ function free_global_block(addrs) {
 }
 
 
-function check_datatype(type) {
+function assert_valid_datatype(type) {
   if (!(type in data_type_size)) {
-    throw new CompError("Data type '" + type + "' unknown")
-  } else {
-    return type
+    throw new CompError(`Data type '${type}' unknown`)
   }
 }
 
@@ -505,7 +492,16 @@ function tokenise(input, line) {
     } else if (list.length > 3) {
       throw new CompError("Invalid syntax")
     }
-    token = {"name":"function_def","type":"structure","body":[],"arguments":{"name":list[1],"type":list[2]}}
+
+    let force_cast = false
+    if (list[2] !== undefined) {
+      if (list[2].startsWith("#")) {
+        force_cast = true
+        list[2] = list[2].substr(1)
+      }
+    }
+
+    token = {"name":"function_def","type":"structure","body":[],"arguments":{"name":list[1],"type":list[2],"force_cast":force_cast}}
 
   } else if (list[0] == "free") {                 // free [name]
     token = {"name":"delete","type":"command","arguments":{"name":list[1]}}
@@ -738,16 +734,15 @@ function translate(token, ctx_type) {
       break
 
     case "var_alloc":     //var [name] [type] <expr>
-      check_datatype(args["type"])
+      // arrays require a different allocation method
       if (args["type"] == "array") {
         token["name"] = "var_array_alloc"
         result = translate(token)
         break
       }
 
-      if (!var_name_available(args["name"])) {
-        throw new CompError("Variable name: '" + args["name"] + "' is not available")
-      }
+      assert_valid_datatype(args["type"])
+      assert_local_name_available(args.name)
 
       if ("expr" in args) {
         var token = args["expr"]
@@ -757,34 +752,33 @@ function translate(token, ctx_type) {
         var token = tokenise("0")
       }
 
-      var prefix_registers_type = translate(token,args["type"])
-      var prefix = prefix_registers_type[0]
-      var registers = prefix_registers_type[1]
-      if (args["type"] != prefix_registers_type[2]) {
-        throw new CompError("Wrong data type, expected '"+ args["type"] +"', got '"+ prefix_registers_type[2] +"'")
+      var [expr_prefix, expr_value, expr_type] = translate(token, args.type)
+
+      if (args.type !== expr_type) {
+        throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
       }
-      var type = args["type"]
-      var size = registers.length
-      log.debug("var alloc '"+type+"', size '"+size+"'")
 
-      var memory = alloc_block(size)
+      var memory = alloc_block(expr_value.length)
 
-      var_map[scope][args["name"]] = memory.slice()
-      name_type_map[scope][args["name"]] = type
+      // add entry to symbol table
+      symbol_table[scope][args["name"]] = {
+        type: "variable",
+        data_type: expr_type,
+        specific: {
+          ram_addresses: memory.slice()
+        }
+      }
 
-      result = prefix
+      result = expr_prefix
 
-      for (var register of registers) {
-        result.push("write " + register + " ram." + memory.shift())
+      for (let expr_word of expr_value) {
+        result.push(`write ${expr_word} ram.${memory.shift()}`)
       }
       break
 
     case "const_alloc":     //const [name] [type] [expr]
-      check_datatype(args["type"])
-
-      if (!const_name_available(args["name"])) {
-        throw new CompError("Error allocating constant: '" + args["name"] + "' is not available")
-      }
+      assert_valid_datatype(args["type"])
+      assert_global_name_available(args.name)
 
       if ("expr" in args) {
         var token = args["expr"]
@@ -813,8 +807,14 @@ function translate(token, ctx_type) {
         memory.push(id + "_" + i)
       }
 
-      const_map[args["name"]] = memory.slice()
-      name_type_map["[root]"][args["name"]] = args["type"]
+      // add entry to symbol table
+      symbol_table["[global]"][args["name"]] = {
+        type: "constant",
+        data_type: args["type"],
+        specific: {
+          value: memory.slice()
+        }
+      }
 
       for (var register of registers) {
         consts.push(memory.shift()+":")
@@ -823,16 +823,15 @@ function translate(token, ctx_type) {
       break
 
     case "global_alloc":     //global [name] [type] <expr>
-      check_datatype(args["type"])
-      if (args["type"] == "array") {
-        token["name"] = "global_array_alloc"
+      // arrays require a different allocation method
+      if (args.type == "array") {
+        token.name = "global_array_alloc"
         result = translate(token)
         break
       }
 
-      if (!var_name_available(args["name"])) {
-        throw new CompError("Variable name: '" + args["name"] + "' is not available")
-      }
+      assert_valid_datatype(args.type)
+      assert_local_name_available(args.name)
 
       if ("expr" in args) {
         var token = args["expr"]
@@ -854,8 +853,14 @@ function translate(token, ctx_type) {
 
       var memory = alloc_global_block(size)
 
-      var_map["[global]"][args["name"]] = memory.slice()
-      name_type_map["[global]"][args["name"]] = type
+      // add entry to symbol table
+      symbol_table["[global]"][args["name"]] = {
+        type: "variable",
+        data_type: type,
+        specific: {
+          ram_addresses: memory.slice()
+        }
+      }
 
       // make data available
       result = prefix
@@ -865,204 +870,231 @@ function translate(token, ctx_type) {
       }
       break
 
-    case "arg_alloc":       //arg [name] [type] [expr]
-      if (scope == "[root]") {
+    case "arg_alloc":       //arg [type] [name] [expr]
+      if (scope === "[root]") {
         throw new CompError("Argument declaration can only be used in functions")
       }
 
-      check_datatype(args["type"])
+      assert_valid_datatype(args.type)
+      assert_local_name_available(args.name)
 
-      if (!var_name_available(args["name"])) {
-        throw new CompError("Error allocating argument: '" + args["name"] + "' is not available")
-      }
-
+      var token
       if ("expr" in args) {
-        var token = args["expr"]
+        token = args.expr
       } else if (args["type"] == "str") {
-        var token = tokenise('""')
+        token = tokenise('""')
       } else {
-        var token = tokenise("0")
+        token = tokenise("0")
       }
 
-      var prefix_registers_type = translate(token,args["type"])
-      var prefix = prefix_registers_type[0]
-      var registers = prefix_registers_type[1]
-      if (args["type"] != prefix_registers_type[2]) {
-        throw new CompError("Wrong data type, expected '"+ args["type"] +"', got '"+ prefix_registers_type[2] +"'")
-      }
-      var type = args["type"]
-      var size = registers.length
-      log.debug("arg alloc '"+type+"', size '"+size+"'")
+      var [expr_prefix, expr_value, expr_type] = translate(token, args.type)
 
-      var memory = alloc_block(size)
-
-      var_map[scope][args["name"]] = memory.slice()
-      arg_map[scope][args["name"]] = memory.slice()
-      name_type_map[scope][args["name"]] = type
-
-      result = prefix
-
-      for (var register of registers) {
-        result.push("write " + register + " ram." + memory.shift())
+      if (args.type !== expr_type) {
+        throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
       }
 
-      var label = "func_" + scope + "_" + args["name"] + ":"
+      var memory = alloc_block(expr_value.length)
+
+      // add entry to symbol table
+      symbol_table[scope][args["name"]] = {
+        type: "argument",
+        data_type: expr_type,
+        specific: {
+          ram_addresses: memory.slice()
+        }
+      }
+
+      // add argument to function
+      function_table[scope].arguments.push(args.name)
+
+      result = expr_prefix
+
+      for (let expr_word of expr_value) {
+        result.push(`write ${expr_word} ram.${memory.shift()}`)
+      }
+
+      var label = `func_${scope}_${args.name}:`
       result.push(label)
       break
 
     case "var_array_alloc":
-      if (!var_name_available(args["name"])) {
-        throw new CompError("Variable name: '" + args["name"] + "' is not available")
+      assert_local_name_available(args.name)
+
+      var [expr_prefix, expr_values, expr_type] = translate(args.expr)
+
+      if (expr_type !== "expr_array") {
+        throw new CompError(`Array declarations require type 'expr_array', got '${expr_type}'`)
       }
 
-      var array_information = translate(args["expr"])[1]
+      var [base_addr, current_len, max_len, data_type] = expr_values
 
-      var base_addr = array_information[0]
-      var max_length = array_information[1]
-      var item_size = array_information[2]
-      var length = array_information[3]
+      assert_valid_datatype(data_type)
+      var element_size = data_type_size[data_type]
 
-      name_type_map[scope][args["name"]] = "array"
-      name_type_map[scope][args["name"]+".contained_type"] = name_type_map[scope][base_addr]
-      name_type_map[scope][args["name"]+".contained_size"] = item_size
+      var header_memory = alloc_block(3)
+      var array_memory = alloc_block(max_len * element_size)
 
-      log.debug("var_array alloc type '" + name_type_map[scope][base_addr] + "' length " + max_length)
+      // add to symbol table
+      symbol_table[scope][args.name] = {
+        type: "variable",
+        data_type: "array",
+        specific: {
+          element_data_type: data_type, // TODO
+          base_addr: header_memory[0],
+          current_len: header_memory[1],
+          max_len: header_memory[2],
+          array_mem: array_memory
+        }
+      }
 
-      var header_memory = alloc_block(4)
-      var array_memory = alloc_block(max_length * item_size)
+      result.push(`write ram.${array_memory[0]} ram.${header_memory[0]}`)
+      result.push(`write ${current_len} ram.${header_memory[1]}`)
+      result.push(`write ${max_len} ram.${header_memory[2]}`)
 
-      var_map[scope][args["name"]] = header_memory.slice()
-      result.push("write ram." + array_memory[0] + " ram."+header_memory.shift())
-      result.push("write " + max_length + " ram."+header_memory.shift())
-      result.push("write " + item_size + " ram."+header_memory.shift())
-      result.push("write " + length + " ram."+header_memory.shift())
-
-      var_map[scope][args["name"]+".block"] = array_memory.slice()
-
-      //call function to copy inital values to array
+      // call function to copy inital values to array
       load_lib("sys.rom_to_ram_copy")
-      result.push("write "+ base_addr +" ram+.0")
-      result.push("write ram."+ array_memory[0] +" ram+.1")
-      result.push("write "+ (length * item_size).toString() + " ram+.2")
+      result.push(`write ${base_addr} ram+.0`)
+      result.push(`write ram.${array_memory[0]} ram+.1`)
+      result.push(`write ${current_len * element_size} ram+.2`)
       result.push("call func_sys.rom_to_ram_copy_length")
       break
 
     case "global_array_alloc":
-      if (!var_name_available(args["name"])) {
-        throw new CompError("Variable name: '" + args["name"] + "' is not available")
+      assert_global_name_available(args.name)
+
+      var [expr_prefix, expr_values, expr_type] = translate(args.expr)
+
+      if (expr_type !== "expr_array") {
+        throw new CompError(`Array declarations require type 'expr_array', got '${expr_type}'`)
       }
 
-      var array_information = translate(args["expr"])[1]
+      var [base_addr, current_len, max_len, data_type] = expr_values
 
-      var base_addr = array_information[0]
-      var max_length = array_information[1]
-      var item_size = array_information[2]
-      var length = array_information[3]
+      assert_valid_datatype(data_type)
+      var element_size = data_type_size[data_type]
 
-      name_type_map["[global]"][args["name"]] = "array"
-      name_type_map["[global]"][args["name"]+".contained_type"] = name_type_map["[root]"][base_addr]
-      name_type_map["[global]"][args["name"]+".contained_size"] = item_size
+      var header_memory = alloc_global_block(3)
+      var array_memory = alloc_global_block(max_len * element_size)
 
-      log.debug("global_array alloc type '" + name_type_map["[global]"][base_addr] + "' length " + max_length)
+      // add to symbol table
+      symbol_table["[global]"][args.name] = {
+        type: "variable",
+        data_type: "array",
+        specific: {
+          element_data_type: data_type,
+          base_addr: header_memory[0],
+          current_len: header_memory[1],
+          max_len: header_memory[2],
+          array_mem: array_memory
+        }
+      }
 
-      var header_memory = alloc_global_block(4)
-      var array_memory = alloc_global_block(max_length * item_size)
+      result.push(`write ram^.${array_memory[0]} ram^.${header_memory[0]}`)
+      result.push(`write ${current_len} ram^.${header_memory[1]}`)
+      result.push(`write ${max_len} ram^.${header_memory[2]}`)
 
-      var_map["[global]"][args["name"]] = header_memory.slice()
-      result.push("write ram^." + array_memory[0] + " ram^."+header_memory.shift())
-      result.push("write " + max_length + " ram^."+header_memory.shift())
-      result.push("write " + item_size + " ram^."+header_memory.shift())
-      result.push("write " + length + " ram^."+header_memory.shift())
-
-      var_map["[global]"][args["name"]+".block"] = array_memory.slice()
-
-      //call function to copy inital values to array
+      // call function to copy inital values to array
       load_lib("sys.rom_to_global_ram_copy")
-      result.push("write "+ base_addr +" ram+.0")
-      result.push("write ram."+ array_memory[0] +" ram+.1")
-      result.push("write "+ (length * item_size).toString() + " ram+.2")
+      result.push(`write ${base_addr} ram+.0`)
+      result.push(`write ram.${array_memory[0]} ram+.1`)
+      result.push(`write ${current_len * element_size} ram+.2`)
       result.push("call func_sys.rom_to_global_ram_copy_length")
       break
 
     case "set":             //[name] = [expr]
-      if (args["name"] in var_map[scope]) {
-        var dst_regs = var_map[scope][args["name"]]
-        var dst_type = name_type_map[scope][args["name"]]
 
-        var prefix_value_type = translate(args["expr"],dst_type)
-        var prefix = prefix_value_type[0]
-        var regs = prefix_value_type[1]
-        var type = prefix_value_type[2]
+      if (args["name"] in symbol_table[scope]) {
+        // this is a local variable or argument
 
-        if (type != dst_type) {
-          throw new CompError("Variable expected type '"+dst_type+"', got '"+type+"'")
+        let table_entry = symbol_table[scope][args["name"]]
+
+        if (!["variable","argument"].includes(table_entry.type)) {
+          throw new CompError("Only variables and arguments can be modified")
         }
+
+        let dst_regs = table_entry.specific.ram_addresses
+        let dst_type = table_entry.data_type
+
+        // get the value and type of the expression
+        let [prefix, value, expr_type] = translate(args["expr"], dst_type)
+
+        if (expr_type !== dst_type) {
+          throw new CompError(`Variable expected type '${dst_type}', got '${expr_type}'`)
+        }
+
+        // run the code required by the expression
         result = prefix
 
-        for (var i = 0; i < dst_regs.length; i++) {
-          result.push("write " + regs[i] + " ram." + dst_regs[i])
+        // copy the new value into the variable's memory
+        for (let i = 0; i < dst_regs.length; i++) {
+          result.push("write " + value[i] + " ram." + dst_regs[i])
         }
 
-      } else if (args["name"] in var_map["[global]"]) {
-        var dst_regs = var_map["[global]"][args["name"]]
-        var dst_type = name_type_map["[global]"][args["name"]]
+      } else if (args["name"] in symbol_table["[global]"]) {
+        // this is a global variable
 
-        var prefix_value_type = translate(args["expr"],dst_type)
-        var prefix = prefix_value_type[0]
-        var regs = prefix_value_type[1]
-        var type = prefix_value_type[2]
+        let table_entry = symbol_table["[global]"][args["name"]]
 
-        if (type != dst_type) {
-          throw new CompError("Variable expected type '"+dst_type+"', got '"+type+"'")
+        if (table_entry.type !== "variable") {
+          throw new CompError("Only variables can be modified")
         }
+
+        let dst_regs = table_entry.specific.ram_addresses
+        let dst_type = table_entry.data_type
+
+        // get the value and type of the expression
+        let [prefix, value, expr_type] = translate(args["expr"], dst_type)
+
+        if (expr_type !== dst_type) {
+          throw new CompError(`Variable expected type '${dst_type}', got '${expr_type}'`)
+        }
+
+        // run the code required by the expression
         result = prefix
 
-        for (var i = 0; i < dst_regs.length; i++) {
-          result.push("write " + regs[i] + " ram^." + dst_regs[i])
+        // copy the new value into the variable's memory
+        for (let i = 0; i < dst_regs.length; i++) {
+          result.push("write " + value[i] + " ram^." + dst_regs[i])
         }
 
       } else {
-        throw new CompError("Error looking up variable '" + args["name"] + "' is undefined")
+        throw new CompError(`Variable '${args["name"]}' is undefined`)
       }
       break
 
     case "pointer_set":             //*[pointer] = [expr]
-      var prefix_value_type = translate(args["expr"])
-      var prefix = prefix_value_type[0]
-      var regs = prefix_value_type[1]
-      var type = prefix_value_type[2]
-      var size = data_type_size[type]
+      var [expr_prefix, expr_value, expr_type] = translate(args["expr"])
+      var size = data_type_size[expr_type]
 
-      result = prefix
+      // run code required by expression
+      result = expr_prefix
 
-      var pointer_expr = tokenise(args["name"])
-      var pointer_prefix_value_type = translate(pointer_expr,"int")
-      var pointer_regs = pointer_prefix_value_type[1]
+      var ptr_expr = tokenise(args["name"])
+      var [ptr_prefix, ptr_value, ptr_type] = translate(ptr_expr)
 
-      if (pointer_prefix_value_type[2] != "int") {
-        throw new CompError("Pointers must be of type 'int', got '" + pointer_prefix_value_type[2] + "'")
+      if (ptr_type !== "int") {
+        throw new CompError(`Pointers must be of type 'int', got ${ptr_type}`)
       }
 
-      log.debug("type: '"+type+"', size: '"+size+"'")
+      log.debug(`Writing '${expr_type}' to a pointer`)
 
-      result.push("write " + regs[0] + " " + pointer_regs[0])
+      result.push(`write ${expr_value[0]} ${ptr_value[0]}`)
 
+      // copy the rest of the words if the data type is more than one word long
       if (size > 1) {
-        result.push("write " + pointer_regs[0] + " alu.1")
-
-        for (var i = 1; i < size; i++) {
-          result.push("write " + i + " alu.2")
-          result.push("write " + regs[i] + " [alu.+]")
+        result.push(`write ${ptr_regs[0]} alu.1`)
+        for (let i = 1; i < size; i++) {
+          result.push(`write ${i} alu.2`)
+          result.push(`write ${expr_value[i]} [alu.+]`)
         }
       }
 
       break
 
     case "array_set":
-      // TODO make work with global arrays
-      var array_name = args["name"]
-      var index_expr = args["index_expr"]
-      var expr = args["expr"]
+      var array_name = args.name
+      var index_expr = args.index_expr
+      var expr = args.expr
 
       var prefix_value_type = translate(index_expr,"int")
       if (prefix_value_type[2] != "int") {
@@ -1072,11 +1104,11 @@ function translate(token, ctx_type) {
 
       var scope_name
       var ram_prefix
-      if (array_name in var_map[scope]) {
+      if (array_name in symbol_table[scope]) {
         // this is a local array
         scope_name = scope
         ram_prefix = "ram."
-      } else if (array_name in var_map["[global]"]) {
+      } else if (array_name in symbol_table["[global]"]) {
         // this is a global array
         scope_name = "[global]"
         ram_prefix = "ram^."
@@ -1084,18 +1116,17 @@ function translate(token, ctx_type) {
         throw new CompError("Cannot find array named '" + array_name + "'")
       }
 
-      var array_information = var_map[scope_name][array_name]
-      var array_type = name_type_map[scope_name][array_name+".contained_type"]
+      var table_entry = symbol_table[scope][array_name].specific
+      var array_type = table_entry.element_data_type
 
       var index = prefix_value_type[1]
-      var base_addr = "["+ram_prefix+array_information[0]+"]"
-      var item_size_as_register = "["+ram_prefix+array_information[2]+"]"
-      var item_size_as_number = name_type_map[scope_name][array_name+".contained_size"]
+      var base_addr = `[${ram_prefix}${table_entry.base_addr}]`
+      var item_size = data_type_size[array_type]
 
-      //calculate address of the specified index
+      // calculate address of the specified index
       load_lib("sys.array_pointer")
       result.push("write "+index+" ram+.0")
-      result.push("write "+item_size_as_register+" ram+.1")
+      result.push("write "+item_size+" ram+.1")
       result.push("write "+base_addr+" ram+.2")
       result.push("call func_sys.array_pointer_base_addr") //output is in ram+.3
 
@@ -1108,8 +1139,8 @@ function translate(token, ctx_type) {
       if (prefix_value_type[2] != array_type) {
         throw new CompError("Array expected type '" +array_type+ "', got '" + prefix_value_type[2] + "'")
       }
-      result.push.apply(result,prefix_value_type[0])
-      var memory = alloc_block(item_size_as_number)
+      result.push.apply(result, prefix_value_type[0])
+      var memory = alloc_block(item_size)
       var buffer = memory.slice()
 
       for (var register of prefix_value_type[1]) {
@@ -1121,7 +1152,7 @@ function translate(token, ctx_type) {
       //copy value of expr into correct position in array
       result.push("write "+source_addr+" ram+.0")
       result.push("write "+target_addr+" ram+.1")
-      result.push("write "+item_size_as_register+ " ram+.2")
+      result.push("write "+item_size+ " ram+.2")
 
       // if this is a global array we need a different copy function
       if (scope_name === "[global]") {
@@ -1137,96 +1168,87 @@ function translate(token, ctx_type) {
       break
 
     case "array_function":
-      var array_name = args["name"]
-      var operation = args["operation"]
+      var array_name = args.name
+      var operation = args.operation
 
       var scope_name
       var ram_prefix
-      if (array_name in var_map[scope]) {
+      if (array_name in symbol_table[scope]) {
         // this is a local array
         scope_name = scope
         ram_prefix = "ram."
-      } else if (array_name in var_map["[global]"]) {
+      } else if (array_name in symbol_table["[global]"]) {
         // this is a global array
         scope_name = "[global]"
         ram_prefix = "ram^."
       } else {
-        throw new CompError("Cannot find array named '" + array_name + "'")
+        throw new CompError(`Cannot find array named '${array_name}'`)
       }
 
-      var array_information = var_map[scope_name][array_name]
-      var type = name_type_map[scope_name][array_name+".contained_type"]
-      var item_size_as_number = name_type_map[scope_name][array_name+".contained_size"]
+      var table_entry = symbol_table[scope][array_name].specific
+      var array_type = table_entry.element_data_type
 
-      if (operation == "append") {
-        var expr = args["exprs"][0]
-        //append just puts the given value at the current end of the list, then adds 1 to the size of the list
+      var base_addr = `[${ram_prefix}${table_entry.base_addr}]`
+      var current_len = `[${ram_prefix}${table_entry.current_len}]`
+      var max_len = `[${ram_prefix}${table_entry.max_len}]`
+      var item_size = data_type_size[array_type]
 
-        var index = "["+ram_prefix+array_information[3]+"]"
-        var base_addr = "["+ram_prefix+array_information[0]+"]"
-        var item_size_as_register = "["+ram_prefix+array_information[2]+"]"
+      if (operation === "append") {
+        // append just puts the given value at the current end of the list, then adds 1 to the size of the list
 
-        //put item at the specified index by evaluating set token
-        var token = {"name":"array_set","type":"command","arguments":{
-          "name": array_name,
-          "index_expr": {
-            "name":"array_expression",
-            "type":"expression",
-            "arguments":{
-              "name":array_name,
-              "operation":"len"}
+        // put item at the specified index by evaluating a set token
+        let token = {name:"array_set",type:"command",arguments:{
+          name: array_name,
+          index_expr: {
+            name:"array_expression",
+            type:"expression",
+            arguments:{
+              name:array_name,
+              operation:"len"}
             },
-          "expr": args["exprs"][0]
+          expr: args.exprs[0]
         }}
-        result.push.apply(result,translate(token))
+        result.push.apply(result, translate(token))
 
-        //increment the curret length of the array to reflect the change
-        var current_index = ram_prefix + array_information[3]
-        result.push("write ["+ current_index +"] alu.1")
+        // increment the curret length of the array to reflect the change
+        result.push("write "+ current_len +" alu.1")
         result.push("write 1 alu.2")
-        result.push("write [alu.+] " + current_index)
+        result.push("write [alu.+] " + current_len.slice(1, -1))
 
-      } else if (operation == "insert") {
-        var index_expression = args["exprs"][0]
-        var item_expression = args["exprs"][1]
+      } else if (operation === "insert") {
+        let [index_expression, item_expression] = args.exprs
 
         //evaluate the expression that gives the index
-        var prefix_value_type = translate(index_expression,"int")
-        if (prefix_value_type[2] != "int") {
+        let [expr_prefix, expr_value, expr_type] = translate(index_expression, "int")
+        if (expr_type !== "int") {
           throw new CompError("Array indexes must be of type 'int'")
         }
-        result.push.apply(result,prefix_value_type[0])
+        result.push.apply(result, expr_prefix)
 
-        var index = prefix_value_type[1]
-        var base_addr = "["+ram_prefix+array_information[0]+"]"
-        var item_size_as_register = "["+ram_prefix+array_information[2]+"]"
-        var current_length = "["+ram_prefix+array_information[3]+"]"
-
-        var temp_var1 = get_temp_word()
-        var temp_var2 = get_temp_word()
+        let temp_var1 = get_temp_word()
+        let temp_var2 = get_temp_word()
 
         //calculate address of the specified index and index+1
         load_lib("sys.array_pointer")
-        result.push("write "+index+" ram+.0")
-        result.push("write "+item_size_as_register+" ram+.1")
+        result.push("write "+expr_value+" ram+.0")
+        result.push("write "+item_size+" ram+.1")
         result.push("write "+base_addr+" ram+.2")
         result.push("call func_sys.array_pointer_base_addr") //output is in ram+.3
 
         result.push("write [ram+.3] " + temp_var1[1])
         result.push("write [ram+.3] alu.1")
-        result.push("write "+item_size_as_register+ " alu.2")
+        result.push("write "+item_size+ " alu.2")
         result.push("write [alu.+] "+ temp_var2[1])
-
-        var source_addr = "["+temp_var1[1]+"]"
-        var target_addr = "["+temp_var2[1]+"]"
 
         //calculate the length of the array in memory
         load_lib("sys.int_multiply")
-        result.push("write "+item_size_as_register+ " ram+.0")
-        result.push("write "+current_length+ " ram+.1")
+        result.push("write "+item_size+ " ram+.0")
+        result.push("write "+current_len+ " ram+.1")
         result.push("call func_sys.int_multiply_b")
 
-        var length_to_shift = "[ram+.2]"
+        let length_to_shift = "[ram+.2]"
+        let source_addr = "["+temp_var1[1]+"]"
+        let target_addr = "["+temp_var2[1]+"]"
 
         //shift entire array (that is below the specified poisiton) one item_size down
         result.push("write "+source_addr+" ram+.0")
@@ -1243,17 +1265,17 @@ function translate(token, ctx_type) {
         }
 
         //put item at the specified index
-        var token = {"name":"array_set","type":"command","arguments":{
-          "name": array_name,
-          "index_expr": args["exprs"][0],
-          "expr": args["exprs"][1]
+        var token = {name:"array_set",type:"command",arguments:{
+          name: array_name,
+          index_expr: index_expression,
+          expr: item_expression
         }}
-        result.push.apply(result,translate(token))
+        result.push.apply(result, translate(token))
 
         //add one to length
-        result.push("write " + current_length + " alu.1")
+        result.push("write " + current_len + " alu.1")
         result.push("write 1 alu.2")
-        result.push("write [alu.+] " +ram_prefix + array_information[3])
+        result.push("write [alu.+] " + current_len.slice(1, -1))
 
         free_block(temp_var1[0])
         free_block(temp_var2[0])
@@ -1264,57 +1286,68 @@ function translate(token, ctx_type) {
       break
 
     case "delete":           //free [name]
-      var name = args["name"]
-      if (is_argument(name) || name in const_map) {
-        throw new CompError("'" + name + "' is not a variable")
-      }
-      if (name in var_map[scope]) {
-        //if its an array, also free up the block that houses its elements
-        if ( name_type_map[scope][name] == "array") {
-          free_block(var_map[scope][name+".block"])
-          delete var_map[scope][name+".block"]
-        }
-        free_block(var_map[scope][name])
-        delete var_map[scope][name]
-        delete name_type_map[scope][name]
-      } else if (name in var_map["[global]"]) {
-        free_global_block(var_map["[global]"][name])
-        delete var_map["[global]"][name]
-        delete name_type_map["[global]"][name]
+      var table_entry
+      var is_global = false
+
+      if (args["name"] in symbol_table[scope])  {
+        // it's a local symbol
+        table_entry = symbol_table[scope][args.name]
+      } else if (args["name"] in symbol_table["[global]"]) {
+        // it's a global symbol
+        table_entry = symbol_table["[global]"][args.name]
+        is_global = true
       } else {
-        throw new CompError("Can't free variable: '" + args["name"] + "' is undefined")
+        // it does not exist
+        throw new CompError(`Variable '${args.name}' is undefined`)
       }
+
+      if (table_entry.type !== "variable") {
+        throw new CompError(`'${args.name}' is not a variable and cannot be freed`)
+      }
+
+      if (table_entry.data_type === "array") {
+        throw new CompError("not implemented")
+      } else {
+        if (is_global) {
+          free_global_block(table_entry.specific.ram_addresses)
+        } else {
+          free_block(table_entry.specific.ram_addresses)
+        }
+      }
+
+      delete symbol_table[scope][args.name]
+
       break
 
     //all the cmds below are just shortcuts for set tokens
     //i.e. a++    becomes a = a + 1
     case "increment_1":  //[name]++
       var variable = {"name":"var_or_const","type":"expression","arguments":{"name":args["name"]}}
-      var number = {"name":"number","type":"expression","arguments":{"value":"1","bool":true,"type_guess":"int"}}
+      var number = tokenise("1")
       var token = set_token(args["name"],"+",[variable,number],args["line"])
-      var prefix = translate(token,name_type_map[scope][args["name"]])
+      var prefix = translate(token, symbol_table[scope][args["name"]].data_type) // TODO fix datatype check and clean up
       result = prefix
       break
 
     case "decrement_1":  //[name]--
       var variable = {"name":"var_or_const","type":"expression","arguments":{"name":args["name"]}}
-      var number = {"name":"number","type":"expression","arguments":{"value":"1","bool":true,"type_guess":"int"}}
+      var number = tokenise("1")
       var token = set_token(args["name"],"-",[variable,number],args["line"])
-      var prefix = translate(token,name_type_map[scope][args["name"]])
+      var prefix = translate(token, symbol_table[scope][args["name"]].data_type)
       result = prefix
       break
 
     case "increment":  //[name] += [expr]
       var variable = {"name":"var_or_const","type":"expression","arguments":{"name":args["name"]}}
       var token = set_token(args["name"],"+",[variable,args["expr"]],args["line"])
-      var prefix = translate(token,name_type_map[scope][args["name"]])
+      var prefix = translate(token, symbol_table[scope][args["name"]].data_type)
       result = prefix
       break
 
     case "decrement":  //[name] -= [expr]
       var variable = {"name":"var_or_const","type":"expression","arguments":{"name":args["name"]}}
       var token = set_token(args["name"],"-",[variable,args["expr"]],args["line"])
-      var prefix = translate(token,name_type_map[scope][args["name"]])
+      var prefix = translate(token, symbol_table[scope][args["name"]].data_type)
       result = prefix
       break
 
@@ -1327,7 +1360,8 @@ function translate(token, ctx_type) {
         throw new CompError("Statement 'return' can only be used in functions")
       }
 
-      var func_type = name_type_map[scope][scope]
+      var func_type = function_table[scope].data_type
+      var force_cast = function_table[scope].force_cast
       if (func_type === "none" && args["expr"] !== undefined) {
         throw new CompError("Functions of type 'none' cannot return values")
       }
@@ -1335,12 +1369,10 @@ function translate(token, ctx_type) {
       // if the return statement should have an expression, evaluate it
       if (func_type !== "none") {
 
-        var [prefix, value, expr_type] = translate(args["expr"], func_type)
-        if (func_type.startsWith('[') && func_type.endsWith(']')) {
-          // trim type to exclude square brackets
-          func_type = func_type.slice(1,-1)
+        var [prefix, value, expr_type] = translate(args.expr, func_type)
 
-          // square brackets around the type means cast any return expression to this type, ignoring any mis-match
+        if (force_cast) {
+          // cast any return expression to this type, ignoring any mis-match
           log.warn(`Casting return expression of type '${expr_type}' to '${func_type}'`)
 
         } else if (expr_type !== func_type) {
@@ -1357,7 +1389,7 @@ function translate(token, ctx_type) {
           //this next replace prevents recursive function calls producing ram++++.x addresses
           map.push(temp.replace("ram++","ram+"))
         }
-        return_map[scope] = map
+        function_table[scope].return_value = map
       }
 
       // add the actual return instruction
@@ -1375,10 +1407,11 @@ function translate(token, ctx_type) {
       break
 
     default:
-      throw new CompError("Error translating command:\nUnknown type '" + token["name"] + "'")
+      throw new CompError(`Error translating command:\nUnknown type '${token.name}'`)
       break
     }
     return result
+
   } else if (token["type"] == "expression") {
 
     var prefix = []
@@ -1537,16 +1570,16 @@ function translate(token, ctx_type) {
 
       consts.push(id+":")
 
-      for (var i = 0; i < string.length; i++) {
-        var char = string[i]
-        var code = char.charCodeAt(0)
+      for (let i = 0; i < string.length; i++) {
+        let code = string[i].charCodeAt(0)
         if (code < 32 || code > 127) {
           throw new CompError("Error looking up character code for '"+char+"' ")
         }
         consts.push(code)
       }
 
-      consts.push(0) //string terminator
+      // string terminator
+      consts.push(0)
 
       registers = [id]
       type = "str"
@@ -2313,23 +2346,22 @@ function translate(token, ctx_type) {
       break
 
     case "expr_array":
-      var id = gen_id("expr_array")
-      id = "expr_array_" + id
+      var label = `expr_array_${gen_id("expr_array")}`
 
       var given_type_size = args["type_size"]
-      var length = args["exprs"].length
+      var length = args.exprs.length
 
-      //if no context given use 1st element to determine type
-      //and assume current length is max length
+      // if no context given use 1st element to determine type
+      // and assume current length is max length
       if (ctx_type === undefined) {
         var contained_type = args["exprs"][0]["arguments"]["type_guess"]
       } else {
         var contained_type = ctx_type
-        log.info("context given type is "+ contained_type)
+        log.info("(expr_array) context given type is "+ contained_type)
       }
       var max_length = length
 
-      //but explicitly given type and max length will override these
+      // but explicitly given type and max length will override these
       if (given_type_size !== undefined) {
         if (given_type_size.length == 1) {
           contained_type = given_type_size[0]
@@ -2340,16 +2372,13 @@ function translate(token, ctx_type) {
       }
 
       if (ctx_type === undefined && given_type_size === undefined) {
-        log.warn("Inferring type as '"+ contained_type +"' from first element of array.")
+        log.warn(`Inferring type as '${contained_type}' from first element of array`)
       }
 
-      name_type_map[scope][id] = contained_type
-      var item_size = translate(args["exprs"][0],contained_type)[1].length
+      var item_size = data_type_size[contained_type]
+      var consts_to_add = [label + ":"]
 
-      var consts_to_add = []
-      consts_to_add.push(id + ":")
-
-      for (var item of args["exprs"]) {
+      for (var item of args.exprs) {
         var prefix_and_value = translate(item,contained_type)
         if (prefix_and_value[0].length != 0 ) {
           throw new CompError("Expressions in an array decleration must be static")
@@ -2358,55 +2387,63 @@ function translate(token, ctx_type) {
       }
       consts.push.apply(consts,consts_to_add)
 
-      registers = [id,max_length,item_size,length]
+      registers = [label, length, max_length, contained_type]
       type = "expr_array"
       break
 
     case "var_or_const":
-      if (args["name"] in libs) {
-        load_lib(args["name"] )
-      }
+      var table_entry
+      var is_global = false
 
-      if (args["name"] in var_map[scope]) {
-        registers = []
-        for (var addr of var_map[scope][args["name"]]) {
-          registers.push("[ram."+addr+"]")
-        }
-      } else if (args["name"] in const_map) {
-        registers = []
-        for (var addr of const_map[args["name"]]) {
-          registers.push("[" + addr + "]")
-        }
-      } else if (args["name"] in var_map["[global]"]) {
-        registers = []
-        for (var addr of var_map["[global]"][args["name"]]) {
-          registers.push("[ram^."+addr+"]")
-        }
-
+      if (args.name in symbol_table[scope])  {
+        // it's a local symbol
+        table_entry = symbol_table[scope][args.name]
+      } else if (args.name in symbol_table["[global]"]) {
+        // it's a global symbol
+        table_entry = symbol_table["[global]"][args.name]
+        is_global = true
       } else {
-        throw new CompError("'"+args["name"]+"' is undefined")
+        // it does not exist
+        throw new CompError(`Variable '${args.name}' is undefined`)
       }
 
-      type = name_type_map[scope][args["name"]]
-      if (typeof type === "undefined") {
-        type = name_type_map["[global]"][args["name"]]
+      type = table_entry.data_type
+      if (!(type in data_type_size)) {
+        throw new CompError(`Variable '${args.name}' has an invalid data type '${type}'`)
       }
-      if (typeof type === "undefined") {
-        throw new CompError("Can't lookup type of '" + args["name"] + "'")
+
+      registers = []
+      if (["variable","argument"].includes(table_entry.type)) {
+        // it's a regular variable/argument
+        for (let addr of table_entry.specific.ram_addresses) {
+          if (is_global) {
+            registers.push(`[ram^.${addr}]`)
+          } else {
+            registers.push(`[ram.${addr}]`)
+          }
+        }
+      } else if (table_entry.type === "constant") {
+        // it's a constant
+        for (let addr of table_entry.specific.value) {
+          registers.push(`[${addr}]`)
+        }
+      } else {
+        throw new CompError(`Unknown symbol type '${table_entry.type}'`)
       }
+
       break
 
     case "array_expression":
-      var array_name = args["name"]
-      var operation = args["operation"]
+      var array_name = args.name
+      var operation = args.operation
 
       var scope_name
       var ram_prefix
-      if (array_name in var_map[scope]) {
+      if (array_name in symbol_table[scope]) {
         // this is a local array
         scope_name = scope
         ram_prefix = "ram."
-      } else if (array_name in var_map["[global]"]) {
+      } else if (array_name in symbol_table["[global]"]) {
         // this is a global array
         scope_name = "[global]"
         ram_prefix = "ram^."
@@ -2414,35 +2451,38 @@ function translate(token, ctx_type) {
         throw new CompError("Cannot find array named '" + array_name + "'")
       }
 
-      var array_information = var_map[scope_name][array_name]
-      var type = name_type_map[scope_name][array_name+".contained_type"]
-      var item_size_as_number = name_type_map[scope_name][array_name+".contained_size"]
+      var table_entry = symbol_table[scope][array_name].specific
+      var array_type = table_entry.element_data_type
+
+      var base_addr = `[${ram_prefix}${table_entry.base_addr}]`
+      var current_len = `[${ram_prefix}${table_entry.current_len}]`
+      var max_len = `[${ram_prefix}${table_entry.max_len}]`
+      var item_size = data_type_size[array_type]
+
 
       if (operation == "index") {
-        var index = args["expr"]
-        var prefix_value_type = translate(index,"int")
+        var index = args.expr
+        var prefix_value_type = translate(index, "int")
         if (prefix_value_type[2] != "int") {
           throw new CompError("Array indexes must be of type 'int'")
         }
         prefix.push.apply(prefix,prefix_value_type[0])
 
         var index = prefix_value_type[1]
-        var base_addr = "["+ram_prefix+array_information[0]+"]"
-        var item_size_as_register = "["+ram_prefix+array_information[2]+"]"
 
         //calculate address of item at the specified index
         load_lib("sys.array_pointer")
         prefix.push("write "+index+" ram+.0")
-        prefix.push("write "+item_size_as_register+" ram+.1")
+        prefix.push("write "+item_size+" ram+.1")
         prefix.push("write "+base_addr+" ram+.2")
         prefix.push("call func_sys.array_pointer_base_addr") //output is in ram+.3
 
-        var memory = alloc_block(item_size_as_number)
+        var memory = alloc_block(item_size)
 
         //copy item from calculated address to allocated result registers
         prefix.push("write [ram+.3] ram+.0")
         prefix.push("write ram."+ memory[0] +" ram+.1")
-        prefix.push("write "+item_size_as_register+ " ram+.2")
+        prefix.push("write "+item_size+ " ram+.2")
 
         // if this is a global array we need a different copy function
         if (scope_name === "[global]") {
@@ -2454,52 +2494,44 @@ function translate(token, ctx_type) {
         }
 
         registers = []
-        for (var word of memory) {
-          registers.push("[ram."+word+"]")
+        for (let addr of memory) {
+          registers.push(`[ram.${addr}]`)
         }
 
       } else if (operation == "len") {
-        var value = "["+ram_prefix+array_information[3]+"]"
-        registers = [value]
+        registers = [current_len]
         type = "int"
 
        } else if (operation == "max_len") {
-        var value = "["+ram_prefix+array_information[1]+"]"
-        registers = [value]
+        registers = [max_len]
         type = "int"
 
       } else if (operation == "pop") {
         // simply take one away from the length of the array, then return the item at that index
 
-        var array_length_register = ram_prefix+array_information[3]+""
-
-        prefix.push("copy "+ array_length_register +" alu.1")
+        prefix.push("write "+ current_len +" alu.1")
         prefix.push("write 1 alu.2")
-        prefix.push("write [alu.-] "+ array_length_register)
-
-        var index = "["+array_length_register+"]"
-        var base_addr = "["+ram_prefix+array_information[0]+"]"
-        var item_size_as_register = "["+ram_prefix+array_information[2]+"]"
+        prefix.push("write [alu.-] "+ current_len.slice(1, -1))
 
         //calculate address of item at the specified index
         load_lib("sys.array_pointer")
-        prefix.push("write "+index+" ram+.0")
-        prefix.push("write "+item_size_as_register+" ram+.1")
+        prefix.push("write "+current_len+" ram+.0")
+        prefix.push("write "+item_size+" ram+.1")
         prefix.push("write "+base_addr+" ram+.2")
         prefix.push("call func_sys.array_pointer_base_addr") //output is in ram+.3
 
-        var memory = alloc_block(item_size_as_number)
+        var memory = alloc_block(item_size)
 
         //copy item from calculated address to allocated result registers
         load_lib("sys.ram_to_ram_copy")
         prefix.push("write [ram+.3] ram+.0")
         prefix.push("write ram."+ memory[0] +" ram+.1")
-        prefix.push("write "+item_size_as_register+ " ram+.2")
+        prefix.push("write "+item_size+ " ram+.2")
         prefix.push("call func_sys.ram_to_ram_copy_length")
 
         registers = []
-        for (var word of memory) {
-          registers.push("[ram."+word+"]")
+        for (let addr of memory) {
+          registers.push(`[ram.${addr}]`)
         }
 
       } else {
@@ -2509,55 +2541,59 @@ function translate(token, ctx_type) {
 
     case "function":      // function call
       // functions begining with 'sys.' will need to be loaded from the standard library first
-      if (args["name"].startsWith("sys.")) {
-        load_lib(args["name"])
+      if (args.name.startsWith("sys.")) {
+        load_lib(args.name)
       }
 
-      var label = "func_" + args["name"]
-      if (!(args["name"] in var_map)) {
-        throw new CompError("'"+args["name"]+"' is undefined")
+      var entry_point = "func_" + args.name
+      if (!(args.name in function_table)) {
+        throw new CompError(`Function '${args.name}' is undefined`)
       }
-      var target_arg_no = Object.keys(arg_map[args.name]).length
-      var actual_arg_no = Object.keys(args["exprs"]).length
-      var target_args = arg_map[args["name"]]
+
+      var function_table_entry = function_table[args.name]
+
+      var target_args = function_table_entry.arguments
+      var target_arg_no = target_args.length
+      var actual_arg_no = Object.keys(args.exprs).length
 
       if (actual_arg_no > target_arg_no) {
-        throw new CompError("'" + args["name"] + "' takes at most " + target_arg_no + " arg(s)")
+        throw new CompError(`'${args.name}' takes at most ${target_arg_no} arg(s), but ${actual_arg_no} have been given`)
       }
-      log.debug("call '" + args["name"] + "' " + actual_arg_no + "/" + target_arg_no + " arg(s)")
+      log.debug(`calling '${args.name}' with ${actual_arg_no}/${target_arg_no} arguments`)
 
-      for (var i = 0; i < actual_arg_no; i++) {
-        var target_type = name_type_map[args["name"]][Object.keys(target_args)[i]]
-        var target_regs = var_map[args["name"]][Object.keys(target_args)[i]]
-        var token = args["exprs"][i]
+      for (let i = 0; i < actual_arg_no; i++) {
+        let target_type = symbol_table[args.name][target_args[i]].data_type
+        let target_regs = symbol_table[args.name][target_args[i]].specific.ram_addresses
 
-        var prefix_value_type = translate(token,target_type)
-        if (prefix_value_type[2] != target_type) {
-          throw new CompError("In call to "+ args["name"] +"()\nArg '" + Object.keys(target_args)[i] + "' requires '" + target_type+ "', got '"+ prefix_value_type[2] +"'")
+        let token = args.exprs[i]
+
+        let [expr_prefix, expr_value, expr_type] = translate(token, target_type)
+        if (expr_type !== target_type) {
+          throw new CompError(`In call to ${args.name}()\nArg '${target_args[i]}' is of type '${target_type}', but got '${expr_type}'`)
         }
 
-        prefix.push.apply(prefix,prefix_value_type[0])
-        for (var y = 0; y < target_regs.length; y++) {
-          var expr_reg = prefix_value_type[1][y]
-          var dst_reg = "ram+." + target_regs[y]
-          prefix.push("write " + expr_reg + " " + dst_reg)
+        // run code required by expression
+        prefix.push.apply(prefix, expr_prefix)
+
+        // copy each word into argument memory
+        for (let y = 0; y < target_regs.length; y++) {
+          let expr_word = expr_value[y]
+          let arg_word = `ram+.${target_regs[y]}`
+          prefix.push(`write ${expr_word} ${arg_word}`)
         }
       }
 
-      if (actual_arg_no != 0) {
-        log.debug(args["name"] + ": skip def of " + Object.keys(target_args)[actual_arg_no-1])
-        label += "_" + Object.keys(target_args)[actual_arg_no-1]
+      // skip the initialisation of arguments that we have supplied values for
+      // we do this by entering the function at a different point
+      if (actual_arg_no > 0) {
+        entry_point += `_${target_args[actual_arg_no - 1]}`
       }
 
-      prefix.push("call " + label)
+      // actually call the function
+      prefix.push("call " + entry_point)
 
-      registers = return_map[args["name"]]
-      type = name_type_map[args["name"]][args["name"]]
-
-      if (type.startsWith('[') && type.endsWith(']')) {
-        // trim type to exclude square brackets if present
-        type = type.slice(1,-1)
-      }
+      registers = function_table[args.name].return_value
+      type = function_table[args.name].data_type
       break
 
     case "pointer_lookup":
@@ -2741,32 +2777,47 @@ function translate(token, ctx_type) {
       break
 
     case "function_def":
-      if (!const_name_available(args["name"])) {
-        throw new CompError("Name '"+args["name"]+"' is not available")
-      }
-      func[args["name"]] = []
-      var target = func[args["name"]]
-      var label = "func_" + args["name"]
-      target.push(label+":")
+      assert_global_name_available(args.name)
+
+      // init output area for generated code
+      var label = `func_${args.name}:`
+      funcs[args.name] = [label]
+      var target = funcs[args.name]
+
+      // save previous scope for later
       var old_scope = scope
-      scope = args["name"]
-      var_map[scope] = {}
-      arg_map[scope] = {}
-      name_type_map[scope] = {}
+      scope = args.name
+      log.debug(`namespace -> ${scope}`)
+
+      // generate free ram and symbol table for this scope
       free_ram[scope] = gen_free_ram_map()
+      symbol_table[args.name] = {}
 
-      if (args["type"] === undefined) {
-        name_type_map[scope][scope] = "none"
+      var data_type
+      if (args.type === undefined) {
+        data_type = "none"
       } else {
-        name_type_map[scope][scope] = args["type"]
+        data_type = args.type
       }
-      log.debug("namespace -> " + scope)
+      assert_valid_datatype(data_type)
 
-      target.push.apply(target,translate_body(token["body"]))
+      // add entry in function table
+      function_table[args.name] = {
+        data_type: data_type,
+        force_cast: args.force_cast,
+        arguments: [],
+        return_value: []
+      }
 
+      // translate the body of the function
+      target.push.apply(target, translate_body(token.body))
+
+      // restore previous scope
       scope = old_scope
-      log.debug("namespace -> " + scope)
-      if (target[target.length -1] != "return") {
+      log.debug(`namespace -> ${scope}`)
+
+      // add return instruction unless it is already there
+      if (target[target.length -1] !== "  return") {
         target.push("return")
       }
       break
@@ -2926,8 +2977,8 @@ function compile(input, nested) {
     }
 
   //add function defs
-    for (var item in func) {
-      for (var line of func[item]) {
+    for (let item in funcs) {
+      for (let line of funcs[item]) {
         output += "\n" + line
       }
     }
@@ -2935,35 +2986,38 @@ function compile(input, nested) {
     output += "\n"
 
   //feedback
-
   if (!nested) {
-    var var_number = 0
-    for (var namespace in var_map) {
-      if (namespace.startsWith("sys.")) { continue }
-      var_number += Object.keys(var_map[namespace]).length
-    }
-    for (var namespace in arg_map) {
-      if (namespace.startsWith("sys.")) { continue }
-      var_number -= Object.keys(arg_map[namespace]).length
-    }
+    let non_deallocated_vars = 0
 
-    var ram_percent = Math.round((max_allocated_ram_slots / 1023) * 100)
-    var standard_libs_used = Object.keys(required).length
-
-    if (var_number > 0) {
-      log.warn(var_number + " variable(s) are never deallocated")
+    for (let namespace in symbol_table) {
+      if (namespace.startsWith("sys.")) {
+        continue
+      }
+      let symbols = symbol_table[namespace]
+      for (let name in symbols) {
+        let symbol = symbols[name]
+        if (symbol.type === "variable") {
+          non_deallocated_vars += 1
+        }
+      }
     }
 
-    let ram_message = "RAM use: " + ram_percent + "% (" + max_allocated_ram_slots + "/1023 words)"
+    if (non_deallocated_vars > 0) {
+      log.warn(non_deallocated_vars + " variable(s) are never deallocated")
+    }
 
+    let ram_percent = Math.round((max_allocated_ram_slots / 1023) * 100)
+
+    let ram_message = `RAM use: ${ram_percent}% (${max_allocated_ram_slots}/1023 words)`
     if (typeof process === 'undefined') { // if we are running in a browser not nodejs
-      ram_message += "<progress value="+max_allocated_ram_slots+" max=\"1023\" class=\"ram-bar\"></progress>"
+      ram_message += `<progress value="${max_allocated_ram_slots}" max="1023" class="ram-bar"></progress>`
     }
     log.info(ram_message)
-    log.info("Standard library functions used: " + standard_libs_used)
+
+    log.info(`Standard library functions used: ${Object.keys(required).length}`)
   }
 
   return output
 }
 
-log.info("Compiler thread started, " + Object.keys(libs).length + " standard functions loaded")
+log.info(`Compiler thread started, ${Object.keys(libs).length} standard functions loaded`)

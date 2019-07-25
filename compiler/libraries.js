@@ -352,7 +352,7 @@ const libs = {
     "  return result"
   ],
   "sys.slong_add": [
-    "def sys.slong_add [slong]",
+    "def sys.slong_add #slong",
     "  arg slong a",
     "  arg slong b",
     "",
@@ -375,7 +375,7 @@ const libs = {
     "  return c"
   ],
   "sys.slong_subtract": [
-    "def sys.slong_subtract [slong]",
+    "def sys.slong_subtract #slong",
     "  arg slong a",
     "  arg slong b",
     "  var int b_high b:0",
@@ -468,7 +468,7 @@ const libs = {
     "  return c"
   ],
   "sys.slong_lshift": [
-    "def sys.slong_lshift [slong]",
+    "def sys.slong_lshift #slong",
     "  arg slong a",
     "  var int a_high a:0",
     "  var int a_low a:1",
@@ -483,7 +483,7 @@ const libs = {
     "  return c"
   ],
   "sys.slong_rshift": [
-    "def sys.slong_rshift [slong]",
+    "def sys.slong_rshift #slong",
     "  arg slong a",
     "  var int a_high a:0",
     "  var int a_low a:1",
