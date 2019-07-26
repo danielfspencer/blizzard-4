@@ -23,7 +23,7 @@ let token_dump = []
 
 const data_type_size = {int:1,sint:1,long:2,slong:2,float:2,bool:1,str:1,array:4,none:0}
 const data_type_default_value = {int:"0",sint:"0",long:"0",slong:"0",float:"0",bool:"false",str:"\"\""}
-const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys":"","array":"","return":""}
+const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys":"","array":"","return":"","break":"","continue":""}
 
 onmessage = (msg) => {
   switch(msg.data[0]) {
@@ -92,6 +92,7 @@ function CompError(message, line) {
 
 function init_vars() {
   scope = "[root]"
+  inner_structure_label = undefined
   free_ram = {"[root]":gen_free_ram_map(),"[global]":gen_free_ram_map()}
   symbol_table = {"[root]":{},"[global]":{}}
   function_table = {}
@@ -517,6 +518,12 @@ function tokenise(input, line) {
 
   } else if (list[0] == "free") {                 // free [name]
     token = {name:"delete",type:"command",arguments:{name:list[1]}}
+
+  } else if (list[0] == "break") {                 // break
+    token = {name:"break",type:"command",arguments:{}}
+
+  } else if (list[0] == "continue") {                 // break
+    token = {name:"continue",type:"command",arguments:{}}
 
   } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.test(input)) {                    // [name] = [expr]
     let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.exec(input)
@@ -1390,6 +1397,20 @@ function translate(token, ctx_type) {
       } else {
         load_lib(args.name)
       }
+      break
+
+    case "break":
+      if (inner_structure_label === undefined) {
+        throw new CompError("'break' can only be used in for/while loops")
+      }
+      result.push(`goto ${inner_structure_label}_end`)
+      break
+
+    case "continue":
+      if (inner_structure_label === undefined) {
+        throw new CompError("'continue' can only be used in for/while loops")
+      }
+      result.push(`goto ${inner_structure_label}_cond`)
       break
 
     default:
@@ -2731,7 +2752,11 @@ function translate(token, ctx_type) {
       result.push("goto? " + label + "_end")
       result.push([(label+"_start:")])
 
+      var prev_inner_structure_label = inner_structure_label
+      inner_structure_label = label
       result.push.apply(result,translate_body(token.body))
+      result.push(label+"_cond:")
+      inner_structure_label = prev_inner_structure_label
 
       var cmd_result = translate(args.cmd)
       result.push.apply(result,cmd_result)
@@ -2757,7 +2782,11 @@ function translate(token, ctx_type) {
       result.push("goto? " + label + "_end")
       result.push([(label+"_start:")])
 
+      var prev_inner_structure_label = inner_structure_label
+      inner_structure_label = label
       result.push.apply(result,translate_body(token.body))
+      result.push(label+"_cond:")
+      inner_structure_label = prev_inner_structure_label
 
       result.push.apply(result,prefix)
       result.push("write " + value + " ctl.cnd")
