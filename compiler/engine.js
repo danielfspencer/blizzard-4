@@ -273,6 +273,15 @@ function write_operand(expr,type) {
   return result
 }
 
+function inc_or_dec_token(var_name, op, value_token) {
+  let var_token = {name:"var_or_const", type:"expression", arguments: {
+    name:var_name
+  }}
+
+  let token = set_token(var_name, op, [var_token, value_token])
+  return translate(token)
+}
+
 function alloc_block(size) {
   log.debug("Request for " + size + " words(s) of RAM")
   var addrs = []
@@ -1322,33 +1331,19 @@ function translate(token, ctx_type) {
     //all the cmds below are just shortcuts for set tokens
     //i.e. a++    becomes a = a + 1
     case "increment_1":  //[name]++
-      var variable = {"name":"var_or_const","type":"expression","arguments":{"name":args["name"]}}
-      var number = tokenise("1")
-      var token = set_token(args["name"],"+",[variable,number],args["line"])
-      var prefix = translate(token, symbol_table[scope][args["name"]].data_type) // TODO fix datatype check and clean up
-      result = prefix
+      result = inc_or_dec_token(args.name, "+", tokenise("1"))
       break
 
     case "decrement_1":  //[name]--
-      var variable = {"name":"var_or_const","type":"expression","arguments":{"name":args["name"]}}
-      var number = tokenise("1")
-      var token = set_token(args["name"],"-",[variable,number],args["line"])
-      var prefix = translate(token, symbol_table[scope][args["name"]].data_type)
-      result = prefix
+      result = inc_or_dec_token(args.name, "-", tokenise("1"))
       break
 
     case "increment":  //[name] += [expr]
-      var variable = {"name":"var_or_const","type":"expression","arguments":{"name":args["name"]}}
-      var token = set_token(args["name"],"+",[variable,args["expr"]],args["line"])
-      var prefix = translate(token, symbol_table[scope][args["name"]].data_type)
-      result = prefix
+      result = inc_or_dec_token(args.name, "+", args.expr)
       break
 
     case "decrement":  //[name] -= [expr]
-      var variable = {"name":"var_or_const","type":"expression","arguments":{"name":args["name"]}}
-      var token = set_token(args["name"],"-",[variable,args["expr"]],args["line"])
-      var prefix = translate(token, symbol_table[scope][args["name"]].data_type)
-      result = prefix
+      result = inc_or_dec_token(args.name, "-", args.expr)
       break
 
     case "comment":    // comment (begins with //)
