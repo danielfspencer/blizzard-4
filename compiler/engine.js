@@ -404,7 +404,7 @@ function tokenise(input, line) {
   let list = input.split(" ")
   let token = {}
 
-  if (/^\/\/([^/]+)/.test(input)) { // a comment begining with two "//"
+  if (/^\/\/[^/].*$/.test(input)) { // a comment begining with two "//"
     token = {name:"comment",type:"command",arguments:{"comment":input}}
 
   } else if (/{(.+)}/.test(input)) {
