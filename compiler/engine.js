@@ -360,6 +360,10 @@ function translate_body(tokens) {
       }
       if (tokens[i].name == "function") {
         command = command[0] // if it is a function call (which is an expression) take only the prefix and bin the result register [[tokens],result] -> [tokens]
+        let function_type = function_table[tokens[i].arguments.name].data_type
+        if (function_type !== "none") {
+          log.warn(`line ${tokens[i].line}:\nDiscarding function's returned value of type '${function_type}'`)
+        }
       }
       for (let j = 0; j < command.length; j++ ) {
         command[j] = "  " + command[j]
@@ -2959,6 +2963,10 @@ function compile(input, nested) {
         command = translate(tokens[i])
         if (tokens[i].name == "function") {
           command = command[0] // if it is a function call (which are expressions) take only the prefix and bin the result register [[tokens],result] -> [tokens]
+          let function_type = function_table[tokens[i].arguments.name].data_type
+          if (function_type !== "none") {
+            log.warn(`line ${tokens[i].line}:\nDiscarding function's returned value of type '${function_type}'`)
+          }
         }
         if (command.length >= 1) {
           output += command.join("\n")
