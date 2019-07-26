@@ -702,13 +702,7 @@ function tokenise(input, line) {
     }
 
   } else if (/(^true$)|(^false$)/.test(input)) {    //is true/false (the reserved keywords for bool data type)
-    let value
-    if (input == "true") {
-      value = "1"
-    } else {
-      value = "0"
-    }
-    token = {name:"number",type:"expression",arguments:{value:value,type_guess:"bool"}}
+    token = {name:"bool",type:"expression",arguments:{value:input}}
 
   } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(input) ) {                       //variable or const (by name)
     token = {name:"var_or_const",type:"expression",arguments:{name:input}}
@@ -1437,24 +1431,21 @@ function translate(token, ctx_type) {
       }
 
       token = {name:type, type:"expression", arguments:{ value:args.value }}
-      var prefix_register_type = translate(token)
+      var prefix_register_type = translate(token, type)
       prefix = prefix_register_type[0]
       registers = prefix_register_type[1]
       break
 
     case "bool":
-      if (!/(^[+]?\d+$)|(^0b[10]+$)|(^0x[0-9a-fA-F]+$)/.test(args.value)) {
+      if (args.value === "true") {
+        registers = ["1"] // true
+      } else if (args.value === "false") {
+        registers = ["0"] // false
+      } else {
         throw new CompError("Invalid input for type 'bool'")
       }
 
-      var dec_val = parse_int(args.value)
-
-      if (dec_val > 65535) {
-        throw new CompError("Integer too large (2^16/65535 max)")
-      }
-
       type = "bool"
-      registers = [args.value]
       break
 
     case "int":

@@ -94,14 +94,14 @@ var bool invalid_key_code true
 while invalid_key_code
   if key_code == 0x16
     mode = 0
-    invalid_key_code = 0
+    invalid_key_code = false
   else if key_code == 0x1e
     mode = 1
-    invalid_key_code = 0
+    invalid_key_code = false
   else if key_code == 0x26
     mode = 2
     speed = 0
-    invalid_key_code = 0
+    invalid_key_code = false
   else
     key_code = get_key()
 

@@ -487,7 +487,7 @@ const libs = {
     "  arg slong a",
     "  var int a_high a:0",
     "  var int a_low a:1",
-    "  var bool carry a_high & 1",
+    "  var bool carry a_high sys.odd",
     "  var bool negative",
     "",
     "  {write [ram.1] alu.1}",
