@@ -1125,7 +1125,7 @@ function translate(token, ctx_type) {
         throw new CompError("Cannot find array named '" + array_name + "'")
       }
 
-      var table_entry = symbol_table[scope][array_name].specific
+      var table_entry = symbol_table[scope_name][array_name].specific
       var array_type = table_entry.element_data_type
 
       var index = prefix_value_type[1]
@@ -1194,7 +1194,7 @@ function translate(token, ctx_type) {
         throw new CompError(`Cannot find array named '${array_name}'`)
       }
 
-      var table_entry = symbol_table[scope][array_name].specific
+      var table_entry = symbol_table[scope_name][array_name].specific
       var array_type = table_entry.element_data_type
 
       var base_addr = `[${ram_prefix}${table_entry.base_addr}]`
@@ -2446,7 +2446,7 @@ function translate(token, ctx_type) {
         throw new CompError("Cannot find array named '" + array_name + "'")
       }
 
-      var table_entry = symbol_table[scope][array_name].specific
+      var table_entry = symbol_table[scope_name][array_name].specific
       var array_type = table_entry.element_data_type
 
       var base_addr = `[${ram_prefix}${table_entry.base_addr}]`
