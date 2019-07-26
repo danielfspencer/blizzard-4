@@ -109,19 +109,19 @@ function pad(string, width) {
 function CSVToArray(strData, strDelimiter){
   if (strData == "") {return []}
   strDelimiter = (strDelimiter || ",")
-  var objPattern = new RegExp(
+  let objPattern = new RegExp(
     ( "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
      "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
      "([^\"\\" + strDelimiter + "\\r\\n]*))" ),
      "gi" )
-  var arrData = [[]]
-  var arrMatches = null
+  let arrData = [[]]
+  let arrMatches = null
   while (arrMatches = objPattern.exec( strData )){
-    var strMatchedDelimiter = arrMatches[ 1 ]
+    let strMatchedDelimiter = arrMatches[ 1 ]
     if (strMatchedDelimiter.length && strMatchedDelimiter !== strDelimiter){
       arrData.push([])
     }
-    var strMatchedValue
+    let strMatchedValue
     if (arrMatches[2]){
       strMatchedValue = arrMatches[2].replace(
         new RegExp("\"\"", "g"),
@@ -137,34 +137,34 @@ function CSVToArray(strData, strDelimiter){
 function benchmark(iterations) {
   postMessage(["update",-1])
 
-  var lines = 0
-  for (var lib of Object.values(libs)) {
+  let lines = 0
+  for (let lib of Object.values(libs)) {
     lines += lib.length
   }
 
-  var total_time = 0
-  for (var i = 0; i < iterations; i++) {
+  let total_time = 0
+  for (let i = 0; i < iterations; i++) {
     init_vars()
-    var t0 = performance.now()
+    let t0 = performance.now()
     try {
       show_log_messages = false
       compile(["include *"], true)
     } finally {
       show_log_messages = true
     }
-    var t1 = performance.now()
+    let t1 = performance.now()
     total_time += t1 - t0
     if (Math.round((i+1) % (iterations/50)) == 0 ) {
       postMessage(["update",(i+1)/iterations*100])
     }
   }
 
-  var avg_time = total_time / iterations
+  let avg_time = total_time / iterations
   return Math.round(lines / (avg_time/1000))
 }
 
 function all_matches(pattern, string) {
-  var list = []
+  let list = []
   let m
   do {
     m = pattern.exec(string)
@@ -176,7 +176,7 @@ function all_matches(pattern, string) {
 }
 
 function find_operation(pattern, string) {
-  var operators = all_matches(pattern,string)
+  let operators = all_matches(pattern,string)
   if (operators.length == 1) {
     return operators[0]
   } else if (operators.length == 3) {
@@ -210,8 +210,8 @@ function find_type_priority(expr1,expr2) {
 }
 
 function set_token(name, operation, exprs, line) {
-  var add = {name:operation,type:"expression",arguments:{expr1:exprs[0],expr2:exprs[1]}}
-  var set_var = {name:"set",type:"command",arguments:{expr:add,name:name},"line":line}
+  let add = {name:operation,type:"expression",arguments:{expr1:exprs[0],expr2:exprs[1]}}
+  let set_var = {name:"set",type:"command",arguments:{expr:add,name:name},"line":line}
   return set_var
 }
 
@@ -246,7 +246,7 @@ function assert_global_name_available(name) {
 }
 
 function gen_id(type) {
-  var id = structures[type]
+  let id = structures[type]
   structures[type] += 1
   if (id === undefined) {
     throw new CompError("Error generating ID:\nunknown structure '" + type + "'")
@@ -255,9 +255,9 @@ function gen_id(type) {
 }
 
 function write_operands(expr1, expr2, type) {
-  var result = []
-  var [expr1_prefix, expr1_reg] = translate(expr1, type)
-  var [expr2_prefix, expr2_reg] = translate(expr2, type)
+  let result = []
+  let [expr1_prefix, expr1_reg] = translate(expr1, type)
+  let [expr2_prefix, expr2_reg] = translate(expr2, type)
   result.push.apply(result, expr1_prefix)
   result.push(`write ${expr1_reg} alu.1`)
   result.push.apply(result, expr2_prefix)
@@ -266,8 +266,8 @@ function write_operands(expr1, expr2, type) {
 }
 
 function write_operand(expr, type) {
-  var result = []
-  var [expr_prefix, expr_reg] = translate(expr, type)
+  let result = []
+  let [expr_prefix, expr_reg] = translate(expr, type)
   result = expr_prefix
   result.push(`write ${expr_reg} alu.1`)
   return result
@@ -284,16 +284,16 @@ function inc_or_dec_token(var_name, op, value_token) {
 
 function alloc_block(size) {
   log.debug(`Request for ${size} words(s) of RAM`)
-  var addrs = []
+  let addrs = []
   if (size > free_ram[scope].length) {
     throw new CompError(`Out of memory, ${size} word(s) requested (only ${free_ram[scope].length} free)`)
   }
-  for (var i = 0; i < size; i++) {
+  for (let i = 0; i < size; i++) {
     addrs.push(free_ram[scope].shift())
   }
 
   if (!scope.startsWith("sys.")) {
-    var allocated_slots = 1023 - free_ram[scope].length
+    let allocated_slots = 1023 - free_ram[scope].length
     if (allocated_slots > max_allocated_ram_slots) {
       max_allocated_ram_slots = allocated_slots
     }
@@ -311,7 +311,7 @@ function alloc_global_block(size) {
 }
 
 function free_global_block(addrs) {
-  var old_scope = scope
+  let old_scope = scope
   scope = "[global]"
   free_block(addrs)
   scope = old_scope
@@ -339,16 +339,17 @@ function get_temp_word() {
 
 function translate_body(tokens) {
   log.debug(`nested translate: ${tokens.length} token(s)`)
-  var result = []
+  let result = []
   if (tokens.length == 0) {
     return result
   }
-  for (var i = 0; i < tokens.length; i++) {
+  for (let i = 0; i < tokens.length; i++) {
     if (tokens[i].type == "expression" && tokens[i].name != "function" || typeof tokens[i] === undefined) {
       throw new CompError("Unexpected expression", tokens[i].line)
     } else {
+      let command
       try {
-        var command = translate(tokens[i])
+        command = translate(tokens[i])
       } catch (error) {
         if (error instanceof CompError && error.line === undefined) { // if this is CompError with no line info
           throw new CompError(error.message, tokens[i].line) // add the line number to it
@@ -359,7 +360,7 @@ function translate_body(tokens) {
       if (tokens[i].name == "function") {
         command = command[0] // if it is a function call (which is an expression) take only the prefix and bin the result register [[tokens],result] -> [tokens]
       }
-      for (var j = 0; j < command.length; j++ ) {
+      for (let j = 0; j < command.length; j++ ) {
         command[j] = "  " + command[j]
       }
       result.push.apply(result,command)
@@ -378,8 +379,8 @@ function load_lib(name) {
   } else {
     required[name] = ""
     log.debug("↳ compiling")
+    let old_log_status = show_log_messages
     try {
-      var old_log_status = show_log_messages
       show_log_messages = false
       compile(libs[name], true)
     } catch (error) {
@@ -397,11 +398,10 @@ function load_lib(name) {
 }
 
 function tokenise(input, line) {
-  if (typeof input == "") {return []}
-  var input = input.trim()
-  var list = input.split(" ")
-  var line = line || -1
-  var token = {}
+  input = input.trim()
+  line = line || -1
+  let list = input.split(" ")
+  let token = {}
 
   if (/^\/\/([^/]+)/.test(input)) { // a comment begining with two "//"
     token = {name:"comment",type:"command",arguments:{"comment":input}}
@@ -414,7 +414,7 @@ function tokenise(input, line) {
 
   } else if (list[0] == "var") {                       // var [type] [name] <expr>
     if (list.length >= 4) {
-      var expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
+      let expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
       if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
       token = {name:"var_alloc",type:"command",arguments:{type:list[1],name:list[2],expr:expr}}
     } else if (list.length > 2) {
@@ -426,7 +426,7 @@ function tokenise(input, line) {
 
   } else if (list[0] == "arg") {                      // arg [type] [name] <expr>
     if (list.length >= 4) {
-      var expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
+      let expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
       if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
       token = {name:"arg_alloc",type:"command",arguments:{type:list[1],name:list[2],expr:expr}}
     } else if (list.length > 2) {
@@ -438,7 +438,7 @@ function tokenise(input, line) {
 
   } else if (list[0] == "const") {             // const [type] [name] [expr]
     if (list.length >= 4) {
-      var expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
+      let expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
       if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
       token = {name:"const_alloc",type:"command",arguments:{type:list[1],name:list[2],expr:expr}}
     } else if (list.length > 2) {
@@ -450,7 +450,7 @@ function tokenise(input, line) {
 
   } else if (list[0] == "global") {             // global [type] [name] [expr]
     if (list.length >= 4) {
-      var expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
+      let expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
       if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
       token = {name:"global_alloc",type:"command",arguments:{type:list[1],name:list[2],expr:expr}}
     } else if (list.length > 2) {
@@ -462,7 +462,7 @@ function tokenise(input, line) {
 
   } else if (list[0] == "if") {               // if [bool]
     if (list.length > 1) {
-      var expr = tokenise(list.slice(1).join(" "), line) // extract all the letters after command
+      let expr = tokenise(list.slice(1).join(" "), line) // extract all the letters after command
       token = {name:"if",type:"structure",body:[],arguments:{expr:expr}}
     } else {
       throw new CompError("If statement has no conditional expression")
@@ -473,7 +473,7 @@ function tokenise(input, line) {
 
   } else if (/(else\sif)/.test(input)) {      //else if
     if (list.length > 2) {
-      var expr = tokenise(list.slice(2).join(" "), line) // extract all the letters after command
+      let expr = tokenise(list.slice(2).join(" "), line) // extract all the letters after command
       token = {name:"else if",type:"structure",arguments:{expr:expr}}
     } else {
       throw new CompError("Else If statement has no conditional expression")
@@ -481,7 +481,7 @@ function tokenise(input, line) {
 
   } else if (list[0] == "while") {              // while [bool]
     if (list.length > 1) {
-      var expr = tokenise(list.slice(1).join(" "), line) // extract all the letters after command
+      let expr = tokenise(list.slice(1).join(" "), line) // extract all the letters after command
       token = {name:"while",type:"structure",body:[],arguments:{expr:expr}}
     } else {
       throw new CompError("While statement has no conditional expression")
@@ -489,10 +489,10 @@ function tokenise(input, line) {
 
    } else if (list[0] == "for") {               // for [cmd];[bool];[cmd]
     if (list.length > 1) {
-      var string_list = input.slice(3).split(";")
-      var init = tokenise(string_list[0],line)
-      var expr = tokenise(string_list[1],line)
-      var cmd = tokenise(string_list[2],line)
+      let string_list = input.slice(3).split(";")
+      let init = tokenise(string_list[0],line)
+      let expr = tokenise(string_list[1],line)
+      let cmd = tokenise(string_list[2],line)
       token = {name:"for",type:"structure",body:[],arguments:{init:init,expr:expr,cmd:cmd}}
     } else {
       throw new CompError("Missing cmd/bool/cmd list")
@@ -519,18 +519,18 @@ function tokenise(input, line) {
     token = {name:"delete",type:"command",arguments:{name:list[1]}}
 
   } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.test(input)) {                    // [name] = [expr]
-    var matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.exec(input)
-    var expr = tokenise(matches[2], line)
+    let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.exec(input)
+    let expr = tokenise(matches[2], line)
     token = {name:"set",type:"command",arguments:{expr:expr,name:matches[1]}}
 
   } else if (/^\*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.test(input)) {                    // *[pointer] = [expr]
-    var matches = /^\*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.exec(input)
-    var expr = tokenise(matches[2], line)
+    let matches = /^\*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.exec(input)
+    let expr = tokenise(matches[2], line)
     token = {name:"pointer_set",type:"command",arguments:{expr:expr,name:matches[1]}}
 
   } else if (list[0] == "return") {                    // return
-    var expr = undefined
-    var expr_string = list.slice(1).join(" ")
+    let expr = undefined
+    let expr_string = list.slice(1).join(" ")
 
     if (expr_string !== "") {
       expr = tokenise(expr_string, line)
@@ -539,11 +539,11 @@ function tokenise(input, line) {
     token = {name:"return",type:"command",arguments:{expr:expr}}
 
   } else if (list[1] == "+=") {                    // [name] += [expr]
-    var expr = tokenise(list.slice(2).join(" "), line)
+    let expr = tokenise(list.slice(2).join(" "), line)
     token = {name:"increment",type:"command",arguments:{expr:expr,name:list[0]}}
 
   } else if (list[1] == "-=") {                    // [name] -= [expr]
-    var expr = tokenise(list.slice(2).join(" "), line)
+    let expr = tokenise(list.slice(2).join(" "), line)
     token = {name:"decrement",type:"command",arguments:{expr:expr,name:list[0]}}
 
   } else if (/.+?(?=\+\+)/.test(input)) { //  [name]++
@@ -553,38 +553,40 @@ function tokenise(input, line) {
     token = {name:"decrement_1",type:"command",arguments:{name:/.+?(?=\-\-)/.exec(input)}}
 
   } else if (/^\*(\(.*\))?([a-zA-Z_][a-zA-Z0-9_]*)$/.test(input)) {                    // pointer lookup
-    var matches = /^\*(\(.*\))?([a-zA-Z_][a-zA-Z0-9_]*)$/.exec(input)
-    var type_cast = undefined
+    let matches = /^\*(\(.*\))?([a-zA-Z_][a-zA-Z0-9_]*)$/.exec(input)
+    let type_cast = undefined
     if(matches[1] !== undefined) {
       type_cast = matches[1].slice(1, -1)
     }
-    var var_or_const_name = matches[2]
+    let var_or_const_name = matches[2]
     token = {name:"pointer_lookup",type:"expression",arguments:{type_cast:type_cast,var_or_const_name:var_or_const_name}}
 
   } else if (/^\((.*)\)$/.test(input)) {  // it is an expression that is in brackets
-    var expression = /^\((.*)\)$/.exec(input)[1]
+    let expression = /^\((.*)\)$/.exec(input)[1]
     log.warn("tokenising '" + expression + "'")
-    var token = tokenise(expression,line)
+    let token = tokenise(expression,line)
     if (token.type != "expression") {
       throw new CompError("Only expressions may be placed in brackets")
     }
     token = {name:"bracket",type:"expression",arguments:{expr:token}}
 
   } else if (/(^\d+$)|(^0b[10]+$)|(^0x[0-9a-fA-F]+$)/.test(input)) { //        [unsigned integer]   is dec/hex/bin number only
-    var dec_val = parse_int(input)
+    let dec_val = parse_int(input)
+    let guess
     if (dec_val > 65535) {
-      var guess = "long"
+      guess = "long"
     } else {
-      var guess = "int"
+      guess = "int"
     }
     token = {name:"number",type:"expression",arguments:{value:input,type_guess:guess}}
 
   } else if (/(^[+-]?\d+$)|(^-?0b[10]+$)|(^-?0x[0-9a-fA-F]+$)/.test(input)) { //   [signed integer]
-    var dec_val = parse_int(input)
+    let dec_val = parse_int(input)
+    let guess
     if (Math.abs(dec_val) > 32767) {
-      var guess = "slong"
+      guess = "slong"
     } else {
-      var guess = "sint"
+      guess = "sint"
     }
     token = {name:"number",type:"expression",arguments:{value:input,type_guess:guess}}
 
@@ -592,15 +594,15 @@ function tokenise(input, line) {
     token = {name:"include",type:"command",arguments:{name:list[1]}}
 
   } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\.(append|insert)\((.*)\)$/.test(input)) {   // array function ie. array_name.insert/append(args)
-    var matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\.(append|insert)\((.*)\)$/.exec(input)
-    var array_name = matches[1]
-    var operation = matches[2]
-    var argument_string = matches[3]
-    var arguments = argument_string.split(",")
+    let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\.(append|insert)\((.*)\)$/.exec(input)
+    let array_name = matches[1]
+    let operation = matches[2]
+    let argument_string = matches[3]
+    let arguments = argument_string.split(",")
 
-    var argument_tokens = []
+    let argument_tokens = []
 
-    for (var argument of arguments) {
+    for (let argument of arguments) {
       argument_tokens.push(tokenise(argument,line))
     }
 
@@ -612,10 +614,10 @@ function tokenise(input, line) {
     }
 
   } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]\s*=\s*(.*)$/.test(input)) {       //array set ie array_name[index] = some value
-    var matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]\s*=\s*(.*)$/.exec(input)
-    var array_name = matches[1]
-    var index_expression = matches[2]
-    var value = matches[3]
+    let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]\s*=\s*(.*)$/.exec(input)
+    let array_name = matches[1]
+    let index_expression = matches[2]
+    let value = matches[3]
 
     token = {name:"array_set",type:"command",arguments:{
       name: array_name,
@@ -625,9 +627,9 @@ function tokenise(input, line) {
     }
 
   } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\.(len|pop|max_len)\(\)$/.test(input)) {       //array function ie array_name.pop/len()
-    var matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\.(len|pop|max_len)\(\)$/.exec(input)
-    var array_name = matches[1]
-    var operation = matches[2]
+    let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\.(len|pop|max_len)\(\)$/.exec(input)
+    let array_name = matches[1]
+    let operation = matches[2]
 
     token = {name:"array_expression",type:"expression",arguments:{
       name: array_name,
@@ -636,9 +638,9 @@ function tokenise(input, line) {
     }
 
   } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]$/.test(input)) {       //array expression ie array_name[index]
-    var matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]$/.exec(input)
-    var array_name = matches[1]
-    var index_expression = matches[2]
+    let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]$/.exec(input)
+    let array_name = matches[1]
+    let index_expression = matches[2]
 
     token = {name:"array_expression",type:"expression",arguments:{
       name: array_name,
@@ -648,12 +650,12 @@ function tokenise(input, line) {
     }
 
   } else if (/^\S+?(?=\((.*)\)$)/.test(input)) { // function call [name](*)
-    var name = /^\S+?(?=\((.*)\)$)/.exec(input)[0]
-    var args_string = /^\S+?(?=\((.*)\)$)/.exec(input)[1]
-    var string_list = args_string.split(",")
-    var arguments = []
+    let name = /^\S+?(?=\((.*)\)$)/.exec(input)[0]
+    let args_string = /^\S+?(?=\((.*)\)$)/.exec(input)[1]
+    let string_list = args_string.split(",")
+    let arguments = []
     if (args_string !== "") {
-      for (var item of string_list) {
+      for (let item of string_list) {
         if (item !== undefined) {
           arguments.push(tokenise(item,line))
         }
@@ -662,27 +664,27 @@ function tokenise(input, line) {
     token = {name:"function",type:"expression",arguments:{name:name,exprs:arguments}}
 
   } else if (/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/.test(input)) {          // is an expression
-    var operation = find_operation(/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/g, input)
+    let operation = find_operation(/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/g, input)
     if (operation in {"+":"", "-":"", "/":"", "*":"", "^":"", "%":""}) { // dual operand [non bool]
-      var args = input.split(operation)
-      var expr1 = tokenise(args[0], line)
-      var expr2 = tokenise(args[1], line)
+      let args = input.split(operation)
+      let expr1 = tokenise(args[0], line)
+      let expr2 = tokenise(args[1], line)
       token = {name:operation,type:"expression",arguments:{expr1:expr1,expr2:expr2}}
 
     } else if (operation in {">":"", "<":"","==":"","!=":"", "&":"", ">=":"", "<=":"", "|":"", "..":"", ":":""}) { // dual operand [bool]
-      var args = input.split(operation)
-      var expr1 = tokenise(args[0], line)
-      var expr2 = tokenise(args[1], line)
+      let args = input.split(operation)
+      let expr1 = tokenise(args[0], line)
+      let expr2 = tokenise(args[1], line)
       token = {name:operation,type:"expression",arguments:{expr1:expr1,expr2:expr2}}
 
     } else if (operation in {">>":"", "<<":"", "!":"", ">> 8":""}) { // single operand [non-bool]
-      var args = CSVToArray(input,operation)
-      var expr = tokenise(args[0][0], line)
+      let args = CSVToArray(input,operation)
+      let expr = tokenise(args[0][0], line)
       token = {name:operation,type:"expression",arguments:{expr:expr}}
 
     } else if (operation == "sys.odd") {
-      var args = /([^\n\r]*)sys.odd\s*/.exec(input)
-      var expr = tokenise(args[1], line)
+      let args = /([^\n\r]*)sys.odd\s*/.exec(input)
+      let expr = tokenise(args[1], line)
       token = {name:"is_odd",type:"expression",arguments:{expr:expr}}
 
     } else if (operation == "sys.ov") {
@@ -693,10 +695,11 @@ function tokenise(input, line) {
     }
 
   } else if (/(^true$)|(^false$)/.test(input)) {    //is true/false (the reserved keywords for bool data type)
+    let value
     if (input == "true") {
-      var value = "1"
+      value = "1"
     } else {
-      var value = "0"
+      value = "0"
     }
     token = {name:"number",type:"expression",arguments:{value:value,type_guess:"bool"}}
 
@@ -704,19 +707,19 @@ function tokenise(input, line) {
     token = {name:"var_or_const",type:"expression",arguments:{name:input}}
 
   } else if (/^((\(.*\))?(\[.*\]))$/.test(input)) {                          //array of expressions
-    var matches = /^((\(.*\))?(\[.*\]))$/.exec(input)
+    let matches = /^((\(.*\))?(\[.*\]))$/.exec(input)
 
-    var type_size = undefined
+    let type_size = undefined
     if(matches[2] !== undefined) {
-      var type_size_string = matches[2].slice(1, -1)
+      let type_size_string = matches[2].slice(1, -1)
       type_size = type_size_string.split(",")
     }
 
-    var elements_string = matches[3].slice(1, -1)
-    var elements_array = elements_string.split(",")
-    var token_array = []
+    let elements_string = matches[3].slice(1, -1)
+    let elements_array = elements_string.split(",")
+    let token_array = []
 
-    for (var item of elements_array) {
+    for (let item of elements_array) {
       token_array.push(tokenise(item,line))
     }
 
@@ -735,10 +738,10 @@ function tokenise(input, line) {
 }
 
 function translate(token, ctx_type) {
-  var args = token.arguments
+  let args = token.arguments
   if (token.type === "command") {
 
-    var result = []
+    let result = []
     switch(token.name) {
 
     case "asm":
@@ -810,7 +813,7 @@ function translate(token, ctx_type) {
 
       var label = `const_${args.name}`
       var memory = []
-      for (var i = 0; i < expr_value.length; i++) {
+      for (let i = 0; i < expr_value.length; i++) {
         memory.push(`${label}_${i}`)
       }
 
@@ -1367,7 +1370,7 @@ function translate(token, ctx_type) {
         result = prefix
 
         var map = []
-        for (var item of value) {
+        for (let item of value) {
           var temp = item.replace("ram","ram+")
           //this next replace prevents recursive function calls producing ram++++.x addresses
           map.push(temp.replace("ram++","ram+"))
@@ -1381,7 +1384,7 @@ function translate(token, ctx_type) {
 
     case "include":
       if (args.name == "*") {
-        for (var name in libs) {
+        for (let name in libs) {
           load_lib(name)
         }
       } else {
@@ -1397,12 +1400,13 @@ function translate(token, ctx_type) {
 
   } else if (token.type == "expression") {
 
-    var prefix = []
-    var registers = [""]
-    var type = ctx_type
-    var types = []
+    let prefix = []
+    let registers = [""]
+    let type = ctx_type
+    let types = []
     switch (token.name) {
-                                              //number types
+
+    // number types
     case "number": // a generic number that can be turned into the type required by the context
       if (ctx_type === undefined) {
         log.warn(`line ${token.line}:\nNo context-specified type for '${args.value}'\nassuming '${args.type_guess}'`)
@@ -1584,7 +1588,7 @@ function translate(token, ctx_type) {
       //
       // //copy its results into a temp bit of memory
       //
-      // for (var i = 0; i < size; i++) {
+      // for (let i = 0; i < size; i++) {
       //   var address = "ram." + memory_copy.shift()
       //   prefix.push("write " + prefix_and_value[1][i] + " " + address)
       //   registers.push("["+address+"]")
@@ -2362,7 +2366,7 @@ function translate(token, ctx_type) {
       var item_size = data_type_size[contained_type]
       var consts_to_add = [label + ":"]
 
-      for (var item of args.exprs) {
+      for (let item of args.exprs) {
         var prefix_and_value = translate(item,contained_type)
         if (prefix_and_value[0].length != 0 ) {
           throw new CompError("Expressions in an array decleration must be static")
@@ -2614,7 +2618,7 @@ function translate(token, ctx_type) {
       if (size > 1) {
         prefix.push("copy " + pointer_addr.label + " alu.1")
 
-        for (var i = 1; i < size; i++) {
+        for (let i = 1; i < size; i++) {
           prefix.push("write " + i + " alu.2")
           prefix.push("copy [alu.+] ram." + temp_buffer[i])
         }
@@ -2622,7 +2626,7 @@ function translate(token, ctx_type) {
 
       // output refisters are the values of the temp buffer
       registers = []
-      for (var addr of temp_buffer) {
+      for (let addr of temp_buffer) {
         registers.push("[ram." + addr + "]")
       }
 
@@ -2636,7 +2640,7 @@ function translate(token, ctx_type) {
     return [prefix, registers, type]
 
   } else if (token.type == "structure") {
-    var result = []
+    let result = []
     switch (token.name) {
 
     case "if":
@@ -2650,7 +2654,7 @@ function translate(token, ctx_type) {
       var clause_number = 0
       var target = main_tokens[0]
 
-      for (var item of token.body) {
+      for (let item of token.body) {
         if (item.name == "else if") {
           clause_number++
           main_tokens.push([])
@@ -2668,7 +2672,7 @@ function translate(token, ctx_type) {
         }
       }
 
-      for (var i = 0; i < exprs.length; i++) {
+      for (let i = 0; i < exprs.length; i++) {
         if (i != 0) {
           result.push(label+"_"+i+":")
         }
@@ -2827,17 +2831,17 @@ function compile(input, nested) {
 
   //tokenise
     log.info("Tokenising...")
-    var t0 = performance.now()
-    var tokens = []
-    var prev_type = ""
-    var prev_indent = 0
-    var curr_indent = 0
-    var token = {}
-    var targ = [tokens]
-    var expect_indent = false
-    var include_block_mode = false
-    for (var i = 0; i < input.length; i++) {
-      var line = input[i].trim()   // remove any trailing whitesapce
+    let t0 = performance.now()
+    let tokens = []
+    let prev_type = ""
+    let prev_indent = 0
+    let curr_indent = 0
+    let token = {}
+    let targ = [tokens]
+    let expect_indent = false
+    let include_block_mode = false
+    for (let i = 0; i < input.length; i++) {
+      let line = input[i].trim()   // remove any trailing whitesapce
       if (line == "" || line == "\n") { continue } // if it is a newline, skip it
       if (line == "///") {
         include_block_mode = ! include_block_mode
@@ -2868,13 +2872,13 @@ function compile(input, nested) {
       } else if (curr_indent < prev_indent) {
         log.debug("indent ↓ " + prev_indent + " -> " + curr_indent)
         if (line.trim().startsWith("else")) {
-          for (var j = 0; j < (prev_indent - curr_indent)-1; j++) {
+          for (let j = 0; j < (prev_indent - curr_indent)-1; j++) {
             targ.pop()
           }
           log.debug("same target [if statement extension]")
           expect_indent = true
         } else {
-          for (var j = 0; j < (prev_indent - curr_indent); j++) {
+          for (let j = 0; j < (prev_indent - curr_indent); j++) {
             targ.pop()             //set 'target' token to the previous one in the stack
           }
           if (targ[targ.length-1] instanceof Array) {
@@ -2913,7 +2917,7 @@ function compile(input, nested) {
       prev_indent = Math.floor(input[i].search(/\S|$/)/2)
     }
 
-    var t1 = performance.now()
+    let t1 = performance.now()
 
     log.info("↳ success, "+ input.length + " line(s) in "+  Math.round(t1-t0) + "ms")
 
@@ -2923,10 +2927,10 @@ function compile(input, nested) {
 
   //translate
     log.info("Tranlsating...")
-    var t0 = performance.now()
-    var output = ""
-    var command = []
-    for (var i = 0; i < tokens.length; i++) {
+    t0 = performance.now()
+    let output = ""
+    let command = []
+    for (let i = 0; i < tokens.length; i++) {
       if (tokens[i].type == "expression" && tokens[i].name != "function") {
         throw new CompError("Unexpected expression", tokens[i].line)
       }
@@ -2954,11 +2958,11 @@ function compile(input, nested) {
     }
     output += "stop"
 
-    var t1 = performance.now()
+    t1 = performance.now()
     log.info("↳ success, "+ tokens.length +" token(s) in "+  Math.round(t1-t0) + "ms")
 
   //add consts
-    for (var i = 0; i < consts.length; i++) {
+    for (let i = 0; i < consts.length; i++) {
       output += "\n" + consts[i]
     }
 
