@@ -259,9 +259,9 @@ function write_operands(expr1, expr2, type) {
   let result = []
   let [expr1_prefix, expr1_reg] = translate(expr1, type)
   let [expr2_prefix, expr2_reg] = translate(expr2, type)
-  result.push.apply(result, expr1_prefix)
+  result.push(...expr1_prefix)
   result.push(`write ${expr1_reg} alu.1`)
-  result.push.apply(result, expr2_prefix)
+  result.push(...expr2_prefix)
   result.push(`write ${expr2_reg} alu.2`)
   return result
 }
@@ -325,7 +325,7 @@ function assert_valid_datatype(type) {
 }
 
 function free_block(addrs) {
-  free_ram[scope].push.apply(free_ram[scope], addrs)
+  free_ram[scope].push(...addrs)
   free_ram[scope].sort((a,b) => (a - b))
 }
 
@@ -368,7 +368,7 @@ function translate_body(tokens) {
       for (let j = 0; j < command.length; j++ ) {
         command[j] = "  " + command[j]
       }
-      result.push.apply(result,command)
+      result.push(...command)
     }
   }
   return result
@@ -1109,7 +1109,7 @@ function translate(token, ctx_type) {
       if (index_type !== "int") {
         throw new CompError("Array indexes must be of type 'int'")
       }
-      result.push.apply(result, index_prefix)
+      result.push(...index_prefix)
 
       var scope_name
       var ram_prefix
@@ -1147,7 +1147,7 @@ function translate(token, ctx_type) {
       if (expr_type !== array_type) {
         throw new CompError(`Array expected type '${array_type}', got '${expr_type}'`)
       }
-      result.push.apply(result, expr_prefix)
+      result.push(...expr_prefix)
 
       var memory = alloc_block(item_size)
       var buffer = memory.slice()
@@ -1217,7 +1217,7 @@ function translate(token, ctx_type) {
             },
           expr: args.exprs[0]
         }}
-        result.push.apply(result, translate(token))
+        result.push(...translate(token))
 
         // increment the curret length of the array to reflect the change
         result.push(`write ${current_len} alu.1`)
@@ -1232,7 +1232,7 @@ function translate(token, ctx_type) {
         if (expr_type !== "int") {
           throw new CompError("Array indexes must be of type 'int'")
         }
-        result.push.apply(result, expr_prefix)
+        result.push(...expr_prefix)
 
         let source_addr = get_temp_word()
         let target_addr = get_temp_word()
@@ -1275,7 +1275,7 @@ function translate(token, ctx_type) {
           index_expr: index_expression,
           expr: item_expression
         }}
-        result.push.apply(result, translate(token))
+        result.push(...translate(token))
 
         //add one to length
         result.push(`write ${current_len} alu.1`)
@@ -2004,7 +2004,7 @@ function translate(token, ctx_type) {
 
           var token = {name:"function",type:"expression",arguments:{name:"sys.long_equal",exprs:[args.expr1,args.expr2]}}
           var prefix_and_value = translate(token)
-          prefix.push.apply(prefix,prefix_and_value[0])
+          prefix.push(...prefix_and_value[0])
           prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[1].label)
 
           prefix.push("write ["+temp_vars[0].label+"] alu.1")
@@ -2029,7 +2029,7 @@ function translate(token, ctx_type) {
 
           var token = {name:"function",type:"expression",arguments:{name:"sys.slong_equal",exprs:[args.expr1,args.expr2]}}
           var prefix_and_value = translate(token)
-          prefix.push.apply(prefix,prefix_and_value[0])
+          prefix.push(...prefix_and_value[0])
           prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[1].label)
 
           prefix.push("write ["+temp_vars[0].label+"] alu.1")
@@ -2091,7 +2091,7 @@ function translate(token, ctx_type) {
 
           var token = {name:"function",type:"expression",arguments:{name:"sys.long_equal",exprs:[args.expr1,args.expr2]}}
           var prefix_and_value = translate(token)
-          prefix.push.apply(prefix,prefix_and_value[0])
+          prefix.push(...prefix_and_value[0])
           prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[1].label)
 
           prefix.push("write ["+temp_vars[0].label+"] alu.1")
@@ -2116,7 +2116,7 @@ function translate(token, ctx_type) {
 
           var token = {name:"function",type:"expression",arguments:{name:"sys.slong_equal",exprs:[args.expr1,args.expr2]}}
           var prefix_and_value = translate(token)
-          prefix.push.apply(prefix,prefix_and_value[0])
+          prefix.push(...prefix_and_value[0])
           prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[1].label)
 
           prefix.push("write ["+temp_vars[0].label+"] alu.1")
@@ -2316,9 +2316,9 @@ function translate(token, ctx_type) {
       var expr2 = translate(args.expr2,ctx_type)
       var expr2_prefix = expr2[0]
       var expr2_reg = expr2[1]
-      prefix.push.apply(prefix,expr2_prefix)
+      prefix.push(...expr2_prefix)
       registers = expr1_reg
-      registers.push.apply(registers,expr2_reg)
+      registers.push(...expr2_reg)
       break
 
     case ":": //word selector
@@ -2393,9 +2393,9 @@ function translate(token, ctx_type) {
         if (prefix_and_value[0].length != 0 ) {
           throw new CompError("Expressions in an array decleration must be static")
         }
-        consts_to_add.push.apply(consts_to_add, prefix_and_value[1])
+        consts_to_add.push(...prefix_and_value[1])
       }
-      consts.push.apply(consts,consts_to_add)
+      consts.push(...consts_to_add)
 
       registers = [label, length, max_length, contained_type]
       type = "expr_array"
@@ -2476,7 +2476,7 @@ function translate(token, ctx_type) {
         if (prefix_value_type[2] != "int") {
           throw new CompError("Array indexes must be of type 'int'")
         }
-        prefix.push.apply(prefix,prefix_value_type[0])
+        prefix.push(...prefix_value_type[0])
 
         var index = prefix_value_type[1]
 
@@ -2583,7 +2583,7 @@ function translate(token, ctx_type) {
         }
 
         // run code required by expression
-        prefix.push.apply(prefix, expr_prefix)
+        prefix.push(...expr_prefix)
 
         // copy each word into argument memory
         for (let y = 0; y < target_regs.length; y++) {
@@ -2627,7 +2627,7 @@ function translate(token, ctx_type) {
       var temp_buffer = alloc_block(size)
 
       // make pointer value available
-      prefix.push.apply(prefix,prefix_value_type[0])
+      prefix.push(...prefix_value_type[0])
 
       // copy pointer value into temp ram word
       var pointer_addr = get_temp_word()
@@ -2711,11 +2711,11 @@ function translate(token, ctx_type) {
         if (prefix_and_value[2] != "bool") {
           log.warn("Structure expession expected type 'bool', got '"+ prefix_and_value[2] +"'")
         }
-        result.push.apply(result,prefix)
+        result.push(...prefix)
         result.push("write " + value[0] + " ctl.cnd")
         result.push("goto? " + next_case_label)
 
-        result.push.apply(result,translate_body(main_tokens[i]))
+        result.push(...translate_body(main_tokens[i]))
 
         if ((else_present || else_if_present) && i != exprs.length) {
           result.push("goto " + label+"_end")
@@ -2725,7 +2725,7 @@ function translate(token, ctx_type) {
       if (else_present) {
         result.push(label+"_"+exprs.length+":")
       }
-      result.push.apply(result,translate_body(else_tokens))
+      result.push(...translate_body(else_tokens))
       result.push(label+"_end:")
       break
 
@@ -2740,7 +2740,7 @@ function translate(token, ctx_type) {
     case "for":
       var label = "for_" + gen_id("for")
       var init_result = translate(args.init)
-      result.push.apply(result,init_result)
+      result.push(...init_result)
 
       var expr_prefix_and_value = translate(args.expr, "bool")
       var expr_prefix = expr_prefix_and_value[0]
@@ -2748,21 +2748,21 @@ function translate(token, ctx_type) {
       if (expr_prefix_and_value[2] != "bool") {
         log.warn("Structure: expected type 'bool', got '"+ expr_prefix_and_value[2] +"'")
       }
-      result.push.apply(result,expr_prefix)
+      result.push(...expr_prefix)
       result.push("write " + expr_value + " ctl.cnd")
       result.push("goto? " + label + "_end")
       result.push([(label+"_start:")])
 
       var prev_inner_structure_label = inner_structure_label
       inner_structure_label = label
-      result.push.apply(result,translate_body(token.body))
+      result.push(...translate_body(token.body))
       result.push(label+"_cond:")
       inner_structure_label = prev_inner_structure_label
 
       var cmd_result = translate(args.cmd)
-      result.push.apply(result,cmd_result)
+      result.push(...cmd_result)
 
-      result.push.apply(result,expr_prefix)
+      result.push(...expr_prefix)
       result.push("write " + expr_value + " ctl.cnd")
       result.push("goto? " + label + "_end")
       result.push("goto " + label + "_start")
@@ -2778,18 +2778,18 @@ function translate(token, ctx_type) {
       if (prefix_and_value[2] != "bool") {
         log.warn("Structure: expected type 'bool', got '"+ prefix_and_value[2] +"'")
       }
-      result.push.apply(result,prefix)
+      result.push(...prefix)
       result.push("write " + value + " ctl.cnd")
       result.push("goto? " + label + "_end")
       result.push([(label+"_start:")])
 
       var prev_inner_structure_label = inner_structure_label
       inner_structure_label = label
-      result.push.apply(result,translate_body(token.body))
+      result.push(...translate_body(token.body))
       result.push(label+"_cond:")
       inner_structure_label = prev_inner_structure_label
 
-      result.push.apply(result,prefix)
+      result.push(...prefix)
       result.push("write " + value + " ctl.cnd")
       result.push("goto? " + label + "_end")
       result.push("goto " + label + "_start")
@@ -2830,7 +2830,7 @@ function translate(token, ctx_type) {
       }
 
       // translate the body of the function
-      target.push.apply(target, translate_body(token.body))
+      target.push(...translate_body(token.body))
 
       // restore previous scope
       scope = old_scope
