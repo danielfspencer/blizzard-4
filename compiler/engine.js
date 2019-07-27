@@ -1310,14 +1310,20 @@ function translate(token, ctx_type) {
         throw new CompError(`'${args.name}' is not a variable and cannot be freed`)
       }
 
+      var addrs = []
       if (table_entry.data_type === "array") {
-        throw new CompError("not implemented")
+        addrs.push(table_entry.specific.base_addr)
+        addrs.push(table_entry.specific.current_len)
+        addrs.push(table_entry.specific.max_len)
+        addrs.push(...table_entry.specific.array_mem)
       } else {
-        if (is_global) {
-          free_global_block(table_entry.specific.ram_addresses)
-        } else {
-          free_block(table_entry.specific.ram_addresses)
-        }
+        addrs = table_entry.specific.ram_addresses
+      }
+
+      if (is_global) {
+        free_global_block(addrs)
+      } else {
+        free_block(addrs)
       }
 
       delete symbol_table[scope][args.name]
