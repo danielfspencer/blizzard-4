@@ -523,10 +523,10 @@ function tokenise(input, line) {
   } else if (list[0] == "free") {                 // free [name]
     token = {name:"delete",type:"command",arguments:{name:list[1]}}
 
-  } else if (list[0] == "break") {                 // break
+  } else if (/^break$/.test(input)) {                 // break
     token = {name:"break",type:"command",arguments:{}}
 
-  } else if (list[0] == "continue") {                 // break
+  } else if (/^continue$/.test(input)) {                 // break
     token = {name:"continue",type:"command",arguments:{}}
 
   } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.test(input)) {                    // [name] = [expr]
