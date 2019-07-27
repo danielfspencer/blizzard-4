@@ -2607,11 +2607,10 @@ function translate(token, ctx_type) {
       break
 
     case "pointer_lookup":
-      var var_or_const_name = args.var_or_const_name
-      var address_expr = tokenise(var_or_const_name)
-      var prefix_value_type = translate(address_expr,"int")
-      if (prefix_value_type[2] != "int") {
-        throw new CompError("Pointers must be of type int, got '" + prefix_value_type[2] +"'")
+      var address_expr = tokenise(args.var_or_const_name)
+      var [addr_prefix, addr_value, addr_type] = translate(address_expr, "int")
+      if (addr_type !== "int") {
+        throw new CompError(`Pointers must be of type 'int', got '${addr_type}'`)
       }
 
       if (args.type_cast !== undefined) {
@@ -2619,7 +2618,7 @@ function translate(token, ctx_type) {
       } else if (ctx_type !== undefined) {
         type = ctx_type
       } else {
-        log.warn("No explicit cast or context-given type for pointer lookup, defaulting to 'int'")
+        log.warn(`line ${token.line}:\nNo explicit cast or context-given type for pointer lookup, defaulting to 'int'`)
         type = "int"
       }
 
@@ -2627,29 +2626,29 @@ function translate(token, ctx_type) {
       var temp_buffer = alloc_block(size)
 
       // make pointer value available
-      prefix.push(...prefix_value_type[0])
+      prefix.push(...addr_prefix)
 
       // copy pointer value into temp ram word
       var pointer_addr = get_temp_word()
-      prefix.push("write " + prefix_value_type[1] + " " + pointer_addr.label)
+      prefix.push(`write ${addr_value} ${pointer_addr.label}`)
 
       // lookup pointer value and copy into temp buffer
-      prefix.push("copy [" + pointer_addr.label + "] ram." + temp_buffer[0])
+      prefix.push(`copy [${pointer_addr.label}] ram.${temp_buffer[0]}`)
 
       // if the target type is more than one word, copy more words
       if (size > 1) {
-        prefix.push("copy " + pointer_addr.label + " alu.1")
+        prefix.push(`copy ${pointer_addr.label} alu.1`)
 
         for (let i = 1; i < size; i++) {
-          prefix.push("write " + i + " alu.2")
-          prefix.push("copy [alu.+] ram." + temp_buffer[i])
+          prefix.push(`write ${i} alu.2`)
+          prefix.push(`copy [alu.+] ram.${temp_buffer[i]}`)
         }
       }
 
-      // output refisters are the values of the temp buffer
+      // output registers are the values of the temp buffer
       registers = []
       for (let addr of temp_buffer) {
-        registers.push("[ram." + addr + "]")
+        registers.push(`[ram.${addr}]`)
       }
 
       pointer_addr.free()
