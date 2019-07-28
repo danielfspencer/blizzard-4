@@ -2679,7 +2679,7 @@ function translate(token, ctx_type) {
         let prefix = prefix_and_value[0]
         let value = prefix_and_value[1]
         if (prefix_and_value[2] != "bool") {
-          log.warn("Structure expession expected type 'bool', got '"+ prefix_and_value[2] +"'")
+          throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
         }
         result.push(...prefix)
         result.push("write " + value[0] + " ctl.cnd")
@@ -2716,7 +2716,7 @@ function translate(token, ctx_type) {
       let expr_prefix = expr_prefix_and_value[0]
       let expr_value = expr_prefix_and_value[1][0]
       if (expr_prefix_and_value[2] != "bool") {
-        log.warn("Structure: expected type 'bool', got '"+ expr_prefix_and_value[2] +"'")
+        throw new CompError(`Conditional expression expected type 'bool', got '${expr_prefix_and_value[2]}'`)
       }
       result.push(...expr_prefix)
       result.push("write " + expr_value + " ctl.cnd")
@@ -2746,7 +2746,7 @@ function translate(token, ctx_type) {
       let prefix = prefix_and_value[0]
       let value = prefix_and_value[1][0]
       if (prefix_and_value[2] != "bool") {
-        log.warn("Structure: expected type 'bool', got '"+ prefix_and_value[2] +"'")
+        throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
       }
       result.push(...prefix)
       result.push("write " + value + " ctl.cnd")

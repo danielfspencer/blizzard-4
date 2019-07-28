@@ -276,7 +276,7 @@ const libs = {
     "  var int carry a_high & 1",
     "  a_high = a_high >>",
     "  a_low = a_low >>",
-    "  if carry",
+    "  if carry sys.odd",
     "    a_low = a_low | 0b1000000000000000",
     "  c = a_high..a_low",
     "  return c"
