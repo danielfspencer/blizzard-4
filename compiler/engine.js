@@ -1363,7 +1363,7 @@ function translate(token, ctx_type) {
 
         if (force_cast) {
           // cast any return expression to this type, ignoring any mis-match
-          log.warn(`Casting return expression of type '${expr_type}' to '${func_type}'`)
+          log.warn(`line ${token.line}:\nCasting return expression of type '${expr_type}' to '${func_type}'`)
 
         } else if (expr_type !== func_type) {
           // the type of the expression in the return statement does not match the data type of the function
@@ -2337,7 +2337,7 @@ function translate(token, ctx_type) {
       }
 
       if (ctx_type === undefined && given_type_size === undefined) {
-        log.warn(`Inferring type as '${contained_type}' from first element of array`)
+        log.warn(`line ${token.line}:\nInferring type as '${contained_type}' from first element of array`)
       }
 
       let item_size = data_type_size[contained_type]
