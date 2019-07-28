@@ -411,7 +411,7 @@ function tokenise(input, line) {
   if (/^\/\/[^/].*$/.test(input)) { // a comment begining with two "//"
     token = {name:"comment",type:"command",arguments:{"comment":input}}
 
-  } else if (/{(.+)}/.test(input)) {
+  } else if (/^{(.+)}$/.test(input)) {
     token = {name:"asm",type:"command",arguments:{value:/{(.+)}/.exec(input)[1]}}
 
   } else if (/^\"(.+)\"$|^(\"\")$/.test(input)) {     //string
@@ -1433,7 +1433,7 @@ function translate(token, ctx_type) {
         type = ctx_type
       }
 
-      num_token = {name:type, type:"expression", arguments:{ value:args.value }}
+      let num_token = {name:type, type:"expression", arguments:{ value:args.value }}
       let prefix_register_type = translate(num_token, type)
       prefix = prefix_register_type[0]
       registers = prefix_register_type[1]
