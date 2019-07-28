@@ -48,7 +48,7 @@ onmessage = (msg) => {
       break
     case "bench":
       try {
-        log.info(benchmark(msg.data[1]) + " lines/second")
+        log.info(`${benchmark(msg.data[1])} lines/second`)
       } catch (error) {
         if (error instanceof CompError) {
           log.error("Benchmark could not be run because the standard library did not compile:")
@@ -250,7 +250,7 @@ function gen_id(type) {
   let id = structures[type]
   structures[type] += 1
   if (id === undefined) {
-    throw new CompError("Error generating ID:\nunknown structure '" + type + "'")
+    throw new CompError(`Error generating ID:\nunknown structure '${type}'`)
   }
   return id
 }
@@ -366,7 +366,7 @@ function translate_body(tokens) {
         }
       }
       for (let j = 0; j < command.length; j++ ) {
-        command[j] = "  " + command[j]
+        command[j] = `  ${command[j]}`
       }
       result.push(...command)
     }
@@ -827,7 +827,7 @@ function translate(token, ctx_type) {
       }
 
       for (let word of expr_value) {
-        consts.push(memory.shift()+":")
+        consts.push(`${memory.shift()}:`)
         consts.push(word)
       }
     } break
@@ -1150,7 +1150,7 @@ function translate(token, ctx_type) {
         result.push(`write ${word} ram.${buffer.shift()}`)
       }
 
-      let source_addr = "ram."+memory[0]
+      let source_addr = `ram.${memory[0]}`
 
       //copy value of expr into correct position in array
       result.push(`write ${source_addr} ram+.0`)
@@ -1494,7 +1494,7 @@ function translate(token, ctx_type) {
       } else {
         bin = dec_val.toString(2)
       }
-      let word = "0b" + pad(bin,16)
+      let word = `0b${pad(bin,16)}`
 
       type = "sint"
       registers = [word]
@@ -1511,8 +1511,8 @@ function translate(token, ctx_type) {
         throw new CompError("Integer out of range (2^32 / 4.29bn max)")
       }
       let bin = pad(dec_val.toString(2),32)
-      let high = "0b"+bin.substring(0,16)
-      let low = "0b"+bin.substring(16,32)
+      let high = `0b${bin.substring(0,16)}`
+      let low = `0b${bin.substring(16,32)}`
 
       type = "long"
       registers = [high,low]
@@ -1548,8 +1548,8 @@ function translate(token, ctx_type) {
       }
 
       bin = pad(bin,32)
-      let high = "0b"+bin.substring(0,16)
-      let low = "0b"+bin.substring(16,32)
+      let high = `0b${bin.substring(0,16)}`
+      let low = `0b${bin.substring(16,32)}`
 
       registers = [high,low]
       type = "slong"
@@ -1566,10 +1566,9 @@ function translate(token, ctx_type) {
       }
       let string = args.value.slice(1,-1)
 
-      let id = gen_id("str")
-      id = "str_" + id
+      let id = `str_${gen_id("str")}`
 
-      consts.push(id+":")
+      consts.push(`${id}:`)
 
       for (let i = 0; i < string.length; i++) {
         let char = string[i]
@@ -1593,7 +1592,7 @@ function translate(token, ctx_type) {
 
                                         //arithmetic operations
     case "+": {  //add
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
         throw new CompError(`Addition operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
@@ -1628,7 +1627,7 @@ function translate(token, ctx_type) {
     } break
 
     case "-": {  //subtract
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
         throw new CompError(`Subtraction operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
@@ -1663,7 +1662,7 @@ function translate(token, ctx_type) {
     } break
 
     case "*": {  //multiply
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
         throw new CompError(`Multiplication operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
@@ -1708,7 +1707,7 @@ function translate(token, ctx_type) {
     } break
 
     case "/": {  //divide
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
         throw new CompError(`Division operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
@@ -1753,7 +1752,7 @@ function translate(token, ctx_type) {
     } break
 
     case "^": {  //exponent
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
         throw new CompError(`Exponention operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
@@ -1798,7 +1797,7 @@ function translate(token, ctx_type) {
     } break
 
     case "%": {  //modulo
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
         throw new CompError(`Modulo operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
@@ -1843,8 +1842,7 @@ function translate(token, ctx_type) {
     } break
                                           //comparison expressions
     case ">": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       ctx_type = find_type_priority(args.expr1,args.expr2)
       switch (ctx_type) {
         case "int": {
@@ -1855,11 +1853,11 @@ function translate(token, ctx_type) {
         case "sint": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           let temp_var = get_temp_word()
-          prefix.push("write [alu.-] " + temp_var.label)
-          prefix.push("write [" + temp_var.label + "] alu.1")
+          prefix.push(`write [alu.-] ${temp_var.label}`)
+          prefix.push(`write [${temp_var.label}] alu.1`)
           prefix.push("write 1 alu.2")
-          prefix.push("write [alu.-] " + temp_var.label)
-          prefix.push("write [" + temp_var.label + "] alu.1")
+          prefix.push(`write [alu.-] ${temp_var.label}`)
+          prefix.push(`write [${temp_var.label}] alu.1`)
           prefix.push("write 0b1000000000000000 alu.2")
           registers = ["[alu.<]"]
           temp_var.free()
@@ -1889,8 +1887,7 @@ function translate(token, ctx_type) {
     } break
 
     case "<": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       ctx_type = find_type_priority(args.expr1,args.expr2)
       switch (ctx_type) {
         case "int": {
@@ -1901,11 +1898,11 @@ function translate(token, ctx_type) {
         case "sint": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           let temp_var = get_temp_word()
-          prefix.push("write [alu.-] " + temp_var.label)
-          prefix.push("write [" + temp_var.label + "] alu.1")
+          prefix.push(`write [alu.-] ${temp_var.label}`)
+          prefix.push(`write [${temp_var.label}] alu.1`)
           prefix.push("write 1 alu.2")
-          prefix.push("write [alu.+] " + temp_var.label)
-          prefix.push("write [" + temp_var.label + "] alu.1")
+          prefix.push(`write [alu.+] ${temp_var.label}`)
+          prefix.push(`write [${temp_var.label}] alu.1`)
           prefix.push("write 0b0111111111111111 alu.2")
           registers = ["[alu.>]"]
           temp_var.free()
@@ -1935,18 +1932,17 @@ function translate(token, ctx_type) {
     } break
 
     case ">=": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       ctx_type = find_type_priority(args.expr1,args.expr2)
       switch (ctx_type) {
         case "int": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
-          prefix.push("write [alu.=] "+temp_vars[0].label)
-          prefix.push("write [alu.>] "+temp_vars[1].label)
-          prefix.push("write ["+temp_vars[0].label+"] alu.1")
-          prefix.push("write ["+temp_vars[1].label+"] alu.2")
+          prefix.push(`write [alu.=] ${temp_vars[0].label}`)
+          prefix.push(`write [alu.>] ${temp_vars[1].label}`)
+          prefix.push(`write [${temp_vars[0].label}] alu.1`)
+          prefix.push(`write [${temp_vars[1].label}] alu.2`)
           registers = ["[alu.|]"]
 
           temp_vars[0].free()
@@ -1956,8 +1952,8 @@ function translate(token, ctx_type) {
         case "sint": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           let temp_var = get_temp_word()
-          prefix.push("write [alu.-] " + temp_var.label)
-          prefix.push("write [" + temp_var.label + "] alu.1")
+          prefix.push(`write [alu.-] ${temp_var.label}`)
+          prefix.push(`write [${temp_var.label}] alu.1`)
           prefix.push("write 0b1000000000000000 alu.2")
           registers = ["[alu.<]"]
           temp_var.free()
@@ -1973,15 +1969,15 @@ function translate(token, ctx_type) {
           let prefix_and_value = translate(call)
           prefix = prefix_and_value[0]
 
-          prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[0].label)
+          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
           call = {name:"function",type:"expression",arguments:{name:"sys.long_equal",exprs:[args.expr1,args.expr2]}}
           prefix_and_value = translate(call)
           prefix.push(...prefix_and_value[0])
-          prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[1].label)
+          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
-          prefix.push("write ["+temp_vars[0].label+"] alu.1")
-          prefix.push("write ["+temp_vars[1].label+"] alu.2")
+          prefix.push(`write [${temp_vars[0].label}] alu.1`)
+          prefix.push(`write [${temp_vars[1].label}] alu.2`)
           registers = ["[alu.|]"]
 
           temp_vars[0].free()
@@ -1998,15 +1994,15 @@ function translate(token, ctx_type) {
           let prefix_and_value = translate(call)
           prefix = prefix_and_value[0]
 
-          prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[0].label)
+          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
           call = {name:"function",type:"expression",arguments:{name:"sys.slong_equal",exprs:[args.expr1,args.expr2]}}
           prefix_and_value = translate(call)
           prefix.push(...prefix_and_value[0])
-          prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[1].label)
+          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
-          prefix.push("write ["+temp_vars[0].label+"] alu.1")
-          prefix.push("write ["+temp_vars[1].label+"] alu.2")
+          prefix.push(`write [${temp_vars[0].label}] alu.1`)
+          prefix.push(`write [${temp_vars[1].label}] alu.2`)
           registers = ["[alu.|]"]
 
           temp_vars[0].free()
@@ -2021,18 +2017,17 @@ function translate(token, ctx_type) {
     } break
 
     case "<=": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       ctx_type = find_type_priority(args.expr1,args.expr2)
       switch (ctx_type) {
         case "int": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
-          prefix.push("write [alu.=] "+temp_vars[0].label)
-          prefix.push("write [alu.<] "+temp_vars[1].label)
-          prefix.push("write ["+temp_vars[0].label+"] alu.1")
-          prefix.push("write ["+temp_vars[1].label+"] alu.2")
+          prefix.push(`write [alu.=] ${temp_vars[0].label}`)
+          prefix.push(`write [alu.<] ${temp_vars[1].label}`)
+          prefix.push(`write [${temp_vars[0].label}] alu.1`)
+          prefix.push(`write [${temp_vars[1].label}] alu.2`)
           registers = ["[alu.|]"]
 
           temp_vars[0].free()
@@ -2042,8 +2037,8 @@ function translate(token, ctx_type) {
         case "sint": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           let temp_var = get_temp_word()
-          prefix.push("write [alu.-] " + temp_var.label)
-          prefix.push("write [" + temp_var.label + "] alu.1")
+          prefix.push(`write [alu.-] ${temp_var.label}`)
+          prefix.push(`write [${temp_var.label}] alu.1`)
           prefix.push("write 0b0111111111111111 alu.2")
           registers = ["[alu.>]"]
           temp_var.free()
@@ -2059,15 +2054,15 @@ function translate(token, ctx_type) {
           let prefix_and_value = translate(call)
           prefix = prefix_and_value[0]
 
-          prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[0].label)
+          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
           call = {name:"function",type:"expression",arguments:{name:"sys.long_equal",exprs:[args.expr1,args.expr2]}}
           prefix_and_value = translate(call)
           prefix.push(...prefix_and_value[0])
-          prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[1].label)
+          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
-          prefix.push("write ["+temp_vars[0].label+"] alu.1")
-          prefix.push("write ["+temp_vars[1].label+"] alu.2")
+          prefix.push(`write [${temp_vars[0].label}] alu.1`)
+          prefix.push(`write [${temp_vars[1].label}] alu.2`)
           registers = ["[alu.|]"]
 
           temp_vars[0].free()
@@ -2084,15 +2079,15 @@ function translate(token, ctx_type) {
           let prefix_and_value = translate(call)
           prefix = prefix_and_value[0]
 
-          prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[0].label)
+          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
           call = {name:"function",type:"expression",arguments:{name:"sys.slong_equal",exprs:[args.expr1,args.expr2]}}
           prefix_and_value = translate(call)
           prefix.push(...prefix_and_value[0])
-          prefix.push("write "+prefix_and_value[1][0]+" "+temp_vars[1].label)
+          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
-          prefix.push("write ["+temp_vars[0].label+"] alu.1")
-          prefix.push("write ["+temp_vars[1].label+"] alu.2")
+          prefix.push(`write [${temp_vars[0].label}] alu.1`)
+          prefix.push(`write [${temp_vars[1].label}] alu.2`)
           registers = ["[alu.|]"]
 
           temp_vars[0].free()
@@ -2107,8 +2102,7 @@ function translate(token, ctx_type) {
     } break
 
     case "==": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       ctx_type = find_type_priority(args.expr1,args.expr2)
       switch (ctx_type) {
         case "bool":
@@ -2142,10 +2136,8 @@ function translate(token, ctx_type) {
     } break
 
     case "!=": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       ctx_type = find_type_priority(args.expr1,args.expr2)
-      log.debug("ctx_type: " + ctx_type)
       switch (ctx_type) {
         case "bool":
         case "int":
@@ -2180,7 +2172,7 @@ function translate(token, ctx_type) {
     } break
                                     //bit-wise operations, only needs to test word length
     case "&": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1)[2],translate(args.expr2)[2]]
 
       prefix = write_operands(args.expr1,args.expr2,ctx_type)
@@ -2188,7 +2180,7 @@ function translate(token, ctx_type) {
     } break
 
     case "|": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1)[2],translate(args.expr2)[2]]
 
       prefix = write_operands(args.expr1,args.expr2,ctx_type)
@@ -2196,8 +2188,7 @@ function translate(token, ctx_type) {
     } break
 
     case ">>": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       switch (ctx_type) {
         case "bool":
         case "int": {
@@ -2236,8 +2227,7 @@ function translate(token, ctx_type) {
     } break
 
     case "<<": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       switch (ctx_type) {
         case "bool":
         case "int":
@@ -2269,15 +2259,13 @@ function translate(token, ctx_type) {
     } break
 
     case "!": {   //(not)
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       prefix = write_operand(args.expr,ctx_type)
       registers = ["[alu.!]"]
     } break
 
     case "..": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       let expr1 = translate(args.expr1,ctx_type)
       let expr1_prefix = expr1[0]
       let expr1_reg = expr1[1]
@@ -2291,8 +2279,7 @@ function translate(token, ctx_type) {
     } break
 
     case ":": { //word selector
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       let expr = translate(args.expr1,ctx_type)
       prefix = expr[0]
       let expr_regs = expr[1]
@@ -2309,8 +2296,7 @@ function translate(token, ctx_type) {
     } break
                                   //others
     case "is_odd": {
-      log.debug("op: "+token.name+" , targ: '" + ctx_type + "'")
-
+      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       let prefix_and_value = translate(args.expr,"int")
       prefix = prefix_and_value[0]
       registers = prefix_and_value[1]
@@ -2337,7 +2323,6 @@ function translate(token, ctx_type) {
         contained_type = args.exprs[0].arguments.type_guess
       } else {
         contained_type = ctx_type
-        log.info("(expr_array) context given type is "+ contained_type)
       }
       let max_length = length
 
@@ -2356,7 +2341,7 @@ function translate(token, ctx_type) {
       }
 
       let item_size = data_type_size[contained_type]
-      let consts_to_add = [label + ":"]
+      let consts_to_add = [`${label}:`]
 
       let prefix_and_value
       for (let item of args.exprs) {
@@ -2452,17 +2437,17 @@ function translate(token, ctx_type) {
 
         //calculate address of item at the specified index
         load_lib("sys.array_pointer")
-        prefix.push("write "+index+" ram+.0")
-        prefix.push("write "+item_size+" ram+.1")
-        prefix.push("write "+base_addr+" ram+.2")
+        prefix.push(`write ${index} ram+.0`)
+        prefix.push(`write ${item_size} ram+.1`)
+        prefix.push(`write ${base_addr} ram+.2`)
         prefix.push("call func_sys.array_pointer_base_addr") //output is in ram+.3
 
         let memory = alloc_block(item_size)
 
         //copy item from calculated address to allocated result registers
         prefix.push("write [ram+.3] ram+.0")
-        prefix.push("write ram."+ memory[0] +" ram+.1")
-        prefix.push("write "+item_size+ " ram+.2")
+        prefix.push(`write ram.${memory[0]} ram+.1`)
+        prefix.push(`write ${item_size} ram+.2`)
 
         // if this is a global array we need a different copy function
         if (scope_name === "[global]") {
@@ -2489,15 +2474,15 @@ function translate(token, ctx_type) {
       } else if (operation == "pop") {
         // simply take one away from the length of the array, then return the item at that index
 
-        prefix.push("write "+ current_len +" alu.1")
+        prefix.push(`write ${current_len} alu.1`)
         prefix.push("write 1 alu.2")
-        prefix.push("write [alu.-] "+ current_len.slice(1, -1))
+        prefix.push(`write [alu.-] ${current_len.slice(1, -1)}`)
 
         //calculate address of item at the specified index
         load_lib("sys.array_pointer")
-        prefix.push("write "+current_len+" ram+.0")
-        prefix.push("write "+item_size+" ram+.1")
-        prefix.push("write "+base_addr+" ram+.2")
+        prefix.push(`write ${current_len} ram+.0`)
+        prefix.push(`write ${item_size} ram+.1`)
+        prefix.push(`write ${base_addr} ram+.2`)
         prefix.push("call func_sys.array_pointer_base_addr") //output is in ram+.3
 
         let memory = alloc_block(item_size)
@@ -2505,8 +2490,8 @@ function translate(token, ctx_type) {
         //copy item from calculated address to allocated result registers
         load_lib("sys.ram_to_ram_copy")
         prefix.push("write [ram+.3] ram+.0")
-        prefix.push("write ram."+ memory[0] +" ram+.1")
-        prefix.push("write "+item_size+ " ram+.2")
+        prefix.push(`write ram.${memory[0]} ram+.1`)
+        prefix.push(`write ${item_size} ram+.2`)
         prefix.push("call func_sys.ram_to_ram_copy_length")
 
         registers = []
@@ -2525,7 +2510,7 @@ function translate(token, ctx_type) {
         load_lib(args.name)
       }
 
-      let entry_point = "func_" + args.name
+      let entry_point = `func_${args.name}`
       if (!(args.name in function_table)) {
         throw new CompError(`Function '${args.name}' is undefined`)
       }
@@ -2570,7 +2555,7 @@ function translate(token, ctx_type) {
       }
 
       // actually call the function
-      prefix.push("call " + entry_point)
+      prefix.push(`call ${entry_point}`)
 
       registers = function_table[args.name].return_value
       type = function_table[args.name].data_type
@@ -2625,7 +2610,7 @@ function translate(token, ctx_type) {
     } break
 
     default:
-      throw new CompError("Error translating expression:\nUnknown type '" + token.name + "'")
+      throw new CompError(`Error translating expression:\nUnknown type '${token.name}'`)
       break
     }
     return [prefix, registers, type]
@@ -2635,7 +2620,7 @@ function translate(token, ctx_type) {
     switch (token.name) {
 
     case "if": {
-      let label = "if_" + gen_id("if")
+      let label = `if_${gen_id("if")}`
 
       let else_present = false
       let else_if_present = false
@@ -2665,14 +2650,14 @@ function translate(token, ctx_type) {
 
       for (let i = 0; i < exprs.length; i++) {
         if (i != 0) {
-          result.push(label+"_"+i+":")
+          result.push(`${label}_${i}:`)
         }
 
         let next_case_label
         if (exprs.length == (i+1) && !else_present) {
-          next_case_label = label+"_end"
+          next_case_label = `${label}_end`
         } else {
-          next_case_label = label+"_"+(i+1)
+          next_case_label = `${label}_${i+1}`
         }
 
         let prefix_and_value = translate(exprs[i], "bool")
@@ -2682,21 +2667,21 @@ function translate(token, ctx_type) {
           throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
         }
         result.push(...prefix)
-        result.push("write " + value[0] + " ctl.cnd")
-        result.push("goto? " + next_case_label)
+        result.push(`write ${value[0]} ctl.cnd`)
+        result.push(`goto? ${next_case_label}`)
 
         result.push(...translate_body(main_tokens[i]))
 
         if ((else_present || else_if_present) && i != exprs.length) {
-          result.push("goto " + label+"_end")
+          result.push(`goto ${label}_end`)
         }
       }
 
       if (else_present) {
-        result.push(label+"_"+exprs.length+":")
+        result.push(`${label}_${exprs.length}:`)
       }
       result.push(...translate_body(else_tokens))
-      result.push(label+"_end:")
+      result.push(`${label}_end:`)
     } break
 
     case "else": {
@@ -2708,7 +2693,7 @@ function translate(token, ctx_type) {
     } break
 
     case "for": {
-      let label = "for_" + gen_id("for")
+      let label = `for_${gen_id("for")}`
       let init_result = translate(args.init)
       result.push(...init_result)
 
@@ -2719,28 +2704,28 @@ function translate(token, ctx_type) {
         throw new CompError(`Conditional expression expected type 'bool', got '${expr_prefix_and_value[2]}'`)
       }
       result.push(...expr_prefix)
-      result.push("write " + expr_value + " ctl.cnd")
-      result.push("goto? " + label + "_end")
-      result.push([(label+"_start:")])
+      result.push(`write ${expr_value} ctl.cnd`)
+      result.push(`goto? ${label}_end`)
+      result.push([(`${label}_start:`)])
 
       let prev_inner_structure_label = inner_structure_label
       inner_structure_label = label
       result.push(...translate_body(token.body))
-      result.push(label+"_cond:")
+      result.push(`${label}_cond:`)
       inner_structure_label = prev_inner_structure_label
 
       let cmd_result = translate(args.cmd)
       result.push(...cmd_result)
 
       result.push(...expr_prefix)
-      result.push("write " + expr_value + " ctl.cnd")
-      result.push("goto? " + label + "_end")
-      result.push("goto " + label + "_start")
-      result.push(label+"_end:")
+      result.push(`write ${expr_value} ctl.cnd`)
+      result.push(`goto? ${label}_end`)
+      result.push(`goto ${label}_start`)
+      result.push(`${label}_end:`)
     } break
 
     case "while": {
-      let label = "while_" + gen_id("while")
+      let label = `while_${gen_id("while")}`
 
       let prefix_and_value = translate(args.expr, "bool")
       let prefix = prefix_and_value[0]
@@ -2749,21 +2734,21 @@ function translate(token, ctx_type) {
         throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
       }
       result.push(...prefix)
-      result.push("write " + value + " ctl.cnd")
-      result.push("goto? " + label + "_end")
-      result.push([(label+"_start:")])
+      result.push(`write ${value} ctl.cnd`)
+      result.push(`goto? ${label}_end`)
+      result.push([(`${label}_start:`)])
 
       let prev_inner_structure_label = inner_structure_label
       inner_structure_label = label
       result.push(...translate_body(token.body))
-      result.push(label+"_cond:")
+      result.push(`${label}_cond:`)
       inner_structure_label = prev_inner_structure_label
 
       result.push(...prefix)
-      result.push("write " + value + " ctl.cnd")
-      result.push("goto? " + label + "_end")
-      result.push("goto " + label + "_start")
-      result.push(label+"_end:")
+      result.push(`write ${value} ctl.cnd`)
+      result.push(`goto? ${label}_end`)
+      result.push(`goto ${label}_start`)
+      result.push(`${label}_end:`)
     } break
 
     case "function_def": {
@@ -2867,10 +2852,10 @@ function compile(input, nested) {
       }
 
       if (curr_indent > prev_indent) {
-        log.debug("indent ↑ " + prev_indent + " -> " + curr_indent)
+        log.debug(`indent ↑ ${prev_indent} -> ${curr_indent}`)
         expect_indent = false  //we've got an indent so no need to throw an error
       } else if (curr_indent < prev_indent) {
-        log.debug("indent ↓ " + prev_indent + " -> " + curr_indent)
+        log.debug(`indent ↓ ${prev_indent} -> ${curr_indent}`)
         if (line.trim().startsWith("else")) {
           for (let j = 0; j < (prev_indent - curr_indent)-1; j++) {
             targ.pop()
@@ -2884,7 +2869,7 @@ function compile(input, nested) {
           if (targ[targ.length-1] instanceof Array) {
             log.debug("new target ↓ [root]")
           } else {
-            log.debug("new target ↓ " + targ[targ.length-1].name)
+            log.debug(`new target ↓ ${targ[targ.length-1].name}`)
           }
         }
       }  // if no indnet, carry on passing into current target
@@ -2898,7 +2883,7 @@ function compile(input, nested) {
         }
 
         if (token.type == "structure" && !(token.name in {"else":"","else if":""})) {     //when a structure header is parsed, set it to be target and expect indent
-          log.debug("new target ↑ " + token.name)
+          log.debug(`new target ↑ ${token.name}`)
           expect_indent = true
           targ.push(token)
         }
@@ -2919,7 +2904,7 @@ function compile(input, nested) {
 
     let t1 = performance.now()
 
-    log.info("↳ success, "+ input.length + " line(s) in "+  Math.round(t1-t0) + "ms")
+    log.info(`↳ success, ${input.length} line(s) in ${Math.round(t1-t0)} ms`)
 
   if (!nested) {
     token_dump = tokens
@@ -2963,7 +2948,7 @@ function compile(input, nested) {
     output += "stop"
 
     t1 = performance.now()
-    log.info("↳ success, "+ tokens.length +" token(s) in "+  Math.round(t1-t0) + "ms")
+    log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
 
   //add consts
     for (let i = 0; i < consts.length; i++) {
@@ -2997,7 +2982,7 @@ function compile(input, nested) {
     }
 
     if (non_deallocated_vars > 0) {
-      log.warn(non_deallocated_vars + " variable(s) are never deallocated")
+      log.warn(`${non_deallocated_vars} variable(s) are never deallocated`)
     }
 
     let ram_percent = Math.round((max_allocated_ram_slots / 1023) * 100)
