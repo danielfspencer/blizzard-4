@@ -1,4 +1,6 @@
-if (typeof process !== 'undefined') {  // if we are running under nodejs define performance.now
+"use strict"
+
+if (typeof process !== "undefined") {  // if we are running under nodejs define performance.now
   try {
     performance = { now : require('performance-now') }
 
@@ -17,6 +19,7 @@ if (typeof process !== 'undefined') {  // if we are running under nodejs define 
   importScripts('libraries.js')
 }
 
+let state = {}
 let show_log_messages = true
 let debug = false
 let token_dump = []
@@ -91,16 +94,18 @@ function CompError(message, line) {
 }
 
 function init_vars() {
-  scope = "[root]"
-  inner_structure_label = undefined
-  free_ram = {"[root]":gen_free_ram_map(),"[global]":gen_free_ram_map()}
-  symbol_table = {"[root]":{},"[global]":{}}
-  function_table = {}
-  consts = []
-  funcs = {}
-  required = {}
-  max_allocated_ram_slots = 0
-  structures = {"if":0,"for":0,"while":0,"str":0,"expr_array":0}
+  state = {
+    scope: "[root]",
+    symbol_table: {"[root]":{},"[global]":{}},
+    free_ram: {"[root]":gen_free_ram_map(),"[global]":gen_free_ram_map()},
+    function_table: {},
+    consts: [],
+    funcs: {},
+    required: {},
+    max_allocated_ram_slots: 0,
+    inner_structure_label: undefined,
+    ids: {if:0,for:0,while:0,str:0,expr_array:0}
+  }
 }
 
 function pad(string, width) {
@@ -226,9 +231,9 @@ function gen_free_ram_map() {
 
 function assert_local_name_available(name) {
   const places = [
-    symbol_table[scope],
+    state.symbol_table[state.scope],
     reserved_keywords,
-    function_table // remove to allow var names to be the same as func names?
+    state.function_table // remove to allow var names to be the same as func names?
   ]
 
   for (let place of places) {
@@ -241,16 +246,16 @@ function assert_local_name_available(name) {
 function assert_global_name_available(name) {
   assert_local_name_available(name)
 
-  if (name in symbol_table["[global]"]) {
+  if (name in state.symbol_table["[global]"]) {
     throw new CompError(`Name '${name}' is not available`)
   }
 }
 
 function gen_id(type) {
-  let id = structures[type]
-  structures[type] += 1
+  let id = state.ids[type]
+  state.ids[type] += 1
   if (id === undefined) {
-    throw new CompError(`Error generating ID:\nunknown structure '${type}'`)
+    throw new CompError(`Error generating ID:\nUnknown structure '${type}'`)
   }
   return id
 }
@@ -286,36 +291,36 @@ function inc_or_dec_token(var_name, op, value_token) {
 function alloc_block(size) {
   log.debug(`Request for ${size} words(s) of RAM`)
   let addrs = []
-  if (size > free_ram[scope].length) {
-    throw new CompError(`Out of memory, ${size} word(s) requested (only ${free_ram[scope].length} free)`)
+  if (size > state.free_ram[state.scope].length) {
+    throw new CompError(`Out of memory, ${size} word(s) requested (only ${state.free_ram[state.scope].length} free)`)
   }
   for (let i = 0; i < size; i++) {
-    addrs.push(free_ram[scope].shift())
+    addrs.push(state.free_ram[state.scope].shift())
   }
 
-  if (!scope.startsWith("sys.")) {
-    let allocated_slots = 1023 - free_ram[scope].length
-    if (allocated_slots > max_allocated_ram_slots) {
-      max_allocated_ram_slots = allocated_slots
+  if (!state.scope.startsWith("sys.")) {
+    let allocated_slots = 1023 - state.free_ram[state.scope].length
+    if (allocated_slots > state.max_allocated_ram_slots) {
+      state.max_allocated_ram_slots = allocated_slots
     }
   }
   return addrs
 }
 
 function alloc_global_block(size) {
-  let old_scope = scope
-  scope = "[global]"
+  let old_state = state.scope
+  state.scope = "[global]"
   let addrs = alloc_block(size)
-  scope = old_scope
+  state.scope = old_state
 
   return addrs
 }
 
 function free_global_block(addrs) {
-  let old_scope = scope
-  scope = "[global]"
+  let old_state = state.scope
+  state.scope = "[global]"
   free_block(addrs)
-  scope = old_scope
+  state.scope = old_state
 }
 
 function assert_valid_datatype(type) {
@@ -325,8 +330,8 @@ function assert_valid_datatype(type) {
 }
 
 function free_block(addrs) {
-  free_ram[scope].push(...addrs)
-  free_ram[scope].sort((a,b) => (a - b))
+  state.free_ram[state.scope].push(...addrs)
+  state.free_ram[state.scope].sort((a,b) => (a - b))
 }
 
 function get_temp_word() {
@@ -360,7 +365,7 @@ function translate_body(tokens) {
       }
       if (tokens[i].name == "function") {
         command = command[0] // if it is a function call (which is an expression) take only the prefix and bin the result register [[tokens],result] -> [tokens]
-        let function_type = function_table[tokens[i].arguments.name].data_type
+        let function_type = state.function_table[tokens[i].arguments.name].data_type
         if (function_type !== "none") {
           log.warn(`line ${tokens[i].line}:\nDiscarding function's returned value of type '${function_type}'`)
         }
@@ -379,10 +384,10 @@ function load_lib(name) {
   if (!(name in libs)) {
     throw new CompError(`Library '${name}' not found`)
   }
-  if (name in required) {
+  if (name in state.required) {
     log.debug("↳ already loaded")
   } else {
-    required[name] = ""
+    state.required[name] = ""
     log.debug("↳ compiling")
     let old_log_status = show_log_messages
     try {
@@ -603,11 +608,11 @@ function tokenise(input, line) {
     let array_name = matches[1]
     let operation = matches[2]
     let argument_string = matches[3]
-    let arguments = argument_string.split(",")
+    let args = argument_string.split(",")
 
     let argument_tokens = []
 
-    for (let argument of arguments) {
+    for (let argument of args) {
       argument_tokens.push(tokenise(argument,line))
     }
 
@@ -658,15 +663,15 @@ function tokenise(input, line) {
     let name = /^\S+?(?=\((.*)\)$)/.exec(input)[0]
     let args_string = /^\S+?(?=\((.*)\)$)/.exec(input)[1]
     let string_list = args_string.split(",")
-    let arguments = []
+    let args = []
     if (args_string !== "") {
       for (let item of string_list) {
         if (item !== undefined) {
-          arguments.push(tokenise(item,line))
+          args.push(tokenise(item,line))
         }
       }
     }
-    token = {name:"function",type:"expression",arguments:{name:name,exprs:arguments}}
+    token = {name:"function",type:"expression",arguments:{name:name,exprs:args}}
 
   } else if (/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/.test(input)) {          // is an expression
     let operation = find_operation(/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/g, input)
@@ -774,7 +779,7 @@ function translate(token, ctx_type) {
       let memory = alloc_block(expr_value.length)
 
       // add entry to symbol table
-      symbol_table[scope][args.name] = {
+      state.symbol_table[state.scope][args.name] = {
         type: "variable",
         data_type: expr_type,
         specific: {
@@ -818,7 +823,7 @@ function translate(token, ctx_type) {
       }
 
       // add entry to symbol table
-      symbol_table["[global]"][args.name] = {
+      state.symbol_table["[global]"][args.name] = {
         type: "constant",
         data_type: args.type,
         specific: {
@@ -827,8 +832,8 @@ function translate(token, ctx_type) {
       }
 
       for (let word of expr_value) {
-        consts.push(`${memory.shift()}:`)
-        consts.push(word)
+        state.consts.push(`${memory.shift()}:`)
+        state.consts.push(word)
       }
     } break
 
@@ -859,7 +864,7 @@ function translate(token, ctx_type) {
       let memory = alloc_global_block(expr_value.length)
 
       // add entry to symbol table
-      symbol_table["[global]"][args.name] = {
+      state.symbol_table["[global]"][args.name] = {
         type: "variable",
         data_type: args.type,
         specific: {
@@ -876,7 +881,7 @@ function translate(token, ctx_type) {
     } break
 
     case "arg_alloc": {      //arg [type] [name] [expr]
-      if (scope === "[root]") {
+      if (state.scope === "[root]") {
         throw new CompError("Argument declaration can only be used in functions")
       }
 
@@ -899,7 +904,7 @@ function translate(token, ctx_type) {
       let memory = alloc_block(expr_value.length)
 
       // add entry to symbol table
-      symbol_table[scope][args.name] = {
+      state.symbol_table[state.scope][args.name] = {
         type: "argument",
         data_type: expr_type,
         specific: {
@@ -908,7 +913,7 @@ function translate(token, ctx_type) {
       }
 
       // add argument to function
-      function_table[scope].arguments.push(args.name)
+      state.function_table[state.scope].arguments.push(args.name)
 
       // make data available
       result = expr_prefix
@@ -917,7 +922,7 @@ function translate(token, ctx_type) {
         result.push(`write ${expr_word} ram.${memory.shift()}`)
       }
 
-      let label = `func_${scope}_${args.name}:`
+      let label = `func_${state.scope}_${args.name}:`
       result.push(label)
     } break
 
@@ -939,7 +944,7 @@ function translate(token, ctx_type) {
       let array_memory = alloc_block(max_len * element_size)
 
       // add to symbol table
-      symbol_table[scope][args.name] = {
+      state.symbol_table[state.scope][args.name] = {
         type: "variable",
         data_type: "array",
         specific: {
@@ -981,7 +986,7 @@ function translate(token, ctx_type) {
       let array_memory = alloc_global_block(max_len * element_size)
 
       // add to symbol table
-      symbol_table["[global]"][args.name] = {
+      state.symbol_table["[global]"][args.name] = {
         type: "variable",
         data_type: "array",
         specific: {
@@ -1006,10 +1011,10 @@ function translate(token, ctx_type) {
     } break
 
     case "set": {            //[name] = [expr]
-      if (args.name in symbol_table[scope]) {
+      if (args.name in state.symbol_table[state.scope]) {
         // this is a local variable or argument
 
-        let table_entry = symbol_table[scope][args.name]
+        let table_entry = state.symbol_table[state.scope][args.name]
 
         if (!["variable","argument"].includes(table_entry.type)) {
           throw new CompError("Only variables and arguments can be modified")
@@ -1025,7 +1030,7 @@ function translate(token, ctx_type) {
           throw new CompError(`Variable expected type '${dst_type}', got '${expr_type}'`)
         }
 
-        // run the code required by the expression
+        // run the code state.required by the expression
         result = prefix
 
         // copy the new value into the variable's memory
@@ -1033,10 +1038,10 @@ function translate(token, ctx_type) {
           result.push(`write ${value[i]} ram.${dst_regs[i]}`)
         }
 
-      } else if (args.name in symbol_table["[global]"]) {
+      } else if (args.name in state.symbol_table["[global]"]) {
         // this is a global variable
 
-        let table_entry = symbol_table["[global]"][args.name]
+        let table_entry = state.symbol_table["[global]"][args.name]
 
         if (table_entry.type !== "variable") {
           throw new CompError("Only variables can be modified")
@@ -1052,7 +1057,7 @@ function translate(token, ctx_type) {
           throw new CompError(`Variable expected type '${dst_type}', got '${expr_type}'`)
         }
 
-        // run the code required by the expression
+        // run the code state.required by the expression
         result = prefix
 
         // copy the new value into the variable's memory
@@ -1069,7 +1074,7 @@ function translate(token, ctx_type) {
       let [expr_prefix, expr_value, expr_type] = translate(args.expr)
       let size = data_type_size[expr_type]
 
-      // run code required by expression
+      // run code state.required by expression
       result = expr_prefix
 
       let ptr_expr = tokenise(args.name)
@@ -1107,11 +1112,11 @@ function translate(token, ctx_type) {
 
       let scope_name
       let ram_prefix
-      if (array_name in symbol_table[scope]) {
+      if (array_name in state.symbol_table[state.scope]) {
         // this is a local array
-        scope_name = scope
+        scope_name = state.scope
         ram_prefix = "ram."
-      } else if (array_name in symbol_table["[global]"]) {
+      } else if (array_name in state.symbol_table["[global]"]) {
         // this is a global array
         scope_name = "[global]"
         ram_prefix = "ram^."
@@ -1119,7 +1124,7 @@ function translate(token, ctx_type) {
         throw new CompError(`Cannot find array named '${array_name}'`)
       }
 
-      let table_entry = symbol_table[scope_name][array_name].specific
+      let table_entry = state.symbol_table[scope_name][array_name].specific
       let array_type = table_entry.element_data_type
 
       let base_addr = `[${ram_prefix}${table_entry.base_addr}]`
@@ -1176,11 +1181,11 @@ function translate(token, ctx_type) {
 
       let scope_name
       let ram_prefix
-      if (array_name in symbol_table[scope]) {
+      if (array_name in state.symbol_table[state.scope]) {
         // this is a local array
-        scope_name = scope
+        scope_name = state.scope
         ram_prefix = "ram."
-      } else if (array_name in symbol_table["[global]"]) {
+      } else if (array_name in state.symbol_table["[global]"]) {
         // this is a global array
         scope_name = "[global]"
         ram_prefix = "ram^."
@@ -1188,7 +1193,7 @@ function translate(token, ctx_type) {
         throw new CompError(`Cannot find array named '${array_name}'`)
       }
 
-      let table_entry = symbol_table[scope_name][array_name].specific
+      let table_entry = state.symbol_table[scope_name][array_name].specific
       let array_type = table_entry.element_data_type
 
       let base_addr = `[${ram_prefix}${table_entry.base_addr}]`
@@ -1288,12 +1293,12 @@ function translate(token, ctx_type) {
       let table_entry
       let is_global = false
 
-      if (args.name in symbol_table[scope])  {
+      if (args.name in state.symbol_table[state.scope])  {
         // it's a local symbol
-        table_entry = symbol_table[scope][args.name]
-      } else if (args.name in symbol_table["[global]"]) {
+        table_entry = state.symbol_table[state.scope][args.name]
+      } else if (args.name in state.symbol_table["[global]"]) {
         // it's a global symbol
-        table_entry = symbol_table["[global]"][args.name]
+        table_entry = state.symbol_table["[global]"][args.name]
         is_global = true
       } else {
         // it does not exist
@@ -1320,7 +1325,7 @@ function translate(token, ctx_type) {
         free_block(addrs)
       }
 
-      delete symbol_table[scope][args.name]
+      delete state.symbol_table[state.scope][args.name]
     } break
 
     //all the cmds below are just shortcuts for set tokens
@@ -1346,12 +1351,12 @@ function translate(token, ctx_type) {
     } break
 
     case "return": {     //return [optional expr]
-      if (scope === "[root]") {
+      if (state.scope === "[root]") {
         throw new CompError("Statement 'return' can only be used in functions")
       }
 
-      let func_type = function_table[scope].data_type
-      let force_cast = function_table[scope].force_cast
+      let func_type = state.function_table[state.scope].data_type
+      let force_cast = state.function_table[state.scope].force_cast
       if (func_type === "none" && args.expr !== undefined) {
         throw new CompError("Functions of type 'none' cannot return values")
       }
@@ -1379,7 +1384,7 @@ function translate(token, ctx_type) {
           //this next replace prevents recursive function calls producing ram++++.x addresses
           map.push(temp.replace("ram++","ram+"))
         }
-        function_table[scope].return_value = map
+        state.function_table[state.scope].return_value = map
       }
 
       // add the actual return instruction
@@ -1397,17 +1402,17 @@ function translate(token, ctx_type) {
     } break
 
     case "break": {
-      if (inner_structure_label === undefined) {
+      if (state.inner_structure_label === undefined) {
         throw new CompError("'break' can only be used in for/while loops")
       }
-      result.push(`goto ${inner_structure_label}_end`)
+      result.push(`goto ${state.inner_structure_label}_end`)
     } break
 
     case "continue": {
-      if (inner_structure_label === undefined) {
+      if (state.inner_structure_label === undefined) {
         throw new CompError("'continue' can only be used in for/while loops")
       }
-      result.push(`goto ${inner_structure_label}_cond`)
+      result.push(`goto ${state.inner_structure_label}_cond`)
     } break
 
     default:
@@ -1425,7 +1430,7 @@ function translate(token, ctx_type) {
     switch (token.name) {
 
     // number types
-    case "number":  { // a generic number that can be turned into the type required by the context
+    case "number":  { // a generic number that can be turned into the type state.required by the context
       if (ctx_type === undefined) {
         log.warn(`line ${token.line}:\nNo context-specified type for '${args.value}'\nassuming '${args.type_guess}'`)
         type = args.type_guess
@@ -1568,7 +1573,7 @@ function translate(token, ctx_type) {
 
       let id = `str_${gen_id("str")}`
 
-      consts.push(`${id}:`)
+      state.consts.push(`${id}:`)
 
       for (let i = 0; i < string.length; i++) {
         let char = string[i]
@@ -1576,11 +1581,11 @@ function translate(token, ctx_type) {
         if (code < 32 || code > 127) {
           throw new CompError(`'${char}' is not a valid character`)
         }
-        consts.push(code)
+        state.consts.push(code)
       }
 
       // string terminator
-      consts.push(0)
+      state.consts.push(0)
 
       registers = [id]
       type = "str"
@@ -2351,7 +2356,7 @@ function translate(token, ctx_type) {
         }
         consts_to_add.push(...prefix_and_value[1])
       }
-      consts.push(...consts_to_add)
+      state.consts.push(...consts_to_add)
 
       registers = [label, length, max_length, contained_type]
       type = "expr_array"
@@ -2361,12 +2366,12 @@ function translate(token, ctx_type) {
       let table_entry
       let is_global = false
 
-      if (args.name in symbol_table[scope])  {
+      if (args.name in state.symbol_table[state.scope])  {
         // it's a local symbol
-        table_entry = symbol_table[scope][args.name]
-      } else if (args.name in symbol_table["[global]"]) {
+        table_entry = state.symbol_table[state.scope][args.name]
+      } else if (args.name in state.symbol_table["[global]"]) {
         // it's a global symbol
-        table_entry = symbol_table["[global]"][args.name]
+        table_entry = state.symbol_table["[global]"][args.name]
         is_global = true
       } else {
         // it does not exist
@@ -2405,11 +2410,11 @@ function translate(token, ctx_type) {
 
       let scope_name
       let ram_prefix
-      if (array_name in symbol_table[scope]) {
+      if (array_name in state.symbol_table[state.scope]) {
         // this is a local array
-        scope_name = scope
+        scope_name = state.scope
         ram_prefix = "ram."
-      } else if (array_name in symbol_table["[global]"]) {
+      } else if (array_name in state.symbol_table["[global]"]) {
         // this is a global array
         scope_name = "[global]"
         ram_prefix = "ram^."
@@ -2417,7 +2422,7 @@ function translate(token, ctx_type) {
         throw new CompError(`Cannot find array named '${array_name}'`)
       }
 
-      let table_entry = symbol_table[scope_name][array_name].specific
+      let table_entry = state.symbol_table[scope_name][array_name].specific
       let array_type = table_entry.element_data_type
 
       let base_addr = `[${ram_prefix}${table_entry.base_addr}]`
@@ -2511,11 +2516,11 @@ function translate(token, ctx_type) {
       }
 
       let entry_point = `func_${args.name}`
-      if (!(args.name in function_table)) {
+      if (!(args.name in state.function_table)) {
         throw new CompError(`Function '${args.name}' is undefined`)
       }
 
-      let function_table_entry = function_table[args.name]
+      let function_table_entry = state.function_table[args.name]
 
       let target_args = function_table_entry.arguments
       let target_arg_no = target_args.length
@@ -2527,8 +2532,8 @@ function translate(token, ctx_type) {
       log.debug(`calling '${args.name}' with ${actual_arg_no}/${target_arg_no} arguments`)
 
       for (let i = 0; i < actual_arg_no; i++) {
-        let target_type = symbol_table[args.name][target_args[i]].data_type
-        let target_regs = symbol_table[args.name][target_args[i]].specific.ram_addresses
+        let target_type = state.symbol_table[args.name][target_args[i]].data_type
+        let target_regs = state.symbol_table[args.name][target_args[i]].specific.ram_addresses
 
         let expr_token = args.exprs[i]
 
@@ -2537,7 +2542,7 @@ function translate(token, ctx_type) {
           throw new CompError(`In call to ${args.name}()\nArg '${target_args[i]}' is of type '${target_type}', but got '${expr_type}'`)
         }
 
-        // run code required by expression
+        // run code state.required by expression
         prefix.push(...expr_prefix)
 
         // copy each word into argument memory
@@ -2557,8 +2562,8 @@ function translate(token, ctx_type) {
       // actually call the function
       prefix.push(`call ${entry_point}`)
 
-      registers = function_table[args.name].return_value
-      type = function_table[args.name].data_type
+      registers = state.function_table[args.name].return_value
+      type = state.function_table[args.name].data_type
     } break
 
     case "pointer_lookup": {
@@ -2708,11 +2713,11 @@ function translate(token, ctx_type) {
       result.push(`goto? ${label}_end`)
       result.push([(`${label}_start:`)])
 
-      let prev_inner_structure_label = inner_structure_label
-      inner_structure_label = label
+      let prev_state = state.inner_structure_label
+      state.inner_structure_label = label
       result.push(...translate_body(token.body))
       result.push(`${label}_cond:`)
-      inner_structure_label = prev_inner_structure_label
+      state.inner_structure_label = prev_state
 
       let cmd_result = translate(args.cmd)
       result.push(...cmd_result)
@@ -2738,11 +2743,11 @@ function translate(token, ctx_type) {
       result.push(`goto? ${label}_end`)
       result.push([(`${label}_start:`)])
 
-      let prev_inner_structure_label = inner_structure_label
-      inner_structure_label = label
+      let prev_state = state.inner_structure_label
+      state.inner_structure_label = label
       result.push(...translate_body(token.body))
       result.push(`${label}_cond:`)
-      inner_structure_label = prev_inner_structure_label
+      state.inner_structure_label = prev_state
 
       result.push(...prefix)
       result.push(`write ${value} ctl.cnd`)
@@ -2756,17 +2761,17 @@ function translate(token, ctx_type) {
 
       // init output area for generated code
       let label = `func_${args.name}:`
-      funcs[args.name] = [label]
-      let target = funcs[args.name]
+      state.funcs[args.name] = [label]
+      let target = state.funcs[args.name]
 
-      // save previous scope for later
-      let old_scope = scope
-      scope = args.name
-      log.debug(`namespace -> ${scope}`)
+      // save previous state.scope for later
+      let old_state = state.scope
+      state.scope = args.name
+      log.debug(`namespace -> ${state.scope}`)
 
-      // generate free ram and symbol table for this scope
-      free_ram[scope] = gen_free_ram_map()
-      symbol_table[args.name] = {}
+      // generate free ram and symbol table for this state.scope
+      state.free_ram[state.scope] = gen_free_ram_map()
+      state.symbol_table[args.name] = {}
 
       let data_type
       if (args.type === undefined) {
@@ -2777,7 +2782,7 @@ function translate(token, ctx_type) {
       assert_valid_datatype(data_type)
 
       // add entry in function table
-      function_table[args.name] = {
+      state.function_table[args.name] = {
         data_type: data_type,
         force_cast: args.force_cast,
         arguments: [],
@@ -2787,9 +2792,9 @@ function translate(token, ctx_type) {
       // translate the body of the function
       target.push(...translate_body(token.body))
 
-      // restore previous scope
-      scope = old_scope
-      log.debug(`namespace -> ${scope}`)
+      // restore previous state.scope
+      state.scope = old_state
+      log.debug(`namespace -> ${state.scope}`)
 
       // add return instruction unless it is already there
       if (target[target.length -1] !== "  return") {
@@ -2833,7 +2838,7 @@ function compile(input, nested) {
         continue
       }
       if (include_block_mode) {
-        consts.push(line)
+        state.consts.push(line)
         continue
       }
 
@@ -2924,7 +2929,7 @@ function compile(input, nested) {
         command = translate(tokens[i])
         if (tokens[i].name == "function") {
           command = command[0] // if it is a function call (which are expressions) take only the prefix and bin the result register [[tokens],result] -> [tokens]
-          let function_type = function_table[tokens[i].arguments.name].data_type
+          let function_type = state.function_table[tokens[i].arguments.name].data_type
           if (function_type !== "none") {
             log.warn(`line ${tokens[i].line}:\nDiscarding function's returned value of type '${function_type}'`)
           }
@@ -2950,14 +2955,14 @@ function compile(input, nested) {
     t1 = performance.now()
     log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
 
-  //add consts
-    for (let i = 0; i < consts.length; i++) {
-      output += "\n" + consts[i]
+  //add state.consts
+    for (let i = 0; i < state.consts.length; i++) {
+      output += "\n" + state.consts[i]
     }
 
   //add function defs
-    for (let item in funcs) {
-      for (let line of funcs[item]) {
+    for (let item in state.funcs) {
+      for (let line of state.funcs[item]) {
         output += "\n" + line
       }
     }
@@ -2968,11 +2973,11 @@ function compile(input, nested) {
   if (!nested) {
     let non_deallocated_vars = 0
 
-    for (let namespace in symbol_table) {
+    for (let namespace in state.symbol_table) {
       if (namespace.startsWith("sys.")) {
         continue
       }
-      let symbols = symbol_table[namespace]
+      let symbols = state.symbol_table[namespace]
       for (let name in symbols) {
         let symbol = symbols[name]
         if (symbol.type === "variable") {
@@ -2985,15 +2990,15 @@ function compile(input, nested) {
       log.warn(`${non_deallocated_vars} variable(s) are never deallocated`)
     }
 
-    let ram_percent = Math.round((max_allocated_ram_slots / 1023) * 100)
+    let ram_percent = Math.round((state.max_allocated_ram_slots / 1023) * 100)
 
-    let ram_message = `RAM use: ${ram_percent}% (${max_allocated_ram_slots}/1023 words)`
+    let ram_message = `RAM use: ${ram_percent}% (${state.max_allocated_ram_slots}/1023 words)`
     if (typeof process === 'undefined') { // if we are running in a browser not nodejs
-      ram_message += `<progress value="${max_allocated_ram_slots}" max="1023" class="ram-bar"></progress>`
+      ram_message += `<progress value="${state.max_allocated_ram_slots}" max="1023" class="ram-bar"></progress>`
     }
     log.info(ram_message)
 
-    log.info(`Standard library functions used: ${Object.keys(required).length}`)
+    log.info(`Standard library functions used: ${Object.keys(state.required).length}`)
   }
 
   return output
