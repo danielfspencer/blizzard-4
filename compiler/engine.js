@@ -1,28 +1,31 @@
 "use strict"
 
-if (typeof process !== "undefined") {  // if we are running under nodejs define performance.now
-  try {
-    performance = { now : require('performance-now') }
+let state = {}
+let show_log_messages = true
+let debug = false
+let token_dump = []
+let timer
 
-    // bad hacks to work around nodejs
-    if (process.pkg) { // packaged node mode
+// load the standard library and define the timer function
+if (typeof process !== "undefined") {
+  // running in nodejs
+  try {
+    timer = require('performance-now')
+    if (process.pkg) { // packaged nodejs mode
       let path = '/snapshot/b4c/compiler/libraries.js'
       if (process.platform === "win32") {
         path = "C:" + path
       }
       importScripts(path)
-    } else {  // normal node mode
+    } else {  // normal nodejs mode
       importScripts('compiler/libraries.js')
     }
-  } catch (e) {}
-} else {  // running in browser (the sane one)
+  } catch (e) {throw e}
+} else {
+  // running in browser (the sane one)
+  timer = () => performance.now()
   importScripts('libraries.js')
 }
-
-let state = {}
-let show_log_messages = true
-let debug = false
-let token_dump = []
 
 const data_type_size = {int:1,sint:1,long:2,slong:2,float:2,bool:1,str:1,array:4,none:0}
 const data_type_default_value = {int:"0",sint:"0",long:"0",slong:"0",float:"0",bool:"false",str:"\"\""}
@@ -151,14 +154,14 @@ function benchmark(iterations) {
   let total_time = 0
   for (let i = 0; i < iterations; i++) {
     init_vars()
-    let t0 = performance.now()
+    let t0 = timer()
     try {
       show_log_messages = false
       compile(["include *"], true)
     } finally {
       show_log_messages = true
     }
-    let t1 = performance.now()
+    let t1 = timer()
     total_time += t1 - t0
     if (Math.round((i+1) % (iterations/50)) == 0 ) {
       postMessage(["update",(i+1)/iterations*100])
@@ -2821,7 +2824,7 @@ function compile(input, nested) {
 
   //tokenise
     log.info("Tokenising...")
-    let t0 = performance.now()
+    let t0 = timer()
     let tokens = []
     let prev_type = ""
     let prev_indent = 0
@@ -2907,7 +2910,7 @@ function compile(input, nested) {
       prev_indent = Math.floor(input[i].search(/\S|$/)/2)
     }
 
-    let t1 = performance.now()
+    let t1 = timer()
 
     log.info(`↳ success, ${input.length} line(s) in ${Math.round(t1-t0)} ms`)
 
@@ -2917,7 +2920,7 @@ function compile(input, nested) {
 
   //translate
     log.info("Tranlsating...")
-    t0 = performance.now()
+    t0 = timer()
     let output = ""
     let command = []
     for (let i = 0; i < tokens.length; i++) {
@@ -2952,7 +2955,7 @@ function compile(input, nested) {
     }
     output += "stop"
 
-    t1 = performance.now()
+    t1 = timer()
     log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
 
   //add state.consts
