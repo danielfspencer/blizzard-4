@@ -291,6 +291,20 @@ function inc_or_dec_token(var_name, op, value_token) {
   return translate(token)
 }
 
+function function_call(name, args) {
+  load_lib(name)
+  let token = {
+    name:"function",
+    type:"expression",
+    arguments: {
+      name: name,
+      exprs: args
+    }
+  }
+
+  return translate(token)
+}
+
 function alloc_block(size) {
   log.debug(`Request for ${size} words(s) of RAM`)
   let addrs = []
@@ -1420,7 +1434,6 @@ function translate(token, ctx_type) {
 
     default:
       throw new CompError(`Error translating command:\nUnknown type '${token.name}'`)
-      break
     }
     return result
 
@@ -1613,24 +1626,15 @@ function translate(token, ctx_type) {
         } break
 
         case "long": {
-          load_lib("sys.long_add")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_add",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_add", [args.expr1,args.expr2])
         } break
 
         case "slong": {
-          load_lib("sys.slong_add")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_add",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_add", [args.expr1,args.expr2])
         } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
     } break
 
@@ -1648,24 +1652,15 @@ function translate(token, ctx_type) {
         } break
 
         case "long": {
-          load_lib("sys.long_subtract")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_subtract",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_subtract", [args.expr1,args.expr2])
         } break
 
         case "slong": {
-          load_lib("sys.slong_subtract")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_subtract",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_subtract", [args.expr1,args.expr2])
         } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
     } break
 
@@ -1677,40 +1672,23 @@ function translate(token, ctx_type) {
       }
       switch (ctx_type) {
         case "int": {
-          load_lib("sys.int_multiply")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.int_multiply",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.int_multiply", [args.expr1,args.expr2])
         } break
 
         case "sint": {
-          load_lib("sys.sint_multiply")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.sint_multiply",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.sint_multiply", [args.expr1,args.expr2])
         } break
 
         case "long": {
-          load_lib("sys.long_multiply")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_multiply",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_multiply", [args.expr1,args.expr2])
         } break
 
         case "slong": {
-          load_lib("sys.slong_multiply")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_multiply",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_multiply", [args.expr1,args.expr2])
         } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
     } break
 
@@ -1722,40 +1700,23 @@ function translate(token, ctx_type) {
       }
       switch (ctx_type) {
         case "int": {
-          load_lib("sys.int_divide")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.int_divide",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.int_divide", [args.expr1,args.expr2])
         } break
 
         case "sint": {
-          load_lib("sys.int_divide")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.sint_divide",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.sint_divide", [args.expr1,args.expr2])
         } break
 
         case "long": {
-          load_lib("sys.long_divide")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_divide",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_divide", [args.expr1,args.expr2])
         } break
 
         case "slong": {
-          load_lib("sys.slong_divide")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_divide",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_divide", [args.expr1,args.expr2])
         } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
     } break
 
@@ -1767,40 +1728,23 @@ function translate(token, ctx_type) {
       }
       switch (ctx_type) {
         case "int": {
-          load_lib("sys.int_exponent")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.int_exponent",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.int_exponent", [args.expr1,args.expr2])
         } break
 
         case "sint": {
-          load_lib("sys.sint_exponent")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.sint_exponent",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.sint_exponent", [args.expr1,args.expr2])
         } break
 
         case "long": {
-          load_lib("sys.long_exponent")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_exponent",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_exponent", [args.expr1,args.expr2])
         } break
 
         case "slong": {
-          load_lib("sys.slong_exponent")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_exponent",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_exponent", [args.expr1,args.expr2])
         } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
     } break
 
@@ -1812,40 +1756,23 @@ function translate(token, ctx_type) {
       }
       switch (ctx_type) {
         case "int": {
-          load_lib("sys.int_modulo")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.int_modulo",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.int_modulo", [args.expr1,args.expr2])
         } break
 
         case "sint": {
-          load_lib("sys.sint_modulo")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.sint_modulo",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.sint_modulo", [args.expr1,args.expr2])
         } break
 
         case "long": {
-          load_lib("sys.long_modulo")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_modulo",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_modulo", [args.expr1,args.expr2])
         } break
 
         case "slong": {
-          load_lib("sys.slong_modulo")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_modulo",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_modulo", [args.expr1,args.expr2])
         } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
     } break
                                           //comparison expressions
@@ -1872,24 +1799,15 @@ function translate(token, ctx_type) {
         } break
 
         case "long": {
-          load_lib("sys.long_greater")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_greater",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_greater", [args.expr1,args.expr2])
         } break
 
         case "slong": {
-          load_lib("sys.slong_greater")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_greater",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_greater", [args.expr1,args.expr2])
         } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
       type = "bool"
     } break
@@ -1917,24 +1835,15 @@ function translate(token, ctx_type) {
           } break
 
         case "long": {
-          load_lib("sys.long_less")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_less",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_less", [args.expr1,args.expr2])
           } break
 
         case "slong": {
-          load_lib("sys.slong_less")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_less",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_less", [args.expr1,args.expr2])
           } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
       type = "bool"
     } break
@@ -1968,19 +1877,14 @@ function translate(token, ctx_type) {
           } break
 
         case "long": {
-          load_lib("sys.long_greater")
-          load_lib("sys.long_equal")
-
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_greater",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
+          let prefix_and_value = function_call("sys.long_greater", [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          call = {name:"function",type:"expression",arguments:{name:"sys.long_equal",exprs:[args.expr1,args.expr2]}}
-          prefix_and_value = translate(call)
+          prefix_and_value = function_call("sys.long_equal", [args.expr1,args.expr2])
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -1993,19 +1897,14 @@ function translate(token, ctx_type) {
           } break
 
         case "slong": {
-          load_lib("sys.slong_greater")
-          load_lib("sys.slong_equal")
-
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_greater",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
+          let prefix_and_value = function_call("sys.slong_greater", [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          call = {name:"function",type:"expression",arguments:{name:"sys.slong_equal",exprs:[args.expr1,args.expr2]}}
-          prefix_and_value = translate(call)
+          prefix_and_value = function_call("sys.slong_equal", [args.expr1,args.expr2])
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -2019,7 +1918,6 @@ function translate(token, ctx_type) {
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
       type = "bool"
     } break
@@ -2053,19 +1951,14 @@ function translate(token, ctx_type) {
           } break
 
         case "long": {
-          load_lib("sys.long_less")
-          load_lib("sys.long_equal")
-
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_less",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
+          let prefix_and_value = function_call("sys.long_less", [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          call = {name:"function",type:"expression",arguments:{name:"sys.long_equal",exprs:[args.expr1,args.expr2]}}
-          prefix_and_value = translate(call)
+          prefix_and_value = function_call("sys.long_equal", [args.expr1,args.expr2])
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -2078,19 +1971,14 @@ function translate(token, ctx_type) {
           } break
 
         case "slong": {
-          load_lib("sys.slong_less")
-          load_lib("sys.slong_equal")
-
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_less",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
+          let prefix_and_value = function_call("sys.slong_less", [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          call = {name:"function",type:"expression",arguments:{name:"sys.slong_equal",exprs:[args.expr1,args.expr2]}}
-          prefix_and_value = translate(call)
+          prefix_and_value = function_call("sys.slong_equal", [args.expr1,args.expr2])
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -2104,7 +1992,6 @@ function translate(token, ctx_type) {
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
       type = "bool"
     } break
@@ -2121,24 +2008,15 @@ function translate(token, ctx_type) {
         } break
 
         case "long": {
-          load_lib("sys.long_equal")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_equal",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_equal", [args.expr1,args.expr2])
           } break
 
         case "slong": {
-          load_lib("sys.slong_equal")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_equal",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_equal", [args.expr1,args.expr2])
           } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
       type = "bool"
     } break
@@ -2157,24 +2035,15 @@ function translate(token, ctx_type) {
         } break
 
         case "long": {
-          load_lib("sys.long_not_equal")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_not_equal",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_not_equal", [args.expr1,args.expr2])
         } break
 
         case "slong": {
-          load_lib("sys.slong_not_equal")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_not_equal",exprs:[args.expr1,args.expr2]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_not_equal", [args.expr1,args.expr2])
         } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
       type = "bool"
     } break
@@ -2205,32 +2074,19 @@ function translate(token, ctx_type) {
         } break
 
         case "sint": {
-          load_lib("sys.sint_rshift")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.sint_rshift",exprs:[args.expr]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.sint_rshift", [args.expr])
         } break
 
         case "long": {
-          load_lib("sys.long_rshift")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_rshift",exprs:[args.expr]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_rshift", [args.expr])
         } break
 
         case "slong": {
-          load_lib("sys.slong_rshift")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_rshift",exprs:[args.expr]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_rshift", [args.expr])
         } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
     } break
 
@@ -2240,29 +2096,20 @@ function translate(token, ctx_type) {
         case "bool":
         case "int":
         case "sint": {
-            prefix = write_operand(args.expr,ctx_type)
-            registers = ["[alu.<<]"]
+          prefix = write_operand(args.expr,ctx_type)
+          registers = ["[alu.<<]"]
         } break
 
         case "long": {
-          load_lib("sys.long_lshift")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.long_lshift",exprs:[args.expr]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.long_lshift", [args.expr])
         } break
 
         case "slong": {
-          load_lib("sys.slong_lshift")
-          let call = {name:"function",type:"expression",arguments:{name:"sys.slong_lshift",exprs:[args.expr]}}
-          let prefix_and_value = translate(call)
-          prefix = prefix_and_value[0]
-          registers = prefix_and_value[1]
+          [prefix, registers] = function_call("sys.slong_lshift", [args.expr])
         } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
-          break
       }
     } break
 
@@ -2619,7 +2466,6 @@ function translate(token, ctx_type) {
 
     default:
       throw new CompError(`Error translating expression:\nUnknown type '${token.name}'`)
-      break
     }
     return [prefix, registers, type]
 
@@ -2807,7 +2653,6 @@ function translate(token, ctx_type) {
 
     default:
       throw new CompError(`Error translating structure:\nUnknown type '${token.name}'`)
-      break
     }
     return result
   } else {
