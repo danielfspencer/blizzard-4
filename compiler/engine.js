@@ -282,7 +282,7 @@ function write_operand(expr, type) {
   return result
 }
 
-function inc_or_dec_token(var_name, op, value_token) {
+function operation_assignment_token(var_name, op, value_token) {
   let var_token = {name:"var_or_const", type:"expression", arguments: {
     name:var_name
   }}
@@ -573,11 +573,23 @@ function tokenise(input, line) {
 
   } else if (list[1] == "+=") {                    // [name] += [expr]
     let expr = tokenise(list.slice(2).join(" "), line)
-    token = {name:"increment",type:"command",arguments:{expr:expr,name:list[0]}}
+    token = {name:"addition_assignment",type:"command",arguments:{expr:expr,name:list[0]}}
 
   } else if (list[1] == "-=") {                    // [name] -= [expr]
     let expr = tokenise(list.slice(2).join(" "), line)
-    token = {name:"decrement",type:"command",arguments:{expr:expr,name:list[0]}}
+    token = {name:"subtraction_assignment",type:"command",arguments:{expr:expr,name:list[0]}}
+
+  } else if (list[1] == "*=") {                    // [name] *= [expr]
+    let expr = tokenise(list.slice(2).join(" "), line)
+    token = {name:"multiplication_assignment",type:"command",arguments:{expr:expr,name:list[0]}}
+
+  } else if (list[1] == "/=") {                    // [name] /= [expr]
+    let expr = tokenise(list.slice(2).join(" "), line)
+    token = {name:"division_assignment",type:"command",arguments:{expr:expr,name:list[0]}}
+
+  } else if (list[1] == "%=") {                    // [name] %= [expr]
+    let expr = tokenise(list.slice(2).join(" "), line)
+    token = {name:"modulo_assignment",type:"command",arguments:{expr:expr,name:list[0]}}
 
   } else if (/.+?(?=\+\+)/.test(input)) { //  [name]++
     token = {name:"increment_1",type:"command",arguments:{name:/.+?(?=\+\+)/.exec(input)}}
@@ -1348,19 +1360,31 @@ function translate(token, ctx_type) {
     //all the cmds below are just shortcuts for set tokens
     //i.e. a++    becomes a = a + 1
     case "increment_1": { //[name]++
-      result = inc_or_dec_token(args.name, "+", tokenise("1"))
+      result = operation_assignment_token(args.name, "+", tokenise("1"))
     } break
 
     case "decrement_1": { //[name]--
-      result = inc_or_dec_token(args.name, "-", tokenise("1"))
+      result = operation_assignment_token(args.name, "-", tokenise("1"))
     } break
 
-    case "increment": { //[name] += [expr]
-      result = inc_or_dec_token(args.name, "+", args.expr)
+    case "addition_assignment": { //[name] += [expr]
+      result = operation_assignment_token(args.name, "+", args.expr)
     } break
 
-    case "decrement": { //[name] -= [expr]
-      result = inc_or_dec_token(args.name, "-", args.expr)
+    case "subtraction_assignment": { //[name] -= [expr]
+      result = operation_assignment_token(args.name, "-", args.expr)
+    } break
+
+    case "multiplication_assignment": { //[name] *= [expr]
+      result = operation_assignment_token(args.name, "*", args.expr)
+    } break
+
+    case "division_assignment": { //[name] /= [expr]
+      result = operation_assignment_token(args.name, "/", args.expr)
+    } break
+
+    case "modulo_assignment": { //[name] %= [expr]
+      result = operation_assignment_token(args.name, "%", args.expr)
     } break
 
     case "comment": {   // comment (begins with //)
@@ -2092,7 +2116,6 @@ function translate(token, ctx_type) {
     case "<<": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       switch (ctx_type) {
-        case "bool":
         case "int":
         case "sint": {
           prefix = write_operand(args.expr,ctx_type)
