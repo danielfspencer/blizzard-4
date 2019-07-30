@@ -32,7 +32,7 @@ def set_word
   arg int data
   arg int addr
   addr += 6144
-  {write [ram.0] [ram.1]}
+  {write $data $addr}
 
 def get_key int
   var int scan_code

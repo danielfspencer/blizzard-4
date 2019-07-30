@@ -778,7 +778,48 @@ function translate(token, ctx_type) {
     switch(token.name) {
 
     case "asm": {
-      result = [args.value]
+      let words = args.value.split(" ")
+
+      // for each word in the assembly statement, check to see if any names need
+      // substituting for their ram addresses
+      for (let i = 0; i < words.length; i++) {
+        let word = words[i]
+
+        // names begining with & represent the address of the variable
+        let addr_operator = word.startsWith("&")
+
+        // names begining with & represent the value of the variable
+        let value_operator = word.startsWith("$")
+
+        if (addr_operator || value_operator) {
+          let name = word.substr(1) // remove the operator character
+          let index_regex = /\[(\d+)\]/.exec(name) // check for an index after the name
+          let index = 0
+
+          if (index_regex !== null) {
+            index = parseInt(index_regex[1])    // parse the index value
+            name = /(\w+)\[\d+\]/.exec(name)[1] // trim the name to exclude the index
+          }
+
+          let token = {name:"var_or_const", type:"expression", arguments: {
+            name: name
+          }}
+
+          let [prefix, values] = translate(token)
+          if (index >= values.length) {
+            throw new CompError(`Cannot access word ${index + 1} of a ${values.length}-word data type`)
+          }
+
+          let symbol = values[index]
+
+          if (addr_operator) {
+            words[i] = symbol.slice(1, -1)
+          } else {
+            words[i] = symbol
+          }
+        }
+      }
+      result = [words.join(" ")]
     } break
 
     case "var_alloc": {    //var [name] [type] <expr>
