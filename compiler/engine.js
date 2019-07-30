@@ -2067,7 +2067,6 @@ function translate(token, ctx_type) {
     case ">>": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       switch (ctx_type) {
-        case "bool":
         case "int": {
           prefix = write_operand(args.expr,ctx_type)
           registers = ["[alu.>>]"]
