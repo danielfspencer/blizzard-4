@@ -29,7 +29,7 @@ if (typeof process !== "undefined") {
 
 const data_type_size = {int:1,sint:1,long:2,slong:2,float:2,bool:1,str:1,array:4,none:0}
 const data_type_default_value = {int:"0",sint:"0",long:"0",slong:"0",float:"0",bool:"false",str:"\"\""}
-const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys":"","array":"","return":"","break":"","continue":""}
+const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys.ov":"","sys":"","array":"","return":"","break":"","continue":""}
 
 onmessage = (msg) => {
   switch(msg.data[0]) {
