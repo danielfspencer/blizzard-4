@@ -2223,6 +2223,7 @@ function translate(token, ctx_type) {
     } break
 
     case "overflow": {
+      type = "bool"
       registers = ["[alu.ov]"]
     } break
 
