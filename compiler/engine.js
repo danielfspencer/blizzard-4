@@ -2218,9 +2218,7 @@ function translate(token, ctx_type) {
       let prefix_and_value = translate(args.expr,"int")
       prefix = prefix_and_value[0]
       registers = prefix_and_value[1]
-      //~ if (prefix_and_value[2] != "int") {
-        //~ throw new CompError("not supported unless int")
-      //~ }
+      type = "bool"
       registers = [registers[registers.length - 1]]
     } break
 
