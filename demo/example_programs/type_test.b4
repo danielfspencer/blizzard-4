@@ -1,6 +1,6 @@
 global bool shift false
 
-def get_keypress
+def get_keypress int
   var int kbd 8192
   var int scancode *kbd
   var int char_code 0
@@ -42,20 +42,20 @@ while true
 
     if code == 8
       if y < 15
-        sys.vram.render_char(32,x,y)
+        sys.vram.render_char(32,x,y,false)
         x = 0
         y++
     else if code == 1
       temp = x + y
       if temp > 0
-        sys.vram.render_char(32,x,y)
+        sys.vram.render_char(32,x,y,false)
         if x > 0
           x--
         else
           x = 15
           y--
     else
-      sys.vram.render_char(code,x,y)
+      sys.vram.render_char(code,x,y,false)
       x++
       if x > 15
         x = 0

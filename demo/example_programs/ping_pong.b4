@@ -32,9 +32,9 @@ def set_word
   arg int data
   arg int addr
   addr += 6144
-  {write [ram.0] [ram.1]}
+  {write $data $addr}
 
-def get_key
+def get_key int
   var int scan_code
   var int kbd 8192
 
@@ -94,14 +94,14 @@ var bool invalid_key_code true
 while invalid_key_code
   if key_code == 0x16
     mode = 0
-    invalid_key_code = 0
+    invalid_key_code = false
   else if key_code == 0x1e
     mode = 1
-    invalid_key_code = 0
+    invalid_key_code = false
   else if key_code == 0x26
     mode = 2
     speed = 0
-    invalid_key_code = 0
+    invalid_key_code = false
   else
     key_code = get_key()
 

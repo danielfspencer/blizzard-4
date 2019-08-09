@@ -1,6 +1,6 @@
-var libs = {
+const libs = {
   "sys.int_multiply": [
-    "def sys.int_multiply",
+    "def sys.int_multiply int",
     "  arg int a",
     "  arg int b",
     "  var int c",
@@ -12,7 +12,7 @@ var libs = {
     "  return c"
   ],
   "sys.int_divide": [
-    "def sys.int_divide",
+    "def sys.int_divide int",
     "  arg int a",
     "  arg int b",
     "",
@@ -39,7 +39,7 @@ var libs = {
     "  return answer"
   ],
   "sys.int_exponent": [
-    "def sys.int_exponent",
+    "def sys.int_exponent int",
     "  arg int a",
     "  arg int b",
     "  var int c 1",
@@ -49,7 +49,7 @@ var libs = {
     "  return c"
   ],
   "sys.int_modulo": [
-    "def sys.int_modulo",
+    "def sys.int_modulo int",
     "  arg int a",
     "  arg int b",
     "  var int c",
@@ -58,9 +58,8 @@ var libs = {
     "  c = a - c",
     "  return c"
   ],
-
   "sys.sint_multiply": [
-    "def sys.sint_multiply",
+    "def sys.sint_multiply sint",
     "  arg sint a",
     "  arg sint b",
     "  var bool sign",
@@ -81,7 +80,7 @@ var libs = {
     "  return c"
   ],
   "sys.sint_divide": [
-    "def sys.sint_divide",
+    "def sys.sint_divide sint",
     "  arg sint a",
     "  arg sint b",
     "",
@@ -120,7 +119,7 @@ var libs = {
     "  return answer"
   ],
   "sys.sint_exponent": [
-    "def sys.sint_exponent",
+    "def sys.sint_exponent sint",
     "  arg sint a",
     "  arg sint b",
     "  var sint c 1",
@@ -130,7 +129,7 @@ var libs = {
     "  return c"
   ],
   "sys.sint_modulo": [
-    "def sys.sint_modulo",
+    "def sys.sint_modulo sint",
     "  arg sint a",
     "  arg sint b",
     "  var sint c",
@@ -140,23 +139,22 @@ var libs = {
     "  return c"
   ],
   "sys.sint_rshift": [
-    "def sys.sint_rshift",
+    "def sys.sint_rshift sint",
     "  arg sint a",
     "  var bool negative",
     "  var sint answer",
-    "  {write [ram.0] alu.1}",
+    "  {write $a alu.1}",
     "  {write 0b1000000000000000 alu.2}",
-    "  {write [alu.ov] ram.1}",
-    "  {write [alu.>>] ram.2}",
+    "  {write [alu.ov] &negative}",
+    "  {write [alu.>>] &answer}",
     "  if negative",
-    "    {write [ram.2] alu.1}",
+    "    {write $answer alu.1}",
     "    {write 0b1000000000000000 alu.2}",
-    "    {write [alu.|] ram.2}",
+    "    {write [alu.|] &answer}",
     "  return answer"
   ],
-
   "sys.long_add": [
-    "def sys.long_add",
+    "def sys.long_add long",
     "  arg long a",
     "  arg long b",
     "",
@@ -179,7 +177,7 @@ var libs = {
     "  return c"
   ],
   "sys.long_subtract": [
-    "def sys.long_subtract",
+    "def sys.long_subtract long",
     "  arg long a",
     "  arg long b",
     "  var int b_high b:0",
@@ -192,7 +190,7 @@ var libs = {
     "  return c"
   ],
   "sys.long_multiply": [
-    "def sys.long_multiply",
+    "def sys.long_multiply long",
     "  arg long a",
     "  arg long b",
     "  var long c",
@@ -208,7 +206,7 @@ var libs = {
     "  return c "
   ],
   "sys.long_divide": [
-    "def sys.long_divide",
+    "def sys.long_divide long",
     "  arg long a",
     "  arg long b",
     "",
@@ -235,7 +233,7 @@ var libs = {
     "  return answer"
   ],
   "sys.long_exponent": [
-    "def sys.long_exponent",
+    "def sys.long_exponent long",
     "  arg long a",
     "  arg long b",
     "  var long c 1",
@@ -245,7 +243,7 @@ var libs = {
     "  return c"
   ],
   "sys.long_modulo": [
-    "def sys.long_modulo",
+    "def sys.long_modulo long",
     "  arg long a",
     "  arg long b",
     "  var long c",
@@ -255,14 +253,14 @@ var libs = {
     "  return c"
   ],
   "sys.long_lshift": [
-    "def sys.long_lshift",
+    "def sys.long_lshift long",
     "  arg long a",
     "  var int a_high a:0",
     "  var int a_low a:1",
     "  var long c",
     "  var int carry a_low & 0b1000000000000000",
     "  carry += 0xffff",
-    "  carry = sys.ov",
+    "  {copy alu.ov &carry}",
     "  a_high = a_high <<",
     "  a_low = a_low <<",
     "  a_high += carry",
@@ -270,7 +268,7 @@ var libs = {
     "  return c"
   ],
   "sys.long_rshift": [
-    "def sys.long_rshift",
+    "def sys.long_rshift long",
     "  arg long a",
     "  var int a_high a:0",
     "  var int a_low a:1",
@@ -278,13 +276,13 @@ var libs = {
     "  var int carry a_high & 1",
     "  a_high = a_high >>",
     "  a_low = a_low >>",
-    "  if carry",
+    "  if carry sys.odd",
     "    a_low = a_low | 0b1000000000000000",
     "  c = a_high..a_low",
     "  return c"
   ],
   "sys.long_not_equal": [
-    "def sys.long_not_equal",
+    "def sys.long_not_equal bool",
     "  arg long a",
     "  arg long b",
     "  var int a_high a:1",
@@ -300,7 +298,7 @@ var libs = {
     "    return result"
   ],
   "sys.long_equal": [
-    "def sys.long_equal",
+    "def sys.long_equal bool",
     "  arg long a",
     "  arg long b",
     "  var int a_high a:1",
@@ -316,7 +314,7 @@ var libs = {
     "    return result"
   ],
   "sys.long_greater": [
-    "def sys.long_greater",
+    "def sys.long_greater bool",
     "  arg long a",
     "  arg long b",
     "  var int a_high a:0",
@@ -335,7 +333,7 @@ var libs = {
     "  return result"
   ],
   "sys.long_less": [
-    "def sys.long_less",
+    "def sys.long_less bool",
     "  arg long a",
     "  arg long b",
     "  var int a_high a:0",
@@ -353,9 +351,8 @@ var libs = {
     "  result = false",
     "  return result"
   ],
-
   "sys.slong_add": [
-    "def sys.slong_add",
+    "def sys.slong_add #slong",
     "  arg slong a",
     "  arg slong b",
     "",
@@ -378,7 +375,7 @@ var libs = {
     "  return c"
   ],
   "sys.slong_subtract": [
-    "def sys.slong_subtract",
+    "def sys.slong_subtract #slong",
     "  arg slong a",
     "  arg slong b",
     "  var int b_high b:0",
@@ -391,7 +388,7 @@ var libs = {
     "  return c"
   ],
   "sys.slong_multiply": [
-    "def sys.slong_multiply",
+    "def sys.slong_multiply slong",
     "  arg slong a",
     "  arg slong b",
     "  var bool sign",
@@ -412,7 +409,7 @@ var libs = {
     "  return c"
   ],
   "sys.slong_divide": [
-    "def sys.slong_divide",
+    "def sys.slong_divide slong",
     "  arg slong a",
     "  arg slong b",
     "",
@@ -451,7 +448,7 @@ var libs = {
     "  return answer"
   ],
   "sys.slong_exponent": [
-    "def sys.slong_exponent",
+    "def sys.slong_exponent slong",
     "  arg slong a",
     "  arg slong b",
     "  var slong c 1",
@@ -461,7 +458,7 @@ var libs = {
     "  return c"
   ],
   "sys.slong_modulo": [
-    "def sys.slong_modulo",
+    "def sys.slong_modulo slong",
     "  arg slong a",
     "  arg slong b",
     "  var slong c",
@@ -471,14 +468,14 @@ var libs = {
     "  return c"
   ],
   "sys.slong_lshift": [
-    "def sys.slong_lshift",
+    "def sys.slong_lshift #slong",
     "  arg slong a",
     "  var int a_high a:0",
     "  var int a_low a:1",
     "  var long c",
     "  var int carry a_low & 0b1000000000000000",
     "  carry += 0xffff",
-    "  carry = sys.ov",
+    "  {copy alu.ov &carry}",
     "  a_high = a_high <<",
     "  a_low = a_low <<",
     "  a_high += carry",
@@ -486,16 +483,16 @@ var libs = {
     "  return c"
   ],
   "sys.slong_rshift": [
-    "def sys.slong_rshift slong",
+    "def sys.slong_rshift #slong",
     "  arg slong a",
     "  var int a_high a:0",
     "  var int a_low a:1",
-    "  var bool carry a_high & 1",
+    "  var bool carry a_high sys.odd",
     "  var bool negative",
     "",
-    "  {write [ram.1] alu.1}",
+    "  {write $a_high alu.1}",
     "  {write 0b1000000000000000 alu.2}",
-    "  {write [alu.ov] ram.5}",
+    "  {write [alu.ov] &negative}",
     "",
     "  a_high = a_high >>",
     "  a_low = a_low >>",
@@ -508,7 +505,7 @@ var libs = {
     "  return a_high..a_low"
   ],
   "sys.slong_not_equal": [
-    "def sys.slong_not_equal",
+    "def sys.slong_not_equal bool",
     "  arg slong a",
     "  arg slong b",
     "  var int a_high a:1",
@@ -524,7 +521,7 @@ var libs = {
     "    return result"
   ],
   "sys.slong_equal": [
-    "def sys.slong_equal",
+    "def sys.slong_equal bool",
     "  arg slong a",
     "  arg slong b",
     "  var int a_high a:1",
@@ -540,7 +537,7 @@ var libs = {
     "    return result"
   ],
   "sys.slong_greater": [
-    "def sys.slong_greater",
+    "def sys.slong_greater bool",
     "  arg slong a",
     "  arg slong b",
     "  var bool ans true",
@@ -558,7 +555,7 @@ var libs = {
     "  return ans"
   ],
   "sys.slong_less": [
-    "def sys.slong_less",
+    "def sys.slong_less bool",
     "  arg slong a",
     "  arg slong b",
     "  var bool ans true",
@@ -575,9 +572,8 @@ var libs = {
     "  ans = false",
     "  return ans"
   ],
-
   "sys.array_pointer": [
-    "def sys.array_pointer",
+    "def sys.array_pointer int",
     "  arg int index",
     "  arg int item_size",
     "  arg int base_addr",
@@ -593,7 +589,7 @@ var libs = {
     "",
     "  target_address -= 4096",
     "  for var int i; i < length; i++",
-    "    {copy [ram.0] [ram.1] }",
+    "    {copy $origin_address $target_address}",
     "    origin_address++",
     "    target_address++"
   ],
@@ -612,27 +608,84 @@ var libs = {
     "  for var int i; i < length; i++",
     "    origin_address--",
     "    target_address--",
-    "    {copy [ram.0] [ram.1] }"
+    "    {copy $origin_address $target_address}",
   ],
-
+  "sys.rom_to_global_ram_copy": [
+    "def sys.rom_to_global_ram_copy",
+    "  arg int origin_address ",
+    "  arg int target_address",
+    "  arg int length",
+    "",
+    "  target_address += 8192",
+    "  for var int i; i < length; i++",
+    "    {copy $origin_address $target_address}",
+    "    origin_address++",
+    "    target_address++"
+  ],
+  "sys.global_ram_to_ram_copy": [
+    "def sys.global_ram_to_ram_copy",
+    "  arg int origin_address ",
+    "  arg int target_address",
+    "  arg int length",
+    "",
+    "  target_address -= 4096",
+    "",
+    "  origin_address += length",
+    "  target_address += length ",
+    "",
+    "  for var int i; i < length; i++",
+    "    origin_address--",
+    "    target_address--",
+    "    {copy $origin_address $target_address}",
+  ],
+  "sys.ram_to_global_ram_copy": [
+    "def sys.ram_to_global_ram_copy",
+    "  arg int origin_address ",
+    "  arg int target_address",
+    "  arg int length",
+    "",
+    "  origin_address -= 4096",
+    "",
+    "  origin_address += length",
+    "  target_address += length ",
+    "",
+    "  for var int i; i < length; i++",
+    "    origin_address--",
+    "    target_address--",
+    "    {copy $origin_address $target_address}",
+  ],
+  "sys.global_ram_to_global_ram_copy": [
+    "def sys.global_ram_to_global_ram_copy",
+    "  arg int origin_address ",
+    "  arg int target_address",
+    "  arg int length",
+    "",
+    "  origin_address += length",
+    "  target_address += length ",
+    "",
+    "  for var int i; i < length; i++",
+    "    origin_address--",
+    "    target_address--",
+    "    {copy $origin_address $target_address}",
+  ],
   "sys.vram.or_word": [
     "def sys.vram.or_word",
     "  arg int word",
     "  arg int addr",
     "  addr += 6144",
-    "  {copy [ram.1] alu.1}",
-    "  {copy ram.0 alu.2}",
-    "  {write [alu.|] [ram.1]}"
+    "  {copy $addr alu.1}",
+    "  {copy &word alu.2}",
+    "  {write [alu.|] $addr}"
   ],
   "sys.vram.nand_word": [
     "def sys.vram.nand_word",
     "  arg int word",
     "  arg int addr",
     "  addr += 6144",
-    "  {copy [ram.1] alu.2}",
+    "  {copy $addr alu.2}",
     "  word = !word",
-    "  {copy ram.0 alu.1}",
-    "  {write [alu.&] [ram.1]}"
+    "  {copy &word alu.1}",
+    "  {write [alu.&] $addr}"
   ],
   "sys.vram.set_pixel": [
     "def sys.vram.set_pixel",
@@ -647,7 +700,7 @@ var libs = {
     "  addr = addr <<",
     "  addr = addr <<",
     "  var int table_addr",
-    "  {write sys.vram.shifted_pixels ram.6}",
+    "  {write sys.vram.shifted_pixels &table_addr}",
     "  if x != 0 ",
     "    large = x ",
     "    large = large >>",
@@ -665,15 +718,15 @@ var libs = {
     "  table_addr += small",
     "  addr += 6144",
     "  if data",
-    "    {copy [ram.6] alu.1}",
-    "    {copy [ram.5] alu.2}",
-    "    {write [alu.|] [ram.5]}",
+    "    {copy $table_addr alu.1}",
+    "    {copy $addr alu.2}",
+    "    {write [alu.|] $addr}",
     "  else",
-    "    {copy [ram.6] alu.1}",
-    "    {copy alu.! ram.6}",
-    "    {copy ram.6 alu.1}",
-    "    {copy [ram.5] alu.2}",
-    "    {write [alu.&] [ram.5]}"
+    "    {copy $table_addr alu.1}",
+    "    {copy alu.! &table_addr}",
+    "    {copy &table_addr alu.1}",
+    "    {copy $addr alu.2}",
+    "    {write [alu.&] $addr}"
   ],
   "sys.vram.render_char": [
     "def sys.vram.render_char",
@@ -681,35 +734,34 @@ var libs = {
     "  arg int char_code",
     "  arg int x",
     "  arg int y",
+    "  arg bool dont_render_spaces true",
     "  ",
     "  if char_code < 32",
     "    char_code = 127",
+    "  else if char_code == 32",
+    "    if dont_render_spaces",
+    "      return",
     "  else if char_code > 129",
     "    char_code = 127",
     "",
     "  char_code -= 32",
     "  ",
-    "  var int char_pointer ",
+    "  var int char_pointer",
     "  var int char_offset char_code",
     "  char_offset = char_offset <<",
     "  char_offset = char_offset <<",
     "  char_offset += char_code",
     "  char_offset += char_code",
-    "  {write sys.vram.glyphs ram.3}",
+    "  {write sys.vram.glyphs &char_pointer}",
     "  char_pointer += char_offset",
     "",
-    "  var int vram_pointer 6144",
+    "  var int vram_pointer 6152",
     "  var int vram_offset_x x >>",
     "  var int vram_offset_y y",
-    "  vram_offset_y = vram_offset_y <<",
-    "  vram_offset_y = vram_offset_y <<",
-    "  vram_offset_y = vram_offset_y <<",
-    "  vram_offset_y = vram_offset_y <<",
-    "  vram_offset_y = vram_offset_y <<",
-    "  vram_offset_y = vram_offset_y <<",
+    "  repeat 6",
+    "    vram_offset_y = vram_offset_y <<",
     "  vram_pointer += vram_offset_x",
     "  vram_pointer += vram_offset_y",
-    "  vram_pointer += 8",
     "",
     "  var int mask 0xff00",
     "  var int inv_mask 0x00ff",
@@ -719,15 +771,15 @@ var libs = {
     "    inv_mask = 0xff00",
     "",
     "  for var int i; i < 6; i++",
-    "    {copy [ram.3] alu.1}",
-    "    {copy ram.8 alu.2}",
+    "    {copy $char_pointer alu.1}",
+    "    {copy &mask alu.2}",
     "    {copy alu.& ram.12}",
-    "    {copy [ram.5] alu.1}",
-    "    {copy ram.9 alu.2}",
+    "    {copy $vram_pointer alu.1}",
+    "    {copy &inv_mask alu.2}",
     "    {copy alu.& ram.13}",
     "    {copy ram.12 alu.1}",
     "    {copy ram.13 alu.2}",
-    "    {copy alu.| [ram.5]}",
+    "    {copy alu.| $vram_pointer}",
     "    char_pointer++",
     "    vram_pointer += 8"
   ],
@@ -747,21 +799,21 @@ var libs = {
     "  {write vram.0 alu.1}",
     "  {func_sys.vram.fast_fill_loop:}",
     "  {write 0 alu.2}",
-    "  {write [ram.0] [alu.+]}",
+    "  {write $data [alu.+]}",
     "  {write 1 alu.2}",
-    "  {write [ram.0] [alu.+]}",
+    "  {write $data [alu.+]}",
     "  {write 2 alu.2}",
-    "  {write [ram.0] [alu.+]}",
+    "  {write $data [alu.+]}",
     "  {write 3 alu.2}",
-    "  {write [ram.0] [alu.+]}",
+    "  {write $data [alu.+]}",
     "  {write 4 alu.2}",
-    "  {write [ram.0] [alu.+]}",
+    "  {write $data [alu.+]}",
     "  {write 5 alu.2}",
-    "  {write [ram.0] [alu.+]}",
+    "  {write $data [alu.+]}",
     "  {write 6 alu.2}",
-    "  {write [ram.0] [alu.+]}",
+    "  {write $data [alu.+]}",
     "  {write 7 alu.2}",
-    "  {write [ram.0] [alu.+]}",
+    "  {write $data [alu.+]}",
     "  {write 8 alu.2}",
     "  {write [alu.+] ram.1}",
     "  {write [ram.1] alu.1}",
@@ -883,7 +935,7 @@ var libs = {
     "    minus_dx = 0 - dx",
     "    if x0 == x1 ",
     "      if y0 == y1",
-    "        return 0",
+    "        return",
     "",
     "    e2 = err",
     "    if e2 > minus_dx",
@@ -894,7 +946,6 @@ var libs = {
     "      err += dx",
     "      y0 += sy"
   ],
-
   "sys.print_string": [
     "def sys.print_string",
     "  arg str string",
@@ -981,25 +1032,17 @@ var libs = {
     "  var int _0_power",
     "",
     "  _0_power = num & 0x000f",
-    "  num = num >>",
-    "  num = num >>",
-    "  num = num >>",
-    "  num = num >>",
+    "  repeat 4",
+    "    num = num >>",
     "  _1_power = num & 0x000f",
-    "  num = num >>",
-    "  num = num >>",
-    "  num = num >>",
-    "  num = num >>",
+    "  repeat 4",
+    "    num = num >>",
     "  _2_power = num & 0x000f",
-    "  num = num >>",
-    "  num = num >>",
-    "  num = num >>",
-    "  num = num >>",
+    "  repeat 4",
+    "    num = num >>",
     "  _3_power = num & 0x000f",
-    "  num = num >>",
-    "  num = num >>",
-    "  num = num >>",
-    "  num = num >>",
+    "  repeat 4",
+    "    num = num >>",
     "",
     "  if _3_power > 0",
     "    is_rendering = true",
@@ -1089,8 +1132,8 @@ var libs = {
     "    negative = true",
     "    num = 0 - num",
     "",
-    "  {write [ram.0] ram.5}",
-    "  {write [ram.1] ram.6}",
+    "  {write $num[0] &abs_num}",
+    "  {write $num[1] &negative}",
     "",
     "  if negative",
     "    sys.vram.render_char(45,x,y)",
@@ -1101,9 +1144,8 @@ var libs = {
    "",
    "  sys.print_long(abs_num,x,y,print_all_places)"
   ],
-
   "sys.kbd.scancode_to_charcode": [
-    "def sys.kbd.scancode_to_charcode",
+    "def sys.kbd.scancode_to_charcode int",
     "  include sys.kbd.scancode_charcode_table",
     "  arg int scancode",
     "  arg bool shifted false",
@@ -1115,20 +1157,14 @@ var libs = {
     "  var int word",
     "  var int charcode",
     "",
-    "  {write sys.kbd.scancode_charcode_table ram.2}",
+    "  {write sys.kbd.scancode_charcode_table &table_addr}",
     "",
     "  table_addr += scancode",
     "  word = *table_addr",
     "",
     "  if shifted",
-    "    word = word >>",
-    "    word = word >>",
-    "    word = word >>",
-    "    word = word >>",
-    "    word = word >>",
-    "    word = word >>",
-    "    word = word >>",
-    "    word = word >>",
+    "    repeat 8",
+    "      word = word >>",
     "    charcode = word",
     "  else",
     "    charcode = word & 0x00ff",
@@ -1808,7 +1844,7 @@ var libs = {
     "0b0000000000000000",
     "0b0000000000000000",
     "0b0100000000100111",
-    "0b0000000000000000",
+    "0b0111111000100011",
     "0b0111101101011011",
     "0b0010101100111101",
     "0b0000000000000000",
@@ -1880,9 +1916,8 @@ var libs = {
     "0b0000000000000001",
     "///"
   ],
-
   "sys.get_lib_version":[
-    "def sys.get_lib_version",
-    "  return \"0.45.0\"",
+    "def sys.get_lib_version str",
+    "  return \"0.46.0\"",
   ]
 }

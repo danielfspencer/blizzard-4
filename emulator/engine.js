@@ -52,10 +52,7 @@ function init_rom() {
 }
 
 function create_zeroed_array(length) {
-  var array = []
-  for (var i = 0; i < length; i++) {
-    array.push(0)
-  }
+  let array = Array(length).fill(0)
   return array
 }
 
@@ -183,9 +180,7 @@ onmessage = (event) => {
       }
       break
     case "reset":
-      if (is_running) {
-        stop()
-      }
+      stop()
       init_memory()
       init_emulator()
       send_front_panel_info()

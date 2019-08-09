@@ -44,7 +44,7 @@ function view(name) {
 
 function load(name, success) {
   $.ajax({
-    url: path + name + ".b4cl",
+    url: path + name + ".b4",
     dataType: "text",
     success: (data) => {
       success(data)

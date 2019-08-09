@@ -1,48 +1,48 @@
 body {
-    background: #111111;
-    color: #ffffff;
+  background: #111111;
+  color: #ffffff;
 }
 
 .card {
-    background: #151515;
+  background: #151515;
 }
 
 #dim.active {
-    opacity: 0.6;
+  opacity: 0.6;
 }
 
 #menu {
-    background: #171717;
+  background: #171717;
 }
 
 #menu-list > li.active {
-    color: #ff6800;
+  color: #ff6800;
 }
 
 #menu-list > li > img {
-    filter: invert(100%);
+  filter: invert(100%);
 }
 
 #dropdown-menu-list > li > img {
-    filter: invert(100%);
+  filter: invert(100%);
 }
 
 #statusbar {
-    background: #171717;
+  background: #171717;
 }
 
 #statusbar.light-accent {
-    background: #232323;
+  background: #232323;
 }
 
 #toolbar {
-    background: #232323;
+  background: #232323;
 }
 
 #toolbar > div.material-design-hamburger {
-    filter: invert(100%);
+  filter: invert(100%);
 }
 
 #overflow-menu {
-    filter: invert(100%);
+  filter: invert(100%);
 }

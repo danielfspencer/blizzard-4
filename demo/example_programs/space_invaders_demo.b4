@@ -1,0 +1,560 @@
+def draw_8x8
+  // draw an 8x8 pixel sprite
+  arg int rom_addr
+  arg int x
+  arg int y
+  var int offset y
+  var int vram_addr 6144
+  var int mask 0xff00
+  var int inv_mask 0x00ff
+  if x sys.odd
+    mask = 0x00ff
+    inv_mask = 0xff00
+  x = x >>
+  vram_addr += x
+  vram_addr += offset
+  repeat 8
+    {copy $vram_addr alu.1}
+    {copy &inv_mask alu.2}
+    {copy alu.& ram.7}
+    {copy $rom_addr alu.1}
+    {copy &mask alu.2}
+    {copy alu.& ram.8}
+    {copy ram.8 alu.1}
+    {copy ram.7 alu.2}
+    {copy alu.| $vram_addr}
+    rom_addr++
+    vram_addr += 8
+
+def shift_right
+  // shift a portion of the screen right one pixel
+  arg int start 6144
+  arg int end 7167
+  while end > start
+    repeat 8
+      {write 1 alu.2}
+      {copy $end alu.1}
+      {copy alu.>> $end}
+      {write $end alu.1}
+      {write [alu.-] &end}
+
+def shift_left
+  // shift a portion of the screen left one pixel
+  arg int start 6144
+  arg int end 7167
+  while start < end
+    {write 1 alu.2}
+    repeat 8
+      {copy $start alu.1}
+      {copy alu.<< $start}
+      {write $start alu.1}
+      {write [alu.+] &start}
+
+def shift_down
+  // shift a portion of the screen down 3 pixels
+  arg int start 6144
+  arg int end 7167
+  while end > start
+    {copy &end alu.1}
+    repeat 8
+      {write 32 alu.2}
+      {copy $end [alu.+]}
+      {write 1 alu.2}
+      {write [alu.-] &end}
+      {copy &end alu.1}
+
+def shift_sprite_right
+  arg int start 6144
+  var int end start + 64
+  var bool carry
+  while end > start
+    {copy $end alu.1}
+    {copy alu.>> $end}
+    end--
+    {copy $end ram.2}
+    if carry
+      end++
+      {copy $end alu.1}
+      {write 0b1000000000000000 alu.2}
+      {copy alu.| $end}
+      end--
+
+    {copy $end alu.1}
+    {copy alu.>> $end}
+    end -= 7
+    {copy $end ram.2}
+    if carry
+      end += 7
+      {copy $end alu.1}
+      {write 0b1000000000000000 alu.2}
+      {copy alu.| $end}
+      end -= 7
+
+def shift_sprite_left
+  arg int start 6144
+  var int end start + 65
+  var bool carry
+  while start < end
+    {copy $start alu.1}
+    {copy alu.<< $start}
+    start++
+    {copy $start alu.1}
+    {write 0b1000000000000000 alu.2}
+    {copy alu.ov ram.2}
+    if carry
+      start--
+      {copy $start alu.1}
+      {write 0b0000000000000001 alu.2}
+      {copy alu.| $start}
+      start++
+
+    {copy $start alu.1}
+    {copy alu.<< $start}
+    start += 7
+    {copy $start alu.1}
+    {write 0b1000000000000000 alu.2}
+    {copy alu.ov ram.2}
+    if carry
+      start -= 7
+      {copy $start alu.1}
+      {write 0b0000000000000001 alu.2}
+      {copy alu.| $start}
+      start += 7
+
+def fast_set_pixel
+  // highly optimised pixel setting
+  include sys.vram.shifted_pixels
+  arg int word_x
+  arg int sub_x
+  arg int y
+  arg bool data true
+
+  y = y <<
+  y = y <<
+  y = y <<
+  y += word_x
+  y += 6144
+
+  {write sys.vram.shifted_pixels ram.4}
+  {write [ram.4] alu.1}
+  {write $sub_x alu.2}
+  {write [alu.+] ram.4}
+
+  if data
+    {copy [ram.4] alu.1}
+    {copy $y alu.2}
+    {write [alu.|] $y}
+  else
+    {copy [ram.4] alu.1}
+    {copy alu.! ram.5}
+    {copy ram.5 alu.1}
+    {copy $y alu.2}
+    {write [alu.&] $y}
+
+// lower numbers = faster
+const int alien_speed 8
+const int shot_speed 1
+
+// addresses for sprites
+global int cannon_sprite
+{write sprites ram^.0}
+global int invader_sprite cannon_sprite + 8
+
+// status of the input buttons
+global bool button_left
+global bool button_right
+global bool button_fire
+
+// the column the cannon is in
+global int cannon_x 7
+
+// the pixel position of the cannon in the column
+global int cannon_x_sub 0
+
+// the player's score
+global int game_score 0
+
+// vram addresses for start and end of the block of invaders
+global int start_row 88
+global int end_row 336
+
+// which row of invaders should be moved next
+global int selected_row 0
+
+// the distance of the invaders from their left-most position
+global int invader_x_pos 0
+
+// which direction the invaders are currently moving in
+global bool invader_shift_right true
+
+// are they currently moving down?
+global bool invader_shift_down false
+
+// have we just finished moving them down?
+global bool invader_has_shifted_down true
+
+// the alive/dead status of each alien
+global array alien_status (bool,18)[true]
+
+// is the shot on screen?
+global bool shot_present
+
+// pixel-level x position of shot
+global int shot_x
+
+// which word (horizontally) the shot is in
+global int shot_x_word
+
+// which pixel (0-15) within the word the shot occupies
+global int shot_x_sub
+
+// pixel-level y position of shot
+global int shot_y
+
+// the y coord of the lowest alien above the shot
+global int lowest_invader_above_player_shot end_row / 8
+
+// which row the alien above the shot is in (0-2)
+global int row_of_invader_above_shot
+
+def wait_time
+  // just wait for a configurable about of time
+  arg int iterations
+  while iterations > 0
+    iterations--
+
+def read_inputs
+  // detect which keys are being pressed
+  var int kbd 8192
+  var int scancode *kbd
+  var int char_code 0
+
+  while scancode > 0
+    if scancode == 0xAA
+      // pass
+    else if scancode == 0xF0
+      scancode = *kbd
+    else if scancode == 0xE0
+      scancode = *kbd
+      if scancode == 0x6b
+        button_left = true
+        return
+      else if scancode == 0x74
+        button_right = true
+        return
+      else if scancode == 0x75
+        button_fire = true
+        return
+      else if scancode == 0xf0
+        scancode = *kbd
+        if scancode == 0x6b
+          button_left = false
+        else if scancode == 0x74
+          button_right = false
+        else if scancode == 0x75
+          button_fire = false
+
+    scancode = *kbd
+
+def update_cannon
+  read_inputs()
+  // calculate which word the cannon is in
+  var int cannon_addr cannon_x >>
+  if cannon_addr > 6
+    cannon_addr = 6
+
+  if button_left
+    var int tmp cannon_x + cannon_x_sub
+    if tmp > 0
+      if cannon_x_sub > 0
+        cannon_x_sub--
+      else
+        cannon_x_sub = 7
+        cannon_x--
+      shift_sprite_left(7104 + cannon_addr)
+  else if button_right
+    if cannon_x < 15
+      if cannon_x_sub < 7
+        cannon_x_sub++
+      else
+        cannon_x_sub = 0
+        cannon_x++
+      shift_sprite_right(7097 + cannon_addr)
+  else
+    // if no buttons are pressed, wait an approx. equiv length of time to what
+    // what actually moving would take this means the speed of the program does
+    // not vary based on user input
+    wait_time(20)
+
+def move_aliens
+  var int addr_offset 88 * selected_row
+  // start_addr holds the vram address of the top of the block of invaders
+  var int start_addr start_row + 6144
+  start_addr += addr_offset
+  // end_addr holds the vram address of the bottom of the block of invaders
+  var int end_addr start_addr + 68
+
+  if invader_shift_down
+    shift_down(start_addr-29, end_addr)
+    if selected_row > 0
+      selected_row--
+    else
+      start_row += 32
+      end_row += 32
+      invader_shift_down = false
+      invader_has_shifted_down = true
+  else
+    if invader_x_pos == 8
+      invader_shift_right = false
+      if !invader_has_shifted_down
+        invader_shift_down = true
+        selected_row = 2
+        return
+    else if invader_x_pos == 0
+      invader_shift_right = true
+      if !invader_has_shifted_down
+        invader_shift_down = true
+        selected_row = 2
+        return
+
+    if invader_shift_right
+      shift_right(start_addr, end_addr)
+    else
+      shift_left(start_addr, end_addr)
+
+    if selected_row < 2
+      selected_row++
+    else
+      selected_row = 0
+      invader_has_shifted_down = false
+      if invader_shift_right
+        invader_x_pos++
+      else
+        invader_x_pos--
+
+def update_score
+  sys.print_int(game_score,6,0)
+
+def erase_invader
+  // erase the space invader at the given coords
+  arg int x
+  arg int y
+
+  // check invader status
+  var int tmp 6 * y
+
+  if alien_status[tmp + x]
+    // set invader as dead
+    alien_status[tmp + x] = false
+  else
+    // invader is already dead
+    return
+  free tmp
+
+  // calculate the vram address of the top of the invader
+  var int vram_addr x + 1
+  vram_addr += start_row
+  // rows are 11 pixels high and 8 words wide
+  var int tmp 88 * y
+  vram_addr += tmp
+  free tmp
+
+  // erase the invader (TODO make this faster & better)
+  for var int i; i < 64; i += 8
+    sys.vram.nand_word(0xffff, vram_addr + i)
+
+  // score is 10 for bottom row, 20 for middle and 30 for top
+  var int tmp 3 - y
+  tmp = 10 * tmp
+  game_score += tmp
+  update_score()
+  free tmp
+
+def update_shot
+  if shot_present
+    if shot_y > lowest_invader_above_player_shot
+      // while we are still below the invaders, move the shot up
+      fast_set_pixel(shot_x_word, shot_x_sub, shot_y + 8, false)
+      shot_y -= 4
+      fast_set_pixel(shot_x_word, shot_x_sub, shot_y, true)
+    else
+      // there are no aliens in the outer two columns
+      // so check the shot is not in those columns
+      if shot_x_word != 0
+        if shot_x_word != 7
+          // check if shot could hit an alien, we do this by checking if the shot is
+          // within the 8 pixel width of an alien in the 16 pixel wide column
+          if shot_x_sub >= invader_x_pos
+            var int tmp invader_x_pos + 8
+            if shot_x_sub < tmp
+              // if it has hit then delete the alien
+              erase_invader(shot_x_word-1,row_of_invader_above_shot)
+            free tmp
+      shot_present = false
+      fast_set_pixel(shot_x_word, shot_x_sub, shot_y, false)
+      fast_set_pixel(shot_x_word, shot_x_sub, shot_y + 4, false)
+      fast_set_pixel(shot_x_word, shot_x_sub, shot_y + 8, false)
+  else if button_fire
+    shot_present = true
+
+    // start above cannon
+    shot_y = 112
+    shot_x = cannon_x * 8
+    shot_x += cannon_x_sub
+    shot_x += 2
+
+    // convert to word and subpixel coords for fast_set function
+    shot_x_word = shot_x / 16
+    shot_x_sub = shot_x % 16
+
+    // calculate the y coord of the lowest invader above the shot
+
+    // get which invader we are below
+    var int column shot_x_word - 1
+
+    // assume bottom invader is still present
+    lowest_invader_above_player_shot = end_row / 8
+    if alien_status[column + 12]
+      // bottom invader
+      row_of_invader_above_shot = 2
+    else if alien_status[column + 6]
+      // middle invader
+      row_of_invader_above_shot = 1
+      lowest_invader_above_player_shot -= 11
+    else if alien_status[column]
+      // top invader
+      row_of_invader_above_shot = 0
+      lowest_invader_above_player_shot -= 22
+    else
+      // no invaders in this column
+      row_of_invader_above_shot = 0
+      lowest_invader_above_player_shot -= 22
+
+// this could be replaced by array.fill in the future
+// mark all invader as alive
+for var int i; i < alien_status.max_len(); i++
+  alien_status[i] = true
+free i
+
+// draw cannon and score title
+draw_8x8(cannon_sprite,cannon_x,960)
+sys.print_string("SCORE 0")
+
+// draw alien invaders
+var bool flip
+for var int row start_row; row < end_row; row += 88
+  for var int col 2; col < 14; col += 2
+    if flip
+      draw_8x8(invader_sprite,col,row)
+    else
+      draw_8x8(invader_sprite+8,col,row)
+    flip = !flip
+  invader_sprite += 16
+free row
+free col
+
+var int cycle
+var int cycle2
+
+// main game loop
+while true
+  update_cannon()
+  if cycle > alien_speed
+    move_aliens()
+    cycle = 0
+
+  if cycle2 > shot_speed
+    update_shot()
+    cycle2 = 0
+
+  cycle++
+  cycle2++
+
+// sprites are defined below
+
+///
+sprites:
+// cannon
+0b0001100000011000
+0b0001100000011000
+0b0001100000011000
+0b0011110000111100
+0b0111111001111110
+0b0111111001111110
+0b0111111001111110
+0b0111111001111110
+// invaders
+0b0001100000011000
+0b0011110000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b0010010000100100
+0b0100001001011010
+0b0010010010100101
+0b0100001001000010
+0b0011110000100100
+0b0101101010111101
+0b1111111111111111
+0b1011110111011011
+0b1010010101111110
+0b0010010000100100
+0b0100001001000010
+0b0011110000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b0110011001100110
+0b1001100100111100
+0b0100001011000011
+0b0000000000000000
+0b0100001000100100
+0b0010010000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b1011110110100101
+0b0010010000100100
+0b0100001001100110
+0b1000000110000001
+0b0111111001111110
+0b1101101111011011
+0b1101101111011011
+0b0111111001111110
+0b1010010100100100
+0b1000000101000010
+0b0110011010000001
+0b0011110000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b0001100000011000
+0b0010010000100100
+0b0100001001000010
+0b0010010010000001
+0b0100001001000010
+0b0010010000100100
+0b0111111010111101
+0b1101101111011011
+0b1111111111111111
+0b1011110101011010
+0b1001100101000010
+0b0010010011000011
+0b0000100000001000
+0b1000100110001001
+0b0100001001000010
+0b0010000000100000
+0b0000010000000100
+0b0100001001000010
+0b1001000110010001
+0b0001000000010000
+// blank space for erasing
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+///
