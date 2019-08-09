@@ -525,6 +525,14 @@ function tokenise(input, line) {
       throw new CompError("Missing cmd/bool/cmd list")
     }
 
+  } else if (list[0] == "repeat") {               // repeat [postive number]
+    if (list.length > 1) {
+      let expr = tokenise(list.slice(1).join(" "), line) // extract all the letters after command
+      token = {name:"repeat",type:"structure",body:[],arguments:{expr:expr}}
+    } else {
+      throw new CompError("Repeat statement has no number")
+    }
+
   } else if (list[0] == "def") {                  //def [name] [opt. return type]       need to check if name is available
     if (list.length < 2) {
       throw new CompError("Functions require a name")
@@ -2665,6 +2673,24 @@ function translate(token, ctx_type) {
       result.push(`goto? ${label}_end`)
       result.push(`goto ${label}_start`)
       result.push(`${label}_end:`)
+    } break
+
+    case "repeat": {
+      let [prefix, value, type] = translate(args.expr, "int")
+
+      let times_to_repeat = parseInt(value[0])
+
+      if (times_to_repeat < 0) {
+        throw new CompError("Number of times to repeat must be a positive number")
+      }
+
+      let body = translate_body(token.body)
+      prefix = []
+
+      while (times_to_repeat > 0) {
+        result.push(...body)
+        times_to_repeat--
+      }
     } break
 
     case "function_def": {
