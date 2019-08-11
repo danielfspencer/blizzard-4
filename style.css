@@ -5,6 +5,10 @@
   display: flex;
 }
 
+iframe {
+  position: fixed;
+}
+
 #drag-region {
   width: 100%;
   height: 100%;
