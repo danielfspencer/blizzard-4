@@ -52,3 +52,21 @@ div.led {
 .item.error {
   background: #2f0c0c;
 }
+
+/* manual pages */
+
+a:link, a:visited, a:hover {
+  color: #ff6800;
+}
+
+a:active {
+ color: #005eff;
+}
+
+ul, ol {
+  border-color: #447fbb;
+}
+
+code {
+  background-color: #1f2429;
+}

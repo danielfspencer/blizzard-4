@@ -6,13 +6,13 @@ body, html {
 }
 
 #main {
-  /* margin-left: 8px; */
   margin-top: 2px;
   width: 100%;
 }
 
 #content {
-  width: 996px;
+  max-width: 996px;
+  padding: 14px 18px;
   margin: 0 auto;
   float: none;
 }
@@ -21,7 +21,25 @@ body, html {
 	width: 100%;
 }
 
-#ops th, #ops td {
-	border: 1px solid black;
-	text-align: center;
+table {
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+code {
+  font-family: monospace;
+	padding: 3px 6px;
+  background-color: #e1dede;
+  display: inline-block;
+  width: auto;
+  border-radius: 3px;
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.2);
+}
+
+ul, ol {
+  border-left: 5px solid;
 }
