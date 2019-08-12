@@ -21,6 +21,15 @@ body, html {
 	width: 100%;
 }
 
+.error {
+  color: red;
+  font-weight: bolder;
+}
+
+img {
+  max-width: 100%;
+}
+
 table {
   border-collapse: collapse;
 }
