@@ -1918,6 +1918,6 @@ const libs = {
   ],
   "sys.get_lib_version":[
     "def sys.get_lib_version str",
-    "  return \"0.46.0\"",
+    "  return \"0.46.1\"",
   ]
 }
