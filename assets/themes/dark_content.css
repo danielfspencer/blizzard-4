@@ -70,3 +70,7 @@ ul, ol {
 code {
   background-color: #1f2429;
 }
+
+#nav-bar div img {
+  filter: invert(1);
+}

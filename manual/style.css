@@ -17,8 +17,34 @@ body, html {
   float: none;
 }
 
-#ops {
-	width: 100%;
+#nav-bar {
+  position: fixed;
+  margin-bottom: 8px;
+}
+
+#nav-bar div {
+  width: 24px;
+  min-width: 0;
+  padding-top: 10px;
+  display: inline-block;
+}
+
+@media only screen and (max-width:1250px) {
+  #nav-bar {
+    width: 100%;
+  }
+
+  body {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  #nav-bar {
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    width: max-content;
+  }
 }
 
 .error {
@@ -47,6 +73,10 @@ code {
   width: auto;
   border-radius: 3px;
   box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.2);
+}
+
+pre {
+  overflow-x: auto;
 }
 
 ul, ol {
