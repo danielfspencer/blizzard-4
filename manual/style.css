@@ -1,7 +1,4 @@
-body, html {
-  font-family: "robotoregular";
-  overflow-y: auto;
-  font-size: 12pt;
+body {
   -webkit-user-select: text;
 }
 
@@ -29,6 +26,7 @@ body, html {
   display: inline-block;
 }
 
+/* responsive design, compact borders and move nav buttons */
 @media only screen and (max-width:1250px) {
   #nav-bar {
     width: 100%;
@@ -58,6 +56,7 @@ img {
 
 table {
   border-collapse: collapse;
+  margin-bottom: 8px;
 }
 
 th, td {

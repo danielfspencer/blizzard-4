@@ -102,11 +102,10 @@ iframe {
   pointer-events: auto;
 }
 
-body, html {
-  font-family: "robotoregular";
-  margin: 0;
+body {
   padding: 0;
   height: 100%;
+  width: 100%;
   overflow: hidden;
 }
 
