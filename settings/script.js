@@ -9,11 +9,11 @@ $( document ).ready( () => {
 
   storage_get_key("theme", (val) => {
     $("#dark-theme").prop('checked', val == "dark")
-  } ,"light")
+  } ,"dark")
 
   storage_get_key("emulator-display-colour", (val) => {
     $("#emulator-display-colour").val(val)
-  } ,"white-black")
+  } ,"green-grey")
 
   $( "#close" ).click( () => {
     window.close()

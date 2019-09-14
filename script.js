@@ -33,7 +33,6 @@ function menu(item) {  //called when a user selects a menu item
 }
 
 function set_theme(theme) {
-  if (theme == null) { return }
   current_theme.name = theme
 
   var path = "assets/themes/" + theme + "_frame.css"
