@@ -1,5 +1,6 @@
 body {
   -webkit-user-select: text;
+  overflow-y: scroll;
 }
 
 #main {
@@ -16,7 +17,7 @@ body {
 
 #nav-bar {
   position: fixed;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 #nav-bar div {
