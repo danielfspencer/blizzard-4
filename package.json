@@ -34,7 +34,7 @@
     }
   },
   "devDependencies": {
-    "electron": "^5",
+    "electron": "latest",
     "electron-builder": "^20"
   }
 }
