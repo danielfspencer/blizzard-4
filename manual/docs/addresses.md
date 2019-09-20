@@ -86,4 +86,4 @@
 | Absolute<br>Address | Internal<br>Address | Description |	Mnemonic | Read/Write | Width<br>(bits) |
 | --- | --- | --- | --- | --- | --- |
 | 8192 | 0 | ps/2 fifo pop last element | `kbd.pop` | R | 16 |
-| 8193 | 1 | fifo queue length<br>NOT IMPLEMENTED | `kbd.len` | R | 8 |
+| 8193 | 1 | fifo queue length<br>**DEPRICATED** | `kbd.len` | R | 8 |
