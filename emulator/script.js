@@ -14,6 +14,7 @@ $(document).ready( () => {
   vram_changes_buffer = []
   front_panel_info = {}
   updates_running = false
+  visualiser = null
 
   led_strips = {
     "alu1_leds":null,
@@ -103,7 +104,18 @@ $(document).ready( () => {
   worker.postMessage(["set_clock",100000])
   parent.input_data = set_rom
   parent.child_page_loaded()
+  open_visualiser()
 })
+
+function open_visualiser() {
+  if (visualiser !== null) {
+    return
+  }
+
+  tools.windows.open('visualiser/visualiser.html', 'Visualiser', 1024 * 2, 512 * 2 + 42, (ref) => {
+    visualiser = ref
+  })
+}
 
 function set_screen_theme(theme) {
   let mapping = {
@@ -154,7 +166,12 @@ function handle_message(message) {
       front_panel_info = message[1]
       break
     case "vram_changes":
-      vram_changes_buffer.push.apply(vram_changes_buffer,message[1])
+      vram_changes_buffer = message[1]
+      break
+    case "ram_changes":
+      if (visualiser !== null) {
+        visualiser.ram_changes_buffer = message[1]
+      }
       break
     case "started":
       //start drawing updates

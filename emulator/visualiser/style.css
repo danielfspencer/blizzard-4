@@ -1,0 +1,11 @@
+body {
+  margin: 0;
+}
+
+#memory {
+  width: 2048px;
+  height: 1024px;
+  background: #000;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+}
