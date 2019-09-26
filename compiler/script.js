@@ -4,8 +4,10 @@ let compiling = false
 $( document ).ready( () => {
   $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
 
-  $("#load_in").change( (e) => {
-    load_file(e, "in")
+  $("#load_in").change((event) => {
+    tools.files.load(event, (data) => {
+      $('#in').val(data);
+    })
   })
 
   $(document).delegate('#in', 'keydown', function(e) {

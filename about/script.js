@@ -1,6 +1,3 @@
-if (get_platform() == "electron") {
-  window.$ = window.jQuery = module.exports; // avoid breaking jquery with node integration
-}
 var version = ""
 
 $( document ).ready( () => {
@@ -24,9 +21,7 @@ $( document ).ready( () => {
     window.open("https://github.com/danielfspencer/blizzard-4")
   })
 
-  $( "#close" ).click( () => {
-    window.close()
-  })
+  $( "#close" ).click(tools.windows.close)
 
   $.getJSON("../manifest.json")
     .done( (data) => {

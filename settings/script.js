@@ -1,17 +1,13 @@
-if (get_platform() == "electron") {
-  window.$ = window.jQuery = module.exports; // avoid breaking jquery with node integration
-}
-
 $( document ).ready( () => {
-  storage_get_key("starting-page", (val) => {
+  tools.storage.get_key("starting-page", (val) => {
     $("#starting-page").val(val)
   } ,"dem")
 
-  storage_get_key("theme", (val) => {
+  tools.storage.get_key("theme", (val) => {
     $("#dark-theme").prop('checked', val == "dark")
   } ,"dark")
 
-  storage_get_key("emulator-display-colour", (val) => {
+  tools.storage.get_key("emulator-display-colour", (val) => {
     $("#emulator-display-colour").val(val)
   } ,"green-grey")
 
@@ -20,23 +16,23 @@ $( document ).ready( () => {
   })
 
   $( "#reset" ).click( () => {
-    storage_clear()
+    tools.storage.clear()
   })
 
   $( "#dark-theme" ).change(function() {
     if ($(this).prop("checked")) {
-      storage_set_key("theme","dark")
+      tools.storage.set_key("theme","dark")
     } else {
-      storage_set_key("theme","light")
+      tools.storage.set_key("theme","light")
     }
   })
 
   $( "#starting-page" ).change(function() {
-    storage_set_key("starting-page",$(this).val())
+    tools.storage.set_key("starting-page",$(this).val())
   })
 
   $("#emulator-display-colour").change(function() {
-    storage_set_key("emulator-display-colour", $(this).val())
+    tools.storage.set_key("emulator-display-colour", $(this).val())
   })
 
   $( "#platform" ).html( () => {

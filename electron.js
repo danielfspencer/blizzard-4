@@ -7,6 +7,7 @@ app.on('ready', () => {
     height: 656,
     frame: false,
     webPreferences: {
+      nativeWindowOpen: true,
       nodeIntegration: true,
       nodeIntegrationInWorker: false
     }
@@ -14,6 +15,15 @@ app.on('ready', () => {
   mainWindow.loadFile('index.html')
   mainWindow.on('closed', () => {
     mainWindow = null
+  })
+
+  // centre any popup windows
+  mainWindow.webContents.on('new-window', function(event, url, frameName, disposition, options) {
+    event.preventDefault()
+    options.x = undefined
+    options.y = undefined
+    options.useContentSize = true
+    event.newGuest = new BrowserWindow(options)
   })
 })
 

@@ -1,8 +1,10 @@
 let assembling = false
 
 $( document ).ready( () => { //connect all the butons to their actions!
-  $("#load_in").change((e) => {
-    load_file(e, "in")
+  $("#load_in").change((event) => {
+    tools.files.load(event, (data) => {
+      $('#in').val(data);
+    })
   })
 
   $("#cmp").click(assemble)

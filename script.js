@@ -1,8 +1,3 @@
-if (get_platform() == "electron") {
-  window.$ = window.jQuery = module.exports; // avoid breaking jquery with node integration
-  remote = require('electron').remote
-}
-
 function menu(item) {  //called when a user selects a menu item
   $( "[id^=menu-item-]").removeClass("active") //un-select all options
   $( "#"+item ).addClass("active") // select the new one
@@ -98,7 +93,7 @@ var current_theme = {
 }
 
 $( document ).ready( () => { //connect all the butons to their actions!
-  storage_get_key("starting-page", (page) => (menu("menu-item-"+page)), "dem")
+  tools.storage.get_key("starting-page", (page) => (menu("menu-item-"+page)), "dem")
   materialDesignHamburger()
 
   $( ".material-design-hamburger" ).click( () => { //show or hide menu on button press
@@ -106,68 +101,25 @@ $( document ).ready( () => { //connect all the butons to their actions!
   })
 
   $( "#close" ).click( () => {
-    window.close()
+    tools.windows.close()
   })
 
   $( "#mini" ).click( () => {
-    switch (get_platform()) {
-      case "chrome_app":
-        chrome.app.window.current().minimize()
-        break
-      case "electron":
-        remote.BrowserWindow.getFocusedWindow().minimize()
-        break
-    }
+    tools.windows.minimise()
   })
 
   $( "#max" ).click( () => {
-    switch (get_platform()) {
-      case "chrome_app":
-        var page = chrome.app.window.current()
-        break
-      case "electron":
-        var page = remote.BrowserWindow.getFocusedWindow()
-        break
-    }
-
-    if (page.isMaximized()) {
-      page.restore()
-    } else {
-      page.maximize()
-    }
-
+    tools.windows.maximise()
   })
 
   $( "#about" ).click( () => {
     toggle_overflow_menu()
-    if (get_platform() == "chrome_app") {
-      chrome.app.window.create('about/about.html', {
-        "frame": "none",
-        "resizable": false,
-        "bounds": {
-          width: 734,
-          height: 218
-        }
-      })
-    } else {
-      window.open("about/about.html",'About','height=218,width=734')
-    }
+    tools.windows.open('about/about.html','About',734,218)
   })
 
   $( "#settings" ).click( () => {
     toggle_overflow_menu()
-    if (get_platform() == "chrome_app") {
-      chrome.app.window.create('settings/settings.html', {
-        "frame": "none",
-        "resizable": false,
-        "bounds": {
-          width: 400,
-          height: 500
-        }
-      })
-    } else {
-      window.open("settings/settings.html",'Settings','height=500,width=400')
-    }
+    tools.windows.open('settings/settings.html','Settings',400,500)
   })
 
   $( "#dim" ).click( () => { //or hide when user clicks off it
@@ -195,10 +147,9 @@ $( document ).ready( () => { //connect all the butons to their actions!
 
   window.onkeydown = (event) => {
     if (event.which === 123 && get_platform() === "electron") {
-      remote.BrowserWindow.getFocusedWindow().webContents.openDevTools()
+      electron.BrowserWindow.getFocusedWindow().webContents.openDevTools()
     }
   }
-
 })
 
 window.addEventListener('message', handleMsg, false)
