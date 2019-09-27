@@ -6,6 +6,7 @@ body {
 #main {
   margin-top: 2px;
   width: 100%;
+  will-change: transform;
 }
 
 #content {
