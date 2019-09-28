@@ -73,8 +73,8 @@ $( document ).ready( () => {
     log("error",msg)
   }
 
-  parent.input_data = set_input
-  parent.child_page_loaded()
+  parent.interface.funcs.input_data = set_input
+  parent.interface.funcs.child_page_loaded()
 })
 
 function handleMsg(data) {

@@ -47,17 +47,14 @@ $( document ).ready( () => {
 
 /* theme setting */
 
-function inject_stylesheet(path, target) {
-  var stylesheet = document.createElement("link")
-  stylesheet.href = path
-  stylesheet.rel = "stylesheet"
-  stylesheet.type = "text/css"
-  target.body.appendChild(stylesheet)
-}
-
-function set_theme(theme) {
-  if (theme == "light") { return }
-  var path = "../assets/themes/" + theme
-  inject_stylesheet(path + "_content.css", document)
-  inject_stylesheet(path + "_frame.css", document)
+function set_theme(name) {
+  $.ajax({
+    url: `../assets/themes/${name}.css`,
+    dataType: 'text',
+    success: (data) => {
+      let style_tag = document.createElement('style')
+      style_tag.innerHTML = data
+      document.body.appendChild(style_tag)
+    }
+  })
 }

@@ -15,43 +15,47 @@
 <body>
   <script src="assets/set_theme.js"></script>
 
-  <div id="statusbar">
-    <div id="drag-region"></div>
-    <img id="mini"src="assets/icons/minimise.svg"/>
-    <img id="max" src="assets/icons/maximise.svg"/>
-    <img id="close" src="assets/icons/close.svg"/>
-  </div>
+  <div id="frame">
+    <div id="statusbar">
+      <div id="drag-region"></div>
+      <img id="mini" src="assets/icons/minimise.svg"/>
+      <img id="max" src="assets/icons/maximise.svg"/>
+      <img id="close" src="assets/icons/close.svg"/>
+    </div>
 
-  <div id="toolbar">
-    <div class="material-design-hamburger">
-      <div class="material-design-hamburger__icon">
-        <span class="material-design-hamburger__layer"></span>
+    <div id="toolbar">
+      <div class="material-design-hamburger">
+        <div class="material-design-hamburger__icon">
+          <span class="material-design-hamburger__layer"></span>
+        </div>
+      </div>
+      <div id="toolbar-title"></div>
+      <div id="button-container">
+      </div>
+      <img id="overflow-menu" src="assets/icons/options.svg"/>
+      <div id="dropdown-menu" class="card">
+        <ul id="dropdown-menu-list">
+          <li id="settings"><img src="assets/icons/debug.svg"><a>Settings</a></li>
+          <li id="about"><img src="assets/icons/about.svg"><a>About</a></li>
+        </ul>
       </div>
     </div>
-    <div id="toolbar-title"></div>
-    <img id="overflow-menu" src="assets/icons/options.svg"/>
-    <div id="dropdown-menu" class="card">
-      <ul id="dropdown-menu-list">
-        <li id="settings"><img src="assets/icons/debug.svg"><a>Settings</a></li>
-        <li id="about"><img src="assets/icons/about.svg"><a>About</a></li>
+
+    <div id="menu">
+      <ul id="menu-list">
+        <li id="menu-item-emu"><img src="assets/icons/play.svg"/>Emulator</li>
+        <li id="menu-item-asm"><img src="assets/icons/assemble.svg"/>Assembler</li>
+        <li id="menu-item-cmp"><img src="assets/icons/compile.svg"/>Compiler</li>
+        <li id="menu-item-dem"><img src="assets/icons/info.svg"/>Demo Programs</li>
+        <li id="menu-item-man"><img src="assets/icons/manual.svg"/>Manual</li>
       </ul>
+      <div id="version"></div>
     </div>
-  </div>
 
-  <div id="menu">
-    <ul id="menu-list">
-      <li id="menu-item-emu"><img src="assets/icons/play.svg"/>Emulator</li>
-      <li id="menu-item-asm"><img src="assets/icons/assemble.svg"/>Assembler</li>
-      <li id="menu-item-cmp"><img src="assets/icons/compile.svg"/>Compiler</li>
-      <li id="menu-item-dem"><img src="assets/icons/info.svg"/>Demo Programs</li>
-      <li id="menu-item-man"><img src="assets/icons/manual.svg"/>Manual</li>
-    </ul>
-    <div id="version"></div>
-  </div>
+    <div id="dim"></div>
+    <div id="overflow-close"></div>
 
-  <div id="dim"></div>
-  <div id="overflow-close"></div>
+  </div>
   <iframe id="content"></iframe>
-  
 </body>
 </html>

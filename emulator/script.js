@@ -1,4 +1,6 @@
 $(document).ready( () => {
+  parent.interface.funcs.add_button("ram visualiser", open_visualiser)
+
   canvas = document.getElementById("screen")
   canvas_context = canvas.getContext("2d", { alpha: false })
   tools.storage.get_key("emulator-display-colour", set_screen_theme, "green-grey")
@@ -102,9 +104,8 @@ $(document).ready( () => {
 
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock",100000])
-  parent.input_data = set_rom
-  parent.child_page_loaded()
-  open_visualiser()
+  parent.interface.funcs.input_data = set_rom
+  parent.interface.funcs.child_page_loaded()
 })
 
 function open_visualiser() {
@@ -164,6 +165,9 @@ function handle_message(message) {
   switch(message[0]) {
     case "front_panel_info":
       front_panel_info = message[1]
+      if (!updates_running) {
+        draw_front_panel()
+      }
       break
     case "vram_changes":
       vram_changes_buffer = message[1]
