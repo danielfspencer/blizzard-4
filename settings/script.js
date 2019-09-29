@@ -11,9 +11,7 @@ $( document ).ready( () => {
     $("#emulator-display-colour").val(val)
   } ,"green-grey")
 
-  $( "#close" ).click( () => {
-    window.close()
-  })
+  $( "#close" ).click(() => window.close())
 
   $( "#reset" ).click( () => {
     tools.storage.clear()
@@ -36,7 +34,7 @@ $( document ).ready( () => {
   })
 
   $( "#platform" ).html( () => {
-    switch (get_platform()) {
+    switch (tools.platform()) {
       case "electron":   return "Electron App"
       case "chrome_app": return "Chrome App"
       case "website":    return "Website"

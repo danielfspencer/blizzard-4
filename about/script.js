@@ -2,26 +2,16 @@ var version = ""
 
 $( document ).ready( () => {
   $.ajaxSetup({ cache: false }) // do not cache requests to check for latest version!
-
   $( "#licence" ).click( () => {
-    if (get_platform() == "chrome_app") {
-      chrome.app.window.create('../licence.html', {
-        "resizable": true,
-        "bounds": {
-          width: 462,
-          height: 680
-        }
-      })
-    } else {
-      window.open("../licence.html",'Licence','height=800,width=600')
-    }
+    windows.open("about/licence.html", 560, 800)
+  })
   })
 
   $( "#website" ).click( () => {
-    window.open("https://github.com/danielfspencer/blizzard-4")
+    windows.open_external("https://github.com/danielfspencer/blizzard-4")
   })
 
-  $( "#close" ).click(tools.windows.close)
+  $( "#close" ).click(() => window.close())
 
   $.getJSON("../manifest.json")
     .done( (data) => {

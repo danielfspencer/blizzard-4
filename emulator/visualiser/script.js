@@ -2,7 +2,7 @@ $(document).ready( () => {
   canvas = document.getElementById("memory")
   canvas_context = canvas.getContext("2d", { alpha: false })
 
-  $( "#close" ).click(tools.windows.close)
+  $( "#close" ).click(() => window.close())
   pixel_on_colours = [255,255,255]
   pixel_off_colours = [0,0,0]
   ram_changes_buffer = []

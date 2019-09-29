@@ -18,14 +18,17 @@ app.on('ready', () => {
   })
 
   // centre any popup windows
-  mainWindow.webContents.on('new-window', function(event, url, frameName, disposition, options) {
-    event.preventDefault()
-    options.x = undefined
-    options.y = undefined
-    options.useContentSize = true
-    event.newGuest = new BrowserWindow(options)
-  })
+  mainWindow.webContents.on('new-window', centre_window)
 })
+
+function centre_window(event, url, frameName, disposition, options) {
+  event.preventDefault()
+  options.x = undefined
+  options.y = undefined
+  options.useContentSize = true
+  event.newGuest = new BrowserWindow(options)
+  event.newGuest.webContents.on('new-window', centre_window)
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

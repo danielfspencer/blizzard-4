@@ -3,6 +3,8 @@ var interface = {
   funcs: {
     input_data: null,
     child_page_loaded: () => {
+      // give the page a reference to the window management tools
+      window.frames[0].windows = windows
       // if we have data waiting, call the function registered by the child page with the data
       if (interface.data !== null) {
         interface.funcs.input_data(interface.data)
@@ -28,20 +30,20 @@ $(document).ready(() => {
 
   $(".material-design-hamburger").click(toggle_menu)
 
-  $("#mini").click(tools.windows.minimise)
+  $("#mini").click(windows.minimise)
 
-  $("#max").click(tools.windows.maximise)
+  $("#max").click(windows.maximise)
 
-  $("#close").click(tools.windows.close)
+  $("#close").click(windows.close)
 
   $("#about").click(() => {
     toggle_overflow_menu()
-    tools.windows.open('about/about.html', 'About', 734, 218)
+    windows.open('about/about.html', 734, 218, win => {win.windows = windows})
   })
 
   $("#settings").click(() => {
     toggle_overflow_menu()
-    tools.windows.open('settings/settings.html', 'Settings', 400, 500)
+    windows.open('settings/settings.html', 400, 500)
   })
 
   $("#dim").click(() => { //or hide when user clicks off it
@@ -64,8 +66,8 @@ $(document).ready(() => {
   })
 
   window.onkeydown = (event) => {
-    if (event.which === 123 && get_platform() === "electron") {
-      electron.BrowserWindow.getFocusedWindow().webContents.openDevTools()
+    if (event.which === 123 && tools.platform() === "electron") {
+      electron.remote.BrowserWindow.getFocusedWindow().webContents.openDevTools()
     }
   }
 

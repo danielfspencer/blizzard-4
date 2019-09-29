@@ -113,7 +113,7 @@ function open_visualiser() {
     return
   }
 
-  tools.windows.open('visualiser/visualiser.html', 'Visualiser', 1024 * 2, 512 * 2 + 42, (ref) => {
+  windows.open('emulator/visualiser/visualiser.html', 1024 * 2, 512 * 2 + 42, (ref) => {
     visualiser = ref
   })
 }
