@@ -67,7 +67,7 @@ function init_emulator() {
   target_cycles_per_second = 0
   cycles_per_batch = 0
   vram_addresses_changed = {}
-  vram_changes_buffer = []
+  ram_addresses_changed = {}
 
   cycle_count_when_timer_last_reset = 0
 
@@ -276,13 +276,25 @@ function send_front_panel_info() {
 function send_vram_changes() {
   //vram_addresses_changed stores the addresses that have been changed as keys - this is because testing for
   //the existance of a key is much faster than array.includes()
-  for (var address in vram_addresses_changed) {
-    var data = vram[address]
+
+  let vram_changes_buffer = []
+  for (let address in vram_addresses_changed) {
+    let data = vram[address]
     vram_changes_buffer.push([address,data])
   }
   postMessage(["vram_changes",vram_changes_buffer])
-  vram_changes_buffer = []
   vram_addresses_changed = {}
+  send_ram_changes()
+}
+
+function send_ram_changes() {
+  let ram_changes_buffer = []
+  for (let address in ram_addresses_changed) {
+    let data = ram[address]
+    ram_changes_buffer.push([address,data])
+  }
+  postMessage(["ram_changes",ram_changes_buffer])
+  ram_addresses_changed = {}
 }
 
 function vram_change(address, new_data) {
@@ -290,6 +302,14 @@ function vram_change(address, new_data) {
   vram[address] = new_data
   if (vram_addresses_changed[address] === undefined) {
     vram_addresses_changed[address] = true
+  }
+}
+
+function ram_change(address, new_data) {
+  activity_indicators["ram_write"] = 1
+  ram[address] = new_data
+  if (ram_addresses_changed[address] === undefined) {
+    ram_addresses_changed[address] = true
   }
 }
 
@@ -590,14 +610,12 @@ function simulate_effect_of_write_bus_change() {
     }
 
   } else if (write_bus > 16383) {                                          // RAM
-    activity_indicators["ram_write"] = 1
-
+    let address = 0
     if (direct_ram_addressing) {
-      var address = write_bus - 16384
-      ram[address] = data_bus
+      address = write_bus - 16384
     } else {
       var frame_offset_selector = (write_bus & 0b0011000000000000) >> 12
-      var address = write_bus & 0b0000001111111111
+      address = write_bus & 0b0000001111111111
 
       switch (frame_offset_selector) {
         case 0:   //frame below
@@ -621,7 +639,7 @@ function simulate_effect_of_write_bus_change() {
       if (address < 0) {
         halt_error("invalid address for ram")
       } else {
-        ram[address] = data_bus
+        ram_change(address, data_bus)
       }
     }
     activity_indicators["ram_address"] = address
@@ -666,7 +684,6 @@ function simulate_effect_of_write_bus_change() {
       case 3:                                                             //video adapter
         if (address < 1024) {
           vram_change(address, data_bus)
-          activity_indicators["vram_write"] = 1
         }
         break
       case 4:                                                             //keyboard interface

@@ -1,7 +1,9 @@
 $(document).ready( () => {
+  parent.interface.funcs.add_button("ram visualiser", open_visualiser)
+
   canvas = document.getElementById("screen")
   canvas_context = canvas.getContext("2d", { alpha: false })
-  storage_get_key("emulator-display-colour", set_screen_theme, "green-grey")
+  tools.storage.get_key("emulator-display-colour", set_screen_theme, "green-grey")
 
   worker = new Worker("engine.js")
   worker.onmessage = (e) => {
@@ -14,6 +16,7 @@ $(document).ready( () => {
   vram_changes_buffer = []
   front_panel_info = {}
   updates_running = false
+  visualiser = null
 
   led_strips = {
     "alu1_leds":null,
@@ -101,9 +104,19 @@ $(document).ready( () => {
 
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock",100000])
-  parent.input_data = set_rom
-  parent.child_page_loaded()
+  parent.interface.funcs.input_data = set_rom
+  parent.interface.funcs.child_page_loaded()
 })
+
+function open_visualiser() {
+  if (visualiser !== null) {
+    return
+  }
+
+  windows.open('emulator/visualiser/visualiser.html', 1024 * 2, 512 * 2 + 42, (ref) => {
+    visualiser = ref
+  })
+}
 
 function set_screen_theme(theme) {
   let mapping = {
@@ -152,9 +165,17 @@ function handle_message(message) {
   switch(message[0]) {
     case "front_panel_info":
       front_panel_info = message[1]
+      if (!updates_running) {
+        draw_front_panel()
+      }
       break
     case "vram_changes":
-      vram_changes_buffer.push.apply(vram_changes_buffer,message[1])
+      vram_changes_buffer = message[1]
+      break
+    case "ram_changes":
+      if (visualiser !== null) {
+        visualiser.ram_changes_buffer = message[1]
+      }
       break
     case "started":
       //start drawing updates

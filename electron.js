@@ -7,6 +7,7 @@ app.on('ready', () => {
     height: 656,
     frame: false,
     webPreferences: {
+      nativeWindowOpen: true,
       nodeIntegration: true,
       nodeIntegrationInWorker: false
     }
@@ -15,7 +16,19 @@ app.on('ready', () => {
   mainWindow.on('closed', () => {
     mainWindow = null
   })
+
+  // centre any popup windows
+  mainWindow.webContents.on('new-window', centre_window)
 })
+
+function centre_window(event, url, frameName, disposition, options) {
+  event.preventDefault()
+  options.x = undefined
+  options.y = undefined
+  options.useContentSize = true
+  event.newGuest = new BrowserWindow(options)
+  event.newGuest.webContents.on('new-window', centre_window)
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
