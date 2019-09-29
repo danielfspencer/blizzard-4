@@ -8,7 +8,7 @@ $( document ).ready( () => {
   } ,"dem")
 
   storage_get_key("theme", (val) => {
-    $("#dark-theme").prop('checked', val == "dark")
+    $("#theme").val(val)
   } ,"dark")
 
   storage_get_key("emulator-display-colour", (val) => {
@@ -23,12 +23,8 @@ $( document ).ready( () => {
     storage_clear()
   })
 
-  $( "#dark-theme" ).change(function() {
-    if ($(this).prop("checked")) {
-      storage_set_key("theme","dark")
-    } else {
-      storage_set_key("theme","light")
-    }
+  $( "#theme" ).change(function() {
+    storage_set_key("theme",$(this).val())
   })
 
   $( "#starting-page" ).change(function() {

@@ -5,19 +5,24 @@ h3 {
 #content {
   width: 300px;
   margin: 0 auto;
-  padding-top: 8px;
+  padding-top: 12px;
   box-sizing: border-box;
 }
 
-#content > .card {
+#content > * {
   width: 100%;
   box-sizing: border-box;
+  margin: 0 0 8px 0;
 }
 
 .settings > * {
   margin-top: 6px;
 }
 
-#starting-page {
+select {
   margin-left: 10px;
+}
+
+.button {
+  display: inline-block;
 }

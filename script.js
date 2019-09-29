@@ -161,8 +161,8 @@ $( document ).ready( () => { //connect all the butons to their actions!
         "frame": "none",
         "resizable": false,
         "bounds": {
-          width: 400,
-          height: 500
+          width: 324,
+          height: 364
         }
       })
     } else {
