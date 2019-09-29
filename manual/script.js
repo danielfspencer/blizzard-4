@@ -7,9 +7,13 @@ let forward_history = []
 $( document ).ready( () => {
   render_page("docs/introduction.md")
 
-  $("#back-button").click(navigate_back)
-  $("#forward-button").click(navigate_forward)
+  parent.interface.funcs.add_button(gen_button("left-arrow.svg"), navigate_back)
+  parent.interface.funcs.add_button(gen_button("right-arrow.svg"), navigate_forward)
 })
+
+function gen_button(icon) {
+  return `<img style='margin-top: 6px;' class='manual_nav_button' src='assets/icons/${icon}'/>`
+}
 
 function render_page(path) {
   $.ajax({

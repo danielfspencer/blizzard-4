@@ -30,20 +30,15 @@ body {
 
 /* responsive design, compact borders and move nav buttons */
 @media only screen and (max-width:1250px) {
-  #nav-bar {
-    width: 100%;
-  }
-
   body {
     padding-left: 0;
     padding-right: 0;
   }
+}
 
-  #nav-bar {
-    position: relative;
-    margin-left: auto;
-    margin-right: auto;
-    width: max-content;
+@media only screen and (max-width:600px) {
+  body {
+    padding: 0;
   }
 }
 

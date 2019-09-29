@@ -11,10 +11,10 @@ var interface = {
         interface.data = null
       }
     },
-    add_button: (text, func) => {
+    add_button: (html, func) => {
       // the button's id is "button-(the number of buttons present)"
       let id = `button-${$("#button-container").children().length}`
-      $("#button-container").append(`<div class="button" id="${id}">${text}</div>`)
+      $("#button-container").append(`<div class="button" id="${id}">${html}</div>`)
       $(`#${id}`).click(func)
     }
   }
