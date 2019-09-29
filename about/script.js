@@ -5,6 +5,9 @@ $( document ).ready( () => {
   $( "#licence" ).click( () => {
     windows.open("about/licence.html", 560, 800)
   })
+
+  $( "#github" ).click( () => {
+    windows.open_external("https://github.com/danielfspencer")
   })
 
   $( "#website" ).click( () => {
