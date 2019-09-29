@@ -98,3 +98,37 @@ div#log > div.item.warn {
 div#log > div.item.error {
   background: #2f0c0c;
 }
+
+/* manual page */
+
+img.manual_nav_button {
+  filter: invert(1);
+}
+
+div.rendered-md a:link {
+  color: #ff6800;
+}
+
+div.rendered-md a:visited {
+  color: #ff6800;
+}
+
+div.rendered-md a:hover {
+  color: #ff6800;
+}
+
+div.rendered-md a:active {
+ color: #005eff;
+}
+
+div.rendered-md ul {
+  border-color: #447fbb;
+}
+
+div.rendered-md ol {
+  border-color: #447fbb;
+}
+
+div.rendered-md code {
+  background-color: #1f2429;
+}

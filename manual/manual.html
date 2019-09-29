@@ -4,37 +4,23 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <link rel="stylesheet" type="text/css" href="../assets/lib.css"/>
   <link rel="stylesheet" type="text/css" href="style.css"/>
+  <script src="../assets/showdown/showdown.min.js"></script>
   <script src="../assets/jquery.min.js"></script>
   <script src="script.js"></script>
 </head>
 <body>
   <script src="../assets/set_theme.js"></script>
 
-  <div id="main">
-    <div class="card" id="content">
-      <h2><a name="intro">Introduction</a></h2>
-      Blizzard 4 is a 16-bit computer capable of advanced arithmetic (through software), logical operations and basic graphics via its 128x128
-      display. It has a small (RISC) instructon set that is designed with simplicity in mind. Every function of the computer is memory-mapped
-      to simplify the hardware design. It has been designed around a transport triggered architecture.
-
-      <h2><a name="set">Instruction Set</a></h2>
-      <table id="ops">
-				<tr style="font-weight: bold;">
-					<td style="width: 80px;">Opcode<sub>2</sub>
-					<td style="width: 80px;">Opcode<sub>10</sub></td>
-					<td style="width: 80px;">Name</td>
-					<td style="width: 130px;">Arguments</td>
-					<td>Description</td>
-				</tr>
-				<tr><td>000</td><td>0</td><td>stop</td><td>none</td><td>stops the computer</td></tr>
-				<tr><td>001</td><td>1</td><td>return</td><td>none</td><td>returns to function call (and moves to the previous frame)</td></tr>
-        <tr><td>010</td><td>2</td><td>goto</td><td>address</td><td>sets the program counter to the specified address</td></tr>
-				<tr><td>011</td><td>3</td><td>call</td><td>address</td><td>calls the function at the given address (moves to next frame up)</td></tr>
-				<tr><td>100</td><td>4</td><td>write</td><td>data, address</td><td>writes the data to the address</td></tr>
-				<tr><td>101</td><td>5</td><td>copy</td><td>address, address</td><td>writes the data at the first address to the second</td></tr>
-      </table>
+  <div id="nav-bar">
+    <div id="back-button" class="button">
+      <img class="manual_nav_button" src="../assets/icons/left-arrow.svg"/>
+    </div>
+    <div id="forward-button" class="button">
+      <img class="manual_nav_button" src="../assets/icons/right-arrow.svg"/>
     </div>
   </div>
-  
+  <div id="main">
+    <div class="card rendered-md" id="content"></div>
+  </div>
 </body>
 </html>
