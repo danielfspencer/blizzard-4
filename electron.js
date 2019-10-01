@@ -1,4 +1,4 @@
-const {app, BrowserWindow} = require('electron')
+const { app, BrowserWindow } = require('electron')
 let mainWindow
 
 app.on('ready', () => {
@@ -21,7 +21,7 @@ app.on('ready', () => {
   mainWindow.webContents.on('new-window', centre_window)
 })
 
-function centre_window(event, url, frameName, disposition, options) {
+function centre_window (event, url, frameName, disposition, options) {
   event.preventDefault()
   options.x = undefined
   options.y = undefined

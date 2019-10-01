@@ -24,12 +24,12 @@ const tools = {
   },
   files: {
     load: (event, callback) => {
-      let file = event.target.files[0]
+      const file = event.target.files[0]
       if (!file) {
         return
       }
 
-      let reader = new FileReader()
+      const reader = new FileReader()
       reader.fileName = file.name
       reader.onload = (event) => {
         callback(event.target.result)
@@ -39,9 +39,9 @@ const tools = {
   },
   storage: {
     get_key: (key, callback, default_value) => {
-      if (tools.platform() ==='chrome_app') {
+      if (tools.platform() === 'chrome_app') {
         chrome.storage.local.get([key], (items) => {
-          let result = items[key]
+          const result = items[key]
           if (result === undefined) {
             callback(default_value)
           } else {
@@ -49,7 +49,7 @@ const tools = {
           }
         })
       } else {
-        let result = localStorage.getItem(key)
+        const result = localStorage.getItem(key)
         if (result === null) {
           callback(default_value)
         } else {
@@ -62,8 +62,8 @@ const tools = {
       }
     },
     set_key: (key, value) => {
-      if (tools.platform() ==='chrome_app') {
-        let obj = {}
+      if (tools.platform() === 'chrome_app') {
+        const obj = {}
         obj[key] = value
         chrome.storage.local.set(obj)
       } else {
@@ -71,7 +71,7 @@ const tools = {
       }
     },
     clear: () => {
-      if (tools.platform() ==='chrome_app') {
+      if (tools.platform() === 'chrome_app') {
         chrome.storage.local.clear()
       } else {
         localStorage.clear()

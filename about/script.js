@@ -1,49 +1,49 @@
-var version = ""
+var version = ''
 
-$( document ).ready( () => {
+$(document).ready(() => {
   $.ajaxSetup({ cache: false }) // do not cache requests to check for latest version!
-  $( "#licence" ).click( () => {
-    windows.open("about/licence.html", 560, 800)
+  $('#licence').click(() => {
+    windows.open('about/licence.html', 560, 800)
   })
 
-  $( "#github" ).click( () => {
-    windows.open_external("https://github.com/danielfspencer")
+  $('#github').click(() => {
+    windows.open_external('https://github.com/danielfspencer')
   })
 
-  $( "#website" ).click( () => {
-    windows.open_external("https://github.com/danielfspencer/blizzard-4")
+  $('#website').click(() => {
+    windows.open_external('https://github.com/danielfspencer/blizzard-4')
   })
 
-  $( "#close" ).click(() => window.close())
+  $('#close').click(() => window.close())
 
-  $.getJSON("../manifest.json")
-    .done( (data) => {
-      version = data["version_name"]
-      $("#version-name").html(version)
-  })
+  $.getJSON('../manifest.json')
+    .done((data) => {
+      version = data.version_name
+      $('#version-name').html(version)
+    })
 
-  $.getJSON("https://danielfspencer.github.io/blizzard-4/manifest.json")
-    .done( (data) => {
-      var latest_version = data["version_name"]
+  $.getJSON('https://danielfspencer.github.io/blizzard-4/manifest.json')
+    .done((data) => {
+      var latest_version = data.version_name
       if (version !== latest_version) {
-        $("#version-status").html(" (newer version " + latest_version + " available)")
+        $('#version-status').html(' (newer version ' + latest_version + ' available)')
       } else {
-        $("#version-status").html(" (up to date)")
+        $('#version-status').html(' (up to date)')
       }
     })
-    .fail( () => {
-      $("#version-status").html(" (error checking for new version)")
+    .fail(() => {
+      $('#version-status').html(' (error checking for new version)')
     })
 })
 
 /* theme setting */
 
-function set_theme(name) {
+function set_theme (name) {
   $.ajax({
     url: `../assets/themes/${name}.css`,
     dataType: 'text',
     success: (data) => {
-      let style_tag = document.createElement('style')
+      const style_tag = document.createElement('style')
       style_tag.innerHTML = data
       document.body.appendChild(style_tag)
     }

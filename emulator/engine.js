@@ -2,64 +2,64 @@ init_memory()
 init_rom()
 init_emulator()
 
-function benchmark() {
+function benchmark () {
   rom[0] = 0b1000000000000000
   rom[1] = 0b1010101010101010
   rom[2] = 0b0101010101010101
   rom[3] = 0b0100000000000000
-  console.time("time")
+  console.time('time')
   is_running = true
   run_batch(5000000)
   is_running = false
-  console.timeEnd("time")
+  console.timeEnd('time')
 }
 
-function init_memory() {
-  //system buses
+function init_memory () {
+  // system buses
   write_bus = 0
   data_bus = 0
   read_bus = 0
 
-  //control unit registers
-  program_counter = 32768  // 1st word of ROM
+  // control unit registers
+  program_counter = 32768 // 1st word of ROM
   command_word = 0
   control_mode = 0
   args_remaining = 0
-  arg_regs = [0,0,0]
+  arg_regs = [0, 0, 0]
   conditional_bit = 0
   frame_number = 0
 
-  //memory spaces
-  ram  = create_zeroed_array(1024 * 16) //16k x 16 bit (32KB)
-  //rom is done separately
+  // memory spaces
+  ram = create_zeroed_array(1024 * 16) // 16k x 16 bit (32KB)
+  // rom is done separately
   vram = create_zeroed_array(1024 * 1) // 1k x 16 bit (2KB)
 
-  //256 x 8 bit FIFO buffer for key presses
-  key_fifo = [0xAA]  //0xaa means keyobard self test OK
+  // 256 x 8 bit FIFO buffer for key presses
+  key_fifo = [0xAA] // 0xaa means keyobard self test OK
 
-  //other registers
-  alu_operands = [0,0]
-  user_input = [0,0]
-  user_output = [0,0,0]
+  // other registers
+  alu_operands = [0, 0]
+  user_input = [0, 0]
+  user_output = [0, 0, 0]
 
-  //misc controls
+  // misc controls
   direct_ram_addressing = false
 }
 
-function init_rom() {
-  rom  = create_zeroed_array(1024 * 32) //32k x 16 bit (64KB)
+function init_rom () {
+  rom = create_zeroed_array(1024 * 32) // 32k x 16 bit (64KB)
   write_protect = false
 }
 
-function create_zeroed_array(length) {
-  let array = Array(length).fill(0)
+function create_zeroed_array (length) {
+  const array = Array(length).fill(0)
   return array
 }
 
-function init_emulator() {
+function init_emulator () {
   debug = false
   is_running = false
-  first_clock = false //the clock is a one-two beat so first_clock is true when on the 'one' beat
+  first_clock = false // the clock is a one-two beat so first_clock is true when on the 'one' beat
   total_cycles = 0
   total_spare_cycles = 0
   temp_cycles = 0
@@ -75,84 +75,84 @@ function init_emulator() {
   init_buffered_instructions()
 }
 
-function init_buffered_instructions() {
+function init_buffered_instructions () {
   buffered_instructions = {
-    "increment_mode": false,
-    "decrement_arg_counter": false
+    increment_mode: false,
+    decrement_arg_counter: false
   }
 }
 
-function init_activity_indicators() {
+function init_activity_indicators () {
   activity_indicators = {
-    "alu1_write":0,
-    "alu2_write":0,
-    "alu_read":0,
-    "ram_address":0,
-    "ram_read":0,
-    "ram_write":0,
-    "ram_frame_offset":0,
-    "rom_address":0,
-    "rom_read":0,
-    "rom_write":0,
-    "vram_address":0,
-    "vram_read":0,
-    "vram_write": 0
+    alu1_write: 0,
+    alu2_write: 0,
+    alu_read: 0,
+    ram_address: 0,
+    ram_read: 0,
+    ram_write: 0,
+    ram_frame_offset: 0,
+    rom_address: 0,
+    rom_read: 0,
+    rom_write: 0,
+    vram_address: 0,
+    vram_read: 0,
+    vram_write: 0
   }
 }
 
-//control unit microcode
+// control unit microcode
 const load_fetch_microcode = [
-  [0,0,1,1,0,0,0,0,0],
-  [1,1,0,0,0,0,0,0,0],
-  [0,0,1,1,0,0,0,0,0],
-  [1,1,0,0,0,0,0,0,0],
-  [0,0,1,1,0,0,0,0,0],
-  [1,1,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,1,0,0,0,0,0,0],
-  [0,0,0,1,1,0,1,0,1],
-  [1,0,0,0,0,1,0,0,0],
-  [0,0,0,1,1,0,1,1,0],
-  [1,0,0,0,0,1,0,0,0],
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0]
+  [0, 0, 1, 1, 0, 0, 0, 0, 0],
+  [1, 1, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 1, 1, 0, 0, 0, 0, 0],
+  [1, 1, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 1, 1, 0, 0, 0, 0, 0],
+  [1, 1, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 1, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 1, 1, 0, 1, 0, 1],
+  [1, 0, 0, 0, 0, 1, 0, 0, 0],
+  [0, 0, 0, 1, 1, 0, 1, 1, 0],
+  [1, 0, 0, 0, 0, 1, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0]
 ]
 
 const execute_microcode = [
-  [0,0,0,0,0,0,0,0,0,0,0,0],
-  [1,0,0,0,0,0,0,0,0,0,0,1],
-  [0,0,0,1,0,0,0,0,0,0,0,1],
-  [0,1,0,0,0,0,0,0,1,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,1,0,0,0,0,0,1],
-  [0,0,0,0,1,1,0,0,0,0,0,1],
-  [0,0,1,0,0,0,0,0,0,0,1,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,1,0,0,1,0,1],
-  [0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,1,0,1,0,1]
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+  [0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+  [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1],
+  [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1]
 ]
 
 onmessage = (event) => {
   var message = event.data
   switch (message[0]) {
-    case "start":
+    case 'start':
       start()
       break
-    case "stop":
+    case 'stop':
       stop()
       break
-    case "set_rom":
-      //rom data is a string with lines breaks between the words
-      var strings_as_array = message[1].split("\n")
+    case 'set_rom':
+      // rom data is a string with lines breaks between the words
+      var strings_as_array = message[1].split('\n')
       if (strings_as_array.length < rom.length) {
         for (var i = 0; i < strings_as_array.length; i++) {
-          if (strings_as_array[i] == "") {
+          if (strings_as_array[i] == '') {
             break
           }
-          var number = parseInt(strings_as_array[i],2)
+          var number = parseInt(strings_as_array[i], 2)
           if (number >= 0 && number <= 0xffff) {
             rom[i] = number
           } else {
@@ -160,62 +160,62 @@ onmessage = (event) => {
           }
         }
       } else {
-        console.error("Program too large for ROM")
+        console.error('Program too large for ROM')
       }
       break
-    case "clock_high":
+    case 'clock_high':
       if (!is_running) {
         step_clock()
         send_front_panel_info()
         send_vram_changes()
-        postMessage(["changed"])
+        postMessage(['changed'])
       }
       break
-    case "clock_low":
+    case 'clock_low':
       if (!is_running) {
         zero_busses()
         send_front_panel_info()
         send_vram_changes()
-        postMessage(["changed"])
+        postMessage(['changed'])
       }
       break
-    case "reset":
+    case 'reset':
       stop()
       init_memory()
       init_emulator()
       send_front_panel_info()
       send_vram_changes()
-      postMessage(["changed"])
+      postMessage(['changed'])
       break
-    case "request_front_panel_info":
+    case 'request_front_panel_info':
       send_front_panel_info()
       break
-    case "request_vram_changes":
+    case 'request_vram_changes':
       send_vram_changes()
       break
-    case "user_input_update":
+    case 'user_input_update':
       user_input = message[1]
       break
-    case "bus_read":
+    case 'bus_read':
       if (!is_running) {
         read_bus = user_input[2]
         simulate_effect_of_read_bus_change()
         send_front_panel_info()
         send_vram_changes()
-        postMessage(["changed"])
+        postMessage(['changed'])
       }
       break
-    case "bus_write":
+    case 'bus_write':
       if (!is_running) {
         write_bus = user_input[0]
         data_bus = user_input[1]
         simulate_effect_of_write_bus_change()
         send_front_panel_info()
         send_vram_changes()
-        postMessage(["changed"])
+        postMessage(['changed'])
       }
       break
-    case "bus_copy":
+    case 'bus_copy':
       if (!is_running) {
         write_bus = user_input[0]
         read_bus = user_input[2]
@@ -223,160 +223,160 @@ onmessage = (event) => {
         simulate_effect_of_write_bus_change()
         send_front_panel_info()
         send_vram_changes()
-        postMessage(["changed"])
+        postMessage(['changed'])
       }
       break
-    case "key_code":
+    case 'key_code':
       if (key_fifo.length < 256) {
-        key_fifo.push.apply(key_fifo,message[1])
+        key_fifo.push.apply(key_fifo, message[1])
       }
       break
-    case "set_clock":
+    case 'set_clock':
       target_cycles_per_second = message[1]
       cycles_per_batch = Math.floor(target_cycles_per_second / 100)
       break
-    case "write_protect_change":
+    case 'write_protect_change':
       write_protect = message[1]
       break
-    case "benchmark":
+    case 'benchmark':
       benchmark()
       break
     default:
-      console.error("Unknown command '"+ message[0] +"'")
+      console.error("Unknown command '" + message[0] + "'")
       break
   }
 }
 
-function measure_frequency() {
+function measure_frequency () {
   actual_cycles_per_second = temp_cycles * 10
   temp_cycles = 0
 }
 
-function send_front_panel_info() {
+function send_front_panel_info () {
   var data = {
-    "clock_speed": actual_cycles_per_second,
-    "program_counter":  program_counter,
-    "command_word": command_word,
-    "control_mode": control_mode,
-    "args_remaining": args_remaining,
-    "arg_regs": arg_regs,
-    "conditional_bit": conditional_bit,
-    "frame_number": frame_number,
-    "user_output": user_output,
-    "write_bus": write_bus,
-    "data_bus": data_bus,
-    "read_bus": read_bus,
-    "alu_operands": alu_operands,
-    "activity_indicators": activity_indicators,
-    "ram_addr_mode": direct_ram_addressing
+    clock_speed: actual_cycles_per_second,
+    program_counter: program_counter,
+    command_word: command_word,
+    control_mode: control_mode,
+    args_remaining: args_remaining,
+    arg_regs: arg_regs,
+    conditional_bit: conditional_bit,
+    frame_number: frame_number,
+    user_output: user_output,
+    write_bus: write_bus,
+    data_bus: data_bus,
+    read_bus: read_bus,
+    alu_operands: alu_operands,
+    activity_indicators: activity_indicators,
+    ram_addr_mode: direct_ram_addressing
   }
-  postMessage(["front_panel_info",data])
+  postMessage(['front_panel_info', data])
 }
 
-function send_vram_changes() {
-  //vram_addresses_changed stores the addresses that have been changed as keys - this is because testing for
-  //the existance of a key is much faster than array.includes()
+function send_vram_changes () {
+  // vram_addresses_changed stores the addresses that have been changed as keys - this is because testing for
+  // the existance of a key is much faster than array.includes()
 
-  let vram_changes_buffer = []
-  for (let address in vram_addresses_changed) {
-    let data = vram[address]
-    vram_changes_buffer.push([address,data])
+  const vram_changes_buffer = []
+  for (const address in vram_addresses_changed) {
+    const data = vram[address]
+    vram_changes_buffer.push([address, data])
   }
-  postMessage(["vram_changes",vram_changes_buffer])
+  postMessage(['vram_changes', vram_changes_buffer])
   vram_addresses_changed = {}
   send_ram_changes()
 }
 
-function send_ram_changes() {
-  let ram_changes_buffer = []
-  for (let address in ram_addresses_changed) {
-    let data = ram[address]
-    ram_changes_buffer.push([address,data])
+function send_ram_changes () {
+  const ram_changes_buffer = []
+  for (const address in ram_addresses_changed) {
+    const data = ram[address]
+    ram_changes_buffer.push([address, data])
   }
-  postMessage(["ram_changes",ram_changes_buffer])
+  postMessage(['ram_changes', ram_changes_buffer])
   ram_addresses_changed = {}
 }
 
-function vram_change(address, new_data) {
-  activity_indicators["vram_write"] = 1
+function vram_change (address, new_data) {
+  activity_indicators.vram_write = 1
   vram[address] = new_data
   if (vram_addresses_changed[address] === undefined) {
     vram_addresses_changed[address] = true
   }
 }
 
-function ram_change(address, new_data) {
-  activity_indicators["ram_write"] = 1
+function ram_change (address, new_data) {
+  activity_indicators.ram_write = 1
   ram[address] = new_data
   if (ram_addresses_changed[address] === undefined) {
     ram_addresses_changed[address] = true
   }
 }
 
-function get_timer_value() {
-  let cycles = total_cycles - cycle_count_when_timer_last_reset
-  let time_sec = cycles / actual_cycles_per_second
-  let value = time_sec * 8192   // 8192 counts per second
+function get_timer_value () {
+  const cycles = total_cycles - cycle_count_when_timer_last_reset
+  const time_sec = cycles / actual_cycles_per_second
+  const value = time_sec * 8192 // 8192 counts per second
 
-  let low_word = value & 0xffff
-  let high_word = (value >> 16) & 0xffff
+  const low_word = value & 0xffff
+  const high_word = (value >> 16) & 0xffff
 
-  return [low_word,high_word]
+  return [low_word, high_word]
 }
 
-function reset_timer() {
+function reset_timer () {
   cycle_count_when_timer_last_reset = total_cycles
 }
 
-function start() {
+function start () {
   if (!is_running) {
     debug = false
     is_running = true
-    //set a timer to run the calculated number of cycles every 10ms that will equate to the target_cycles_per_second
+    // set a timer to run the calculated number of cycles every 10ms that will equate to the target_cycles_per_second
     interval_timer = setInterval(() => { run_batch(cycles_per_batch) }, 10)
     frequency_measurement_timer = setInterval(measure_frequency, 100)
-    postMessage(["started"])
+    postMessage(['started'])
   }
 }
 
-function stop() {
+function stop () {
   if (is_running) {
     is_running = false
     clearInterval(interval_timer)
     clearInterval(frequency_measurement_timer)
-    postMessage(["stopped"])
+    postMessage(['stopped'])
   } else {
-    postMessage(["stop"])
+    postMessage(['stop'])
   }
 }
 
-function halt_error(message) {
+function halt_error (message) {
   console.error(message)
   stop()
 }
 
-function run_batch(cycles) {
+function run_batch (cycles) {
   while (cycles-- >= 1 && is_running) {
     zero_busses()
     step_clock()
   }
 }
 
-function get_padded_num(number,num_zeroes,base) {
-  var string = "0".repeat(num_zeroes)
+function get_padded_num (number, num_zeroes, base) {
+  var string = '0'.repeat(num_zeroes)
   string += number.toString(base)
   return string.slice(-num_zeroes)
 }
 
-function step_clock() {
+function step_clock () {
   first_clock = !first_clock
-  debug && console.debug("---clock rising edge:")
-  debug && console.debug(" ↳ is first clock? " + first_clock)
-  debug && console.debug(" ↳ control mode: " + control_mode.toString())
+  debug && console.debug('---clock rising edge:')
+  debug && console.debug(' ↳ is first clock? ' + first_clock)
+  debug && console.debug(' ↳ control mode: ' + control_mode.toString())
 
-  debug && console.debug("---running data bus-modifying microcode:")
-  //run contol unit commands that modify (directly or indirectly) the data bus
-  if (control_mode === 2) { //the control unit is in execute mode
+  debug && console.debug('---running data bus-modifying microcode:')
+  // run contol unit commands that modify (directly or indirectly) the data bus
+  if (control_mode === 2) { // the control unit is in execute mode
     var instructions = get_execute_microcode_instructions()
     run_execute_microcode_1st_stage(instructions)
   } else {
@@ -384,37 +384,37 @@ function step_clock() {
     run_load_fetch_microcode_1st_stage(instructions)
   }
 
-  debug && console.debug("---new state:")
-  debug && console.debug(" ↳ read bus: " + read_bus.toString())
-  debug && console.debug(" ↳ data bus: " + data_bus.toString())
-  debug && console.debug(" ↳ write bus: " + write_bus.toString())
+  debug && console.debug('---new state:')
+  debug && console.debug(' ↳ read bus: ' + read_bus.toString())
+  debug && console.debug(' ↳ data bus: ' + data_bus.toString())
+  debug && console.debug(' ↳ write bus: ' + write_bus.toString())
 
-  //simulate read bus if it has been used
-  debug && console.debug("simulating read bus with content: " + read_bus.toString())
+  // simulate read bus if it has been used
+  debug && console.debug('simulating read bus with content: ' + read_bus.toString())
   if (read_bus !== 0) {
     simulate_effect_of_read_bus_change()
   }
 
-  debug && console.debug("---running data bus-dependant microcode: ")
-  //run control unit commands that depend (directly or indirectly) on the data bus
-  if (control_mode === 2) { //the control unit is in execute mode
+  debug && console.debug('---running data bus-dependant microcode: ')
+  // run control unit commands that depend (directly or indirectly) on the data bus
+  if (control_mode === 2) { // the control unit is in execute mode
     run_execute_microcode_2nd_stage(instructions)
   } else {
     run_load_fetch_microcode_2nd_stage(instructions)
   }
 
-  debug && console.debug("---new state:")
-  debug && console.debug(" ↳ read bus: " + read_bus.toString())
-  debug && console.debug(" ↳ data bus: " + data_bus.toString())
-  debug && console.debug(" ↳ write bus: " + write_bus.toString())
+  debug && console.debug('---new state:')
+  debug && console.debug(' ↳ read bus: ' + read_bus.toString())
+  debug && console.debug(' ↳ data bus: ' + data_bus.toString())
+  debug && console.debug(' ↳ write bus: ' + write_bus.toString())
 
-  //simulate write bus
-  debug && console.debug("simulating write bus with content: " + write_bus.toString())
+  // simulate write bus
+  debug && console.debug('simulating write bus with content: ' + write_bus.toString())
   if (write_bus !== 0) {
     simulate_effect_of_write_bus_change()
   }
 
-  debug && console.debug("---clock falling edge")
+  debug && console.debug('---clock falling edge')
   run_buffered_instructions()
 
   if ((write_bus + read_bus + data_bus) == 0) {
@@ -424,7 +424,7 @@ function step_clock() {
   temp_cycles++
 }
 
-function zero_busses() {
+function zero_busses () {
   write_bus = 0
   read_bus = 0
   data_bus = 0
@@ -432,23 +432,21 @@ function zero_busses() {
   init_activity_indicators()
 }
 
-function simulate_effect_of_read_bus_change() {
-
+function simulate_effect_of_read_bus_change () {
   if (data_bus !== 0) {
-    halt_error("Data bus is not free for write - check microcode")
+    halt_error('Data bus is not free for write - check microcode')
   }
   if (read_bus < 0 || read_bus > 65535) {
-    halt_error("Read bus has an invalid value - check microcode")
+    halt_error('Read bus has an invalid value - check microcode')
   }
 
-  if (read_bus > 32767) {                                                 // ROM
+  if (read_bus > 32767) { // ROM
     var address = read_bus - 32768
-    activity_indicators["rom_read"] = 1
-    activity_indicators["rom_address"] = address
+    activity_indicators.rom_read = 1
+    activity_indicators.rom_address = address
     data_bus = rom[address]
-
-  } else if (read_bus > 16383) {                                          // RAM
-    activity_indicators["ram_read"] = 1
+  } else if (read_bus > 16383) { // RAM
+    activity_indicators.ram_read = 1
 
     if (direct_ram_addressing) {
       var address = read_bus - 16384
@@ -458,37 +456,36 @@ function simulate_effect_of_read_bus_change() {
       var address = read_bus & 0b0000001111111111
 
       switch (frame_offset_selector) {
-        case 0:   //frame below
+        case 0: // frame below
           address += (frame_number - 1) * 1024
-          activity_indicators["ram_frame_offset"] = 2
+          activity_indicators.ram_frame_offset = 2
           break
-        case 1:   //current frame
+        case 1: // current frame
           address += frame_number * 1024
-          activity_indicators["ram_frame_offset"] = 4
+          activity_indicators.ram_frame_offset = 4
           break
-        case 2:   //frame above
+        case 2: // frame above
           address += (frame_number + 1) * 1024
-          activity_indicators["ram_frame_offset"] = 8
+          activity_indicators.ram_frame_offset = 8
           break
-        case 3:  //top frame
+        case 3: // top frame
           address += 15 * 1024
-          activity_indicators["ram_frame_offset"] = 1
+          activity_indicators.ram_frame_offset = 1
           break
       }
 
       if (address < 0) {
-        halt_error("invalid address for ram")
+        halt_error('invalid address for ram')
       } else {
         data_bus = ram[address]
       }
     }
-    activity_indicators["ram_address"] = address
-
-  } else if (read_bus < 16384) {                                          //everywhere else (card addressing)
+    activity_indicators.ram_address = address
+  } else if (read_bus < 16384) { // everywhere else (card addressing)
     var card_address = (read_bus & 0b0011100000000000) >> 11
     var address = read_bus & 0b0000011111111111
 
-    switch (card_address) {                                               //control unit
+    switch (card_address) { // control unit
       case 0:
         switch (address) {
           case 1:
@@ -506,51 +503,51 @@ function simulate_effect_of_read_bus_change() {
             break
         }
         break
-      case 1:                                                             //alu
+      case 1: // alu
         switch (address) {
           case 2:
             data_bus = alu_operands[0] + alu_operands[1]
-            activity_indicators["alu_read"] = 2 ** 10
+            activity_indicators.alu_read = 2 ** 10
             break
           case 3:
             data_bus = alu_operands[0] - alu_operands[1]
-            activity_indicators["alu_read"] = 2 ** 9
+            activity_indicators.alu_read = 2 ** 9
             break
           case 4:
             data_bus = alu_operands[0] >> 1
-            activity_indicators["alu_read"] = 2 ** 8
+            activity_indicators.alu_read = 2 ** 8
             break
           case 5:
             data_bus = alu_operands[0] << 1
-            activity_indicators["alu_read"] = 2 ** 7
+            activity_indicators.alu_read = 2 ** 7
             break
           case 6:
             data_bus = alu_operands[0] & alu_operands[1]
-            activity_indicators["alu_read"] = 2 ** 6
+            activity_indicators.alu_read = 2 ** 6
             break
           case 7:
             data_bus = alu_operands[0] | alu_operands[1]
-            activity_indicators["alu_read"] = 2 ** 5
+            activity_indicators.alu_read = 2 ** 5
             break
           case 8:
             data_bus = alu_operands[0] ^ 0xffff
-            activity_indicators["alu_read"] = 2 ** 4
+            activity_indicators.alu_read = 2 ** 4
             break
           case 9:
             data_bus = alu_operands[0] > alu_operands[1] ? 1 : 0
-            activity_indicators["alu_read"] = 2 ** 3
+            activity_indicators.alu_read = 2 ** 3
             break
           case 10:
             data_bus = alu_operands[0] < alu_operands[1] ? 1 : 0
-            activity_indicators["alu_read"] = 2 ** 2
+            activity_indicators.alu_read = 2 ** 2
             break
           case 11:
             data_bus = alu_operands[0] == alu_operands[1] ? 1 : 0
-            activity_indicators["alu_read"] = 2
+            activity_indicators.alu_read = 2
             break
           case 12:
             data_bus = (alu_operands[0] + alu_operands[1]) > 0xffff ? 1 : 0
-            activity_indicators["alu_read"] = 1
+            activity_indicators.alu_read = 1
             break
           default:
             break
@@ -558,18 +555,18 @@ function simulate_effect_of_read_bus_change() {
 
         data_bus = data_bus & 0xffff
         break
-      case 2:                                                             //user io
+      case 2: // user io
         if (address < 3) {
           data_bus = user_input[address]
         }
         break
-      case 3:                                                             //video adapter
+      case 3: // video adapter
         if (address < 1024) {
           data_bus = vram[address]
-          activity_indicators["vram_read"] = 1
+          activity_indicators.vram_read = 1
         }
         break
-      case 4:                                                             //keyboard interface
+      case 4: // keyboard interface
 
         switch (address) {
           case 0:
@@ -592,24 +589,23 @@ function simulate_effect_of_read_bus_change() {
   }
 
   if (data_bus === undefined) {
-    halt_error("read-bus change gave data bus an invalid value")
+    halt_error('read-bus change gave data bus an invalid value')
   }
 }
 
-function simulate_effect_of_write_bus_change() {
+function simulate_effect_of_write_bus_change () {
   if (write_bus < 0 || write_bus > 65535) {
-    halt_error("Write bus has an invalid value - check microcode")
+    halt_error('Write bus has an invalid value - check microcode')
   }
 
-  if (write_bus > 32767) {                                                 // ROM
+  if (write_bus > 32767) { // ROM
     var address = write_bus - 32768
-    activity_indicators["rom_write"] = 1
-    activity_indicators["rom_address"] = address
+    activity_indicators.rom_write = 1
+    activity_indicators.rom_address = address
     if (!write_protect) {
       rom[address] = data_bus
     }
-
-  } else if (write_bus > 16383) {                                          // RAM
+  } else if (write_bus > 16383) { // RAM
     let address = 0
     if (direct_ram_addressing) {
       address = write_bus - 16384
@@ -618,37 +614,36 @@ function simulate_effect_of_write_bus_change() {
       address = write_bus & 0b0000001111111111
 
       switch (frame_offset_selector) {
-        case 0:   //frame below
+        case 0: // frame below
           address += (frame_number - 1) * 1024
-          activity_indicators["ram_frame_offset"] = 2
+          activity_indicators.ram_frame_offset = 2
           break
-        case 1:   //current frame
+        case 1: // current frame
           address += frame_number * 1024
-          activity_indicators["ram_frame_offset"] = 4
+          activity_indicators.ram_frame_offset = 4
           break
-        case 2:   //frame above
+        case 2: // frame above
           address += (frame_number + 1) * 1024
-          activity_indicators["ram_frame_offset"] = 8
+          activity_indicators.ram_frame_offset = 8
           break
-        case 3:  //top frame
+        case 3: // top frame
           address += 15 * 1024
-          activity_indicators["ram_frame_offset"] = 1
+          activity_indicators.ram_frame_offset = 1
           break
       }
 
       if (address < 0) {
-        halt_error("invalid address for ram")
+        halt_error('invalid address for ram')
       } else {
         ram_change(address, data_bus)
       }
     }
-    activity_indicators["ram_address"] = address
-
-  } else if (write_bus < 16384) {                                          //everywhere else (card addressing)
+    activity_indicators.ram_address = address
+  } else if (write_bus < 16384) { // everywhere else (card addressing)
     var card_address = (write_bus & 0b0011100000000000) >> 11
     var address = write_bus & 0b0000011111111111
 
-    switch (card_address) {                                               //control unit
+    switch (card_address) { // control unit
       case 0:
         switch (address) {
           case 1:
@@ -667,26 +662,26 @@ function simulate_effect_of_write_bus_change() {
             break
         }
         break
-      case 1:                                                             //alu
+      case 1: // alu
         if (address == 0) {
           alu_operands[0] = data_bus
-          activity_indicators["alu1_write"] = 1
+          activity_indicators.alu1_write = 1
         } else if (address == 1) {
           alu_operands[1] = data_bus
-          activity_indicators["alu2_write"] = 1
+          activity_indicators.alu2_write = 1
         }
         break
-      case 2:                                                             //user io
+      case 2: // user io
         if (address < 6 && address > 2) {
           user_output[address - 3] = data_bus
         }
         break
-      case 3:                                                             //video adapter
+      case 3: // video adapter
         if (address < 1024) {
           vram_change(address, data_bus)
         }
         break
-      case 4:                                                             //keyboard interface
+      case 4: // keyboard interface
         break
       default:
         break
@@ -694,7 +689,7 @@ function simulate_effect_of_write_bus_change() {
   }
 }
 
-function get_load_fetch_microcode_instructions() {
+function get_load_fetch_microcode_instructions () {
   var exe_mode = control_mode << 3
   var arg_count = args_remaining << 1
   var clock = first_clock ? 1 : 0
@@ -702,31 +697,31 @@ function get_load_fetch_microcode_instructions() {
   var instructions = load_fetch_microcode[address]
 
   if (instructions === undefined) {
-    halt_error("Invalid adddress for microcode")
+    halt_error('Invalid adddress for microcode')
   }
 
-  debug && console.debug("load/fetch microcode address: " + get_padded_num(address,4,2))
-  debug && console.debug(" ↳ instructions: " + JSON.stringify(instructions))
+  debug && console.debug('load/fetch microcode address: ' + get_padded_num(address, 4, 2))
+  debug && console.debug(' ↳ instructions: ' + JSON.stringify(instructions))
   return instructions
 }
 
-function get_execute_microcode_instructions() {
+function get_execute_microcode_instructions () {
   var opcode = command_word >> 13
   var clock = first_clock ? 1 : 0
-  var address = (opcode << 1)  + clock
+  var address = (opcode << 1) + clock
   var instructions = execute_microcode[address]
 
   if (instructions === undefined) {
-    halt_error("Invalid adddress for microcode")
+    halt_error('Invalid adddress for microcode')
   }
 
-  debug && console.debug("execute microcode address: " + get_padded_num(address,4,2))
-  debug && console.debug(" ↳ instructions: " + JSON.stringify(instructions))
+  debug && console.debug('execute microcode address: ' + get_padded_num(address, 4, 2))
+  debug && console.debug(' ↳ instructions: ' + JSON.stringify(instructions))
   return instructions
 }
 
-function run_load_fetch_microcode_1st_stage(instructions) {
-  debug && console.debug("running instructions: " + JSON.stringify(instructions))
+function run_load_fetch_microcode_1st_stage (instructions) {
+  debug && console.debug('running instructions: ' + JSON.stringify(instructions))
 
   instructions[0] && pc_to_read_bus()
   instructions[2] && increment_mode()
@@ -735,8 +730,8 @@ function run_load_fetch_microcode_1st_stage(instructions) {
   instructions[6] && arg3_to_selected_bus()
 }
 
-function run_load_fetch_microcode_2nd_stage(instructions) {
-  debug && console.debug("running instructions: " + JSON.stringify(instructions))
+function run_load_fetch_microcode_2nd_stage (instructions) {
+  debug && console.debug('running instructions: ' + JSON.stringify(instructions))
 
   instructions[1] && data_bus_to_cmd_reg()
   instructions[5] && data_bus_to_arg3()
@@ -744,26 +739,26 @@ function run_load_fetch_microcode_2nd_stage(instructions) {
   instructions[8] && data_bus_to_arg2()
 }
 
-function run_execute_microcode_1st_stage(instructions) {
-  debug && console.debug("running instructions: " + JSON.stringify(instructions))
+function run_execute_microcode_1st_stage (instructions) {
+  debug && console.debug('running instructions: ' + JSON.stringify(instructions))
 
   if (conditional_bit && (command_word & 1) == 1) {
-    debug && console.log("execute disabled due to cnd bit")
+    debug && console.log('execute disabled due to cnd bit')
     increment_mode()
     return
   }
 
-  instructions[0]  && clock_stop()
-  instructions[1]  && ram_caller_pointer_to_read_bus()
-  instructions[5]  && arg2_to_pc()
-  instructions[6]  && arg1_to_data_bus()
-  instructions[7]  && arg1_to_read_bus()
+  instructions[0] && clock_stop()
+  instructions[1] && ram_caller_pointer_to_read_bus()
+  instructions[5] && arg2_to_pc()
+  instructions[6] && arg1_to_data_bus()
+  instructions[7] && arg1_to_read_bus()
   instructions[10] && pc_to_data_bus()
   instructions[11] && increment_mode()
 }
 
-function run_execute_microcode_2nd_stage(instructions) {
-  debug && console.debug("running instructions: " + JSON.stringify(instructions))
+function run_execute_microcode_2nd_stage (instructions) {
+  debug && console.debug('running instructions: ' + JSON.stringify(instructions))
 
   instructions[2] && ram_caller_pointer_to_write_bus()
   instructions[3] && decrement_frame_no()
@@ -772,9 +767,9 @@ function run_execute_microcode_2nd_stage(instructions) {
   instructions[9] && arg2_to_write_bus()
 }
 
-function run_buffered_instructions() {
-  if (buffered_instructions["increment_mode"]) {
-    debug && console.debug("increment_mode")
+function run_buffered_instructions () {
+  if (buffered_instructions.increment_mode) {
+    debug && console.debug('increment_mode')
     first_clock = false
     if (control_mode < 2) {
       control_mode++
@@ -783,39 +778,39 @@ function run_buffered_instructions() {
     }
   }
 
-  if (buffered_instructions["decrement_arg_counter"]) {
-    debug && console.debug("decrement_arg_counter")
+  if (buffered_instructions.decrement_arg_counter) {
+    debug && console.debug('decrement_arg_counter')
     args_remaining--
   }
 
-  init_buffered_instructions() //this sets them all to false because we are finished
+  init_buffered_instructions() // this sets them all to false because we are finished
 }
 
-//--------------------microcode instructions
+// --------------------microcode instructions
 
-//arg reg
-function arg1_to_read_bus() {
-  debug && console.debug("arg1_to_read_bus")
+// arg reg
+function arg1_to_read_bus () {
+  debug && console.debug('arg1_to_read_bus')
   read_bus = arg_regs[0]
 }
 
-function arg1_to_data_bus() {
-  debug && console.debug("arg1_to_data_bus")
+function arg1_to_data_bus () {
+  debug && console.debug('arg1_to_data_bus')
   data_bus = arg_regs[0]
 }
 
-function arg2_to_pc() {
-  debug && console.debug("arg2_to_pc")
+function arg2_to_pc () {
+  debug && console.debug('arg2_to_pc')
   program_counter = arg_regs[1] & 0xffff
 }
 
-function arg2_to_write_bus() {
-  debug && console.debug("arg2_to_write_bus")
+function arg2_to_write_bus () {
+  debug && console.debug('arg2_to_write_bus')
   write_bus = arg_regs[1]
 }
 
-function arg3_to_selected_bus() {
-  debug && console.debug("arg3_to_selected_bus")
+function arg3_to_selected_bus () {
+  debug && console.debug('arg3_to_selected_bus')
 
   var addr_modes = (command_word & 0b0001100000000000) >> 11
   var addr_mode = 0
@@ -832,74 +827,74 @@ function arg3_to_selected_bus() {
   }
 }
 
-function data_bus_to_arg3() {
-  debug && console.debug("data_bus_to_arg3")
+function data_bus_to_arg3 () {
+  debug && console.debug('data_bus_to_arg3')
   arg_regs[2] = data_bus
 }
 
-function data_bus_to_arg1() {
-  debug && console.debug("data_bus_to_arg1")
+function data_bus_to_arg1 () {
+  debug && console.debug('data_bus_to_arg1')
   arg_regs[0] = data_bus
 }
 
-function data_bus_to_arg2() {
-  debug && console.debug("data_bus_to_arg2")
+function data_bus_to_arg2 () {
+  debug && console.debug('data_bus_to_arg2')
   arg_regs[1] = data_bus
 }
 
-//other
+// other
 
-function increment_mode() {
-  debug && console.debug("queue: increment_mode")
-  buffered_instructions["increment_mode"] = true
+function increment_mode () {
+  debug && console.debug('queue: increment_mode')
+  buffered_instructions.increment_mode = true
 }
 
-function increment_pc() {
-  debug && console.debug("increment_pc")
+function increment_pc () {
+  debug && console.debug('increment_pc')
   program_counter++
   program_counter = program_counter & 0xffff
 }
 
-function decrement_arg_counter() {
-  debug && console.debug("queue: decrement_arg_counter")
-  buffered_instructions["decrement_arg_counter"] = true
+function decrement_arg_counter () {
+  debug && console.debug('queue: decrement_arg_counter')
+  buffered_instructions.decrement_arg_counter = true
 }
 
-function clock_stop() {
-  debug && console.debug("clock_stop")
+function clock_stop () {
+  debug && console.debug('clock_stop')
   stop()
 }
 
-function pc_to_data_bus() {
-  debug && console.debug("pc_to_data_bus")
+function pc_to_data_bus () {
+  debug && console.debug('pc_to_data_bus')
   data_bus = program_counter
 }
 
-function data_bus_to_cmd_reg() {
-  debug && console.debug("data_bus_to_cmd_reg")
+function data_bus_to_cmd_reg () {
+  debug && console.debug('data_bus_to_cmd_reg')
   command_word = data_bus
   args_remaining = command_word >> 14
 }
 
-function pc_to_read_bus() {
-  debug && console.debug("pc_to_read_bus")
+function pc_to_read_bus () {
+  debug && console.debug('pc_to_read_bus')
   read_bus = program_counter
 }
 
-function ram_caller_pointer_to_read_bus() {
-  debug && console.debug("ram_caller_pointer_to_read_bus")
-  //this address is ram.1023
+function ram_caller_pointer_to_read_bus () {
+  debug && console.debug('ram_caller_pointer_to_read_bus')
+  // this address is ram.1023
   read_bus = 0b0101001111111111
 }
 
-function ram_caller_pointer_to_write_bus() {
-  debug && console.debug("ram_caller_pointer_to_write_bus")
-  //this address is ram+.1023
+function ram_caller_pointer_to_write_bus () {
+  debug && console.debug('ram_caller_pointer_to_write_bus')
+  // this address is ram+.1023
   write_bus = 0b0110001111111111
 }
 
-function decrement_frame_no() {
-  debug && console.debug("decrement_frame_no")
+function decrement_frame_no () {
+  debug && console.debug('decrement_frame_no')
   if (frame_number > 0) {
     frame_number--
   } else {
@@ -907,8 +902,8 @@ function decrement_frame_no() {
   }
 }
 
-function increment_frame_no() {
-  debug && console.debug("increment_frame_no")
+function increment_frame_no () {
+  debug && console.debug('increment_frame_no')
   if (frame_number < 15) {
     frame_number++
   } else {
@@ -916,7 +911,7 @@ function increment_frame_no() {
   }
 }
 
-function data_bus_to_pc() {
-  debug && console.debug("data_bus_to_pc")
+function data_bus_to_pc () {
+  debug && console.debug('data_bus_to_pc')
   program_counter = data_bus & 0xffff
 }
