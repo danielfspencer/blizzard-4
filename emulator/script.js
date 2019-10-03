@@ -1,5 +1,12 @@
+function gen_button(icon, text) {
+  return `<img style='position:relative;top:6px;' class='manual_nav_button' src='assets/icons/${icon}'/><a>${text}</a>`
+}
+
+
 $(document).ready( () => {
   parent.interface.funcs.add_button("ram visualiser", open_visualiser)
+  parent.interface.funcs.add_button(gen_button("compile.svg","statistics"), open_stats)
+  stats = null
 
   canvas = document.getElementById("screen")
   canvas_context = canvas.getContext("2d", { alpha: false })
@@ -115,6 +122,16 @@ function open_visualiser() {
 
   windows.open('emulator/visualiser/visualiser.html', 1024 * 2, 512 * 2 + 42, (ref) => {
     visualiser = ref
+  })
+}
+
+function open_stats() {
+  if (stats !== null && stats.parent !== null) {
+    return
+  }
+
+  windows.open('emulator/stats/stats.html', 512, 512 + 24, (ref) => {
+    stats = ref
   })
 }
 
