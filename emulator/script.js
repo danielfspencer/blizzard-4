@@ -77,6 +77,7 @@ $(document).ready( () => {
     worker.postMessage(["reset"])
     worker.postMessage(["set_clock",$("#clock-target").val()])
     setTimeout(clear_screen, 150)
+    send_user_input()
   })
 
   $("#step").mousedown( () => {
