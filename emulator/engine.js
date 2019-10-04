@@ -636,12 +636,12 @@ function simulate_effect_of_write_bus_change() {
           break
       }
 
-      if (address < 0) {
-        halt_error("invalid address for ram")
-      } else {
-        ram_change(address, data_bus)
-      }
     }
+    if (address < 0 || address > 16383) {
+      halt_error("invalid address for ram")
+    }
+
+    ram_change(address, data_bus)
     activity_indicators["ram_address"] = address
 
   } else if (write_bus < 16384) {                                          //everywhere else (card addressing)
