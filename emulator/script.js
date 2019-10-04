@@ -119,7 +119,7 @@ function gen_button(icon, text) {
 
 function open_visualiser() {
   let store = parent.interface.window_ref_store
-  if (store.visualiser === undefined) {
+  if (store.visualiser === undefined || store.visualiser.parent === null) {
     windows.open('emulator/visualiser/visualiser.html', 512, 512 + 24, ref => {
       store.visualiser = ref
     })
@@ -128,7 +128,7 @@ function open_visualiser() {
 
 function open_stats() {
   let store = parent.interface.window_ref_store
-  if (store.stats === undefined) {
+  if (store.stats === undefined || store.stats.parent === null) {
     windows.open('emulator/stats/stats.html', 512, 512 + 24, ref => {
       store.stats = ref
     })
