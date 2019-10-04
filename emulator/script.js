@@ -1,110 +1,74 @@
-$(document).ready( () => {
-  parent.interface.funcs.add_button(gen_button("memory.svg","ram visualiser"), open_visualiser)
-  parent.interface.funcs.add_button(gen_button("stats.svg","statistics"), open_stats)
+const strip_names = [
+  "alu1_leds", "alu2_leds", "alu_write_leds", "alu_read_leds", "read_bus_leds", "write_bus_leds",
+  "data_bus_leds", "out1_leds", "out2_leds", "out3_leds", "arg1_leds", "arg2_leds", "arg3_leds",
+  "pc_leds", "ram_addr_leds", "rom_addr_leds", "opcode_leds", "cmd_word_1st_part_leds",
+  "cmd_word_2nd_part_leds", "proc_mode_leds", "arg_num_leds", "frame_num_leds", "cnd_reg_leds",
+  "ram_read_leds", "ram_offset_leds", "ram_write_leds", "ram_addr_mode_leds", "rom_read_leds",
+  "rom_write_leds", "inp1_leds", "inp2_leds", "inp3_leds"
+]
 
-  canvas = document.getElementById("screen")
+let worker
+let canvas_context
+let led_strips = {}
+let front_panel_info = {}
+let updates_running = false
+let vram_changes_buffer = []
+
+$(document).ready(() => {
+  parent.interface.funcs.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
+  parent.interface.funcs.add_button(gen_button("stats.svg", "statistics"), open_stats)
+
+  let canvas = document.getElementById("screen")
   canvas_context = canvas.getContext("2d", { alpha: false })
+
   tools.storage.get_key("emulator-display-colour", set_screen_theme, "green-grey")
 
   worker = new Worker("engine.js")
-  worker.onmessage = (e) => {
-    handle_message(e.data)
-  }
+  worker.onmessage = e => handle_message(e.data)
 
-  document.addEventListener("keydown", (event) => { on_key_event(event, "keydown") })
-  document.addEventListener("keyup", (event) => { on_key_event(event, "keyup") })
+  document.addEventListener("keydown", e => on_key_event(e, "keydown"))
+  document.addEventListener("keyup", e => on_key_event(e, "keyup"))
 
-  vram_changes_buffer = []
-  front_panel_info = {}
-  updates_running = false
-
-  led_strips = {
-    "alu1_leds":null,
-    "alu2_leds":null,
-    "alu_write_leds":null,
-    "alu_read_leds":null,
-    "read_bus_leds":null,
-    "write_bus_leds":null,
-    "data_bus_leds":null,
-    "out1_leds":null,
-    "out2_leds":null,
-    "out3_leds":null,
-    "arg1_leds":null,
-    "arg2_leds":null,
-    "arg3_leds":null,
-    "pc_leds":null,
-    "ram_addr_leds":null,
-    "rom_addr_leds": null,
-    "opcode_leds": null,
-    "cmd_word_1st_part_leds":null,
-    "cmd_word_2nd_part_leds":null,
-    "proc_mode_leds":null,
-    "arg_num_leds":null,
-    "frame_num_leds":null,
-    "cnd_reg_leds":null,
-    "ram_read_leds":null,
-    "ram_offset_leds":null,
-    "ram_write_leds":null,
-    "ram_addr_mode_leds":null,
-    "rom_read_leds":null,
-    "rom_write_leds":null,
-    "inp1_leds":null,
-    "inp2_leds":null,
-    "inp3_leds":null
-  }
-
-  for (var name in led_strips) {
+  for (let name of strip_names) {
     led_strips[name] = get_led_references(name)
   }
 
-  $("#start").click( () => {
+  $("#start").click(() => {
     send_user_input()
     worker.postMessage(["start"])
   })
 
-  $("#stop").click( () => {
-    worker.postMessage(["stop"])
-  })
-
-  $("#reset").click( () => {
+  $("#reset").click(() => {
     worker.postMessage(["reset"])
-    worker.postMessage(["set_clock",$("#clock-target").val()])
+    worker.postMessage(["set_clock", $("#clock-target").val()])
     setTimeout(clear_screen, 150)
     send_user_input()
   })
 
-  $("#step").mousedown( () => {
-    worker.postMessage(["clock_high"])
-  })
+  $("#stop").click(() => worker.postMessage(["stop"]))
 
-  $("#step, #read, #write, #copy").mouseup( () => {
-    worker.postMessage(["clock_low"])
-  })
+  $("#step").mousedown(() => worker.postMessage(["clock_high"]))
 
-  $("#read").mousedown( () => {
-    worker.postMessage(["bus_read"])
-  })
+  $("#step, #read, #write, #copy").mouseup(() => worker.postMessage(["clock_low"]))
 
-  $("#write").mousedown( () => {
-    worker.postMessage(["bus_write"])
-  })
+  $("#read").mousedown(() => worker.postMessage(["bus_read"]))
 
-  $("#copy").mousedown( () => {
-    worker.postMessage(["bus_copy"])
-  })
+  $("#write").mousedown(() => worker.postMessage(["bus_write"]))
 
-  $("#clock-target").change( () => {
-    worker.postMessage(["set_clock",$("#clock-target").val()])
+  $("#copy").mousedown(() => worker.postMessage(["bus_copy"]))
+
+  $("#clock-target").change(() => {
+    worker.postMessage(["set_clock", $("#clock-target").val()])
   })
 
   $("#usr1_input, #usr2_input, #usr3_input").on('input', send_user_input)
 
-  $("#rom_write_protect").change(function() {
-    worker.postMessage(["write_protect_change",this.checked])
+  $("#rom_write_protect").change(e => {
+    worker.postMessage(["write_protect_change", $(e.target).prop('checked')])
   })
 
   worker.postMessage(["request_front_panel_info"])
-  worker.postMessage(["set_clock",100000])
+  worker.postMessage(["set_clock", 100000])
   parent.interface.funcs.input_data = set_rom
   parent.interface.funcs.child_page_loaded()
 })
@@ -187,33 +151,31 @@ function set_screen_theme(theme) {
 function set_rom([string, shouldRun, clock_speed]) {
   if (clock_speed !== undefined) {
     $("#clock-target").val(clock_speed)
-    worker.postMessage(["set_clock",clock_speed])
+    worker.postMessage(["set_clock", clock_speed])
   }
-  worker.postMessage(["set_rom",string])
+  worker.postMessage(["set_rom", string])
   if (shouldRun) {
     worker.postMessage(["start"])
   }
 }
 
 function send_user_input(event){
-  var inputs = [$("#usr1_input").val(),$("#usr2_input").val(),$("#usr3_input").val()]
-  var formatted_inputs = [0,0,0]
-  for (var i = 0; i < 3; i++) {
-    var integer = parseInt(inputs[i])
+  let inputs = [$("#usr1_input").val(), $("#usr2_input").val(), $("#usr3_input").val()]
+  let sanitised_inputs = []
+  for (let i = 0; i < inputs.length; i++) {
+    let integer = parseInt(inputs[i])
     if (integer > 65535) {
       integer = 65535
     } else if (integer < 0) {
       integer = 0
     }
-    formatted_inputs[i] = integer
+    sanitised_inputs.push(integer)
   }
 
-  display_number_on_leds("inp1_leds", formatted_inputs[0])
-  display_number_on_leds("inp2_leds", formatted_inputs[1])
-  display_number_on_leds("inp3_leds", formatted_inputs[2])
-  worker.postMessage(["user_input_update",formatted_inputs])
-}
-
+  display_number_on_leds("inp1_leds", sanitised_inputs[0])
+  display_number_on_leds("inp2_leds", sanitised_inputs[1])
+  display_number_on_leds("inp3_leds", sanitised_inputs[2])
+  worker.postMessage(["user_input_update", sanitised_inputs])
 }
 
 function start_updates() {
@@ -233,7 +195,7 @@ function stop_updates() {
 function start_slow_step(delay) {
   if (! updates_running) {
     start_updates()
-    step_timer = setInterval( () => { slow_step(delay) }, delay)
+    step_timer = setInterval(() => slow_step(delay), delay)
   }
 }
 
@@ -244,12 +206,12 @@ function stop_slow_step() {
 
 function slow_step(delay) {
   worker.postMessage(["clock_high"])
-  setTimeout( () => { worker.postMessage(["clock_low"]) }, delay/2)
+  setTimeout(() => worker.postMessage(["clock_low"]), delay / 2)
 }
 
 function benchmark() {
   console.time("leds")
-  for (var i = 0; i < 500000; i++) {
+  for (let i = 0; i < 500000; i++) {
     display_number_on_leds("data_bus_leds",i % 65535)
   }
   console.timeEnd("leds")
@@ -257,42 +219,43 @@ function benchmark() {
 
 function clear_screen() {
   let [red, green, blue] = pixel_off_colours
-  canvas_context.fillStyle = "rgb("+ red +","+ green +","+ blue +")"
+  canvas_context.fillStyle = `rgb(${red}, ${green}, ${blue})`
   canvas_context.fillRect(0, 0, 128, 128)
 }
 
 function get_led_references(id) {
-  var element = document.getElementById(id)
-  var references = {}
+  let element = document.getElementById(id)
 
-  var has_tooltip = element.children[0].className == "tooltip_content"
-  references.leds = Array.prototype.slice.call(element.children)
-  references.tooltip = null
-  references.tooltip_visible = false
+  let references = {
+    leds: Array.prototype.slice.call(element.children),
+    value: 0,
+    tooltip: null,
+    tooltip_visible: false
+  }
 
-  if (has_tooltip) {
+  // true if leds should have a tooltip
+  if (element.children[0].className === "tooltip_content") {
     references.leds = references.leds.slice(1)
     references.tooltip = element.children[0]
     element.addEventListener("mouseover", mouseover_tooltip)
     element.addEventListener("mouseout", mouseoff_tooltip)
   }
 
-  var log10_of_leds_squared = Math.log10(Math.pow(2, references.leds.length))
+  let log10_of_leds_squared = Math.log10(Math.pow(2, references.leds.length))
   references.num_dec_digits = Math.ceil(log10_of_leds_squared)
   references.num_hex_digits = Math.ceil(log10_of_leds_squared / Math.log10(16))
-  references.value = 0
 
   return references
 }
 
 function display_number_on_leds(id, number) {
-  var references = led_strips[id]
-  var leds = references.leds
+  let references = led_strips[id]
+  let leds = references.leds
 
-  for (var i = 0; i < leds.length; i++) {
-    var mask = 1 << (leds.length - i - 1)
-    var ref = leds[i].classList
-    if ((number & mask) != 0) {
+  for (let i = 0; i < leds.length; i++) {
+    let mask = 1 << (leds.length - i - 1)
+    let ref = leds[i].classList
+    if ((number & mask) !== 0) {
       if (!ref.contains("on")) {
         ref.add("on")
       }
@@ -311,16 +274,16 @@ function display_number_on_leds(id, number) {
 }
 
 function update_tool_tip(id) {
-  var references = led_strips[id]
-  var dec = get_padded_num(references.value, references.num_dec_digits,10)
-  var hex = get_padded_num(references.value , references.num_hex_digits,16)
+  let references = led_strips[id]
+  let dec = get_padded_num(references.value, references.num_dec_digits,10)
+  let hex = get_padded_num(references.value , references.num_hex_digits,16)
 
-  var text = "dec " + dec + " hex " + hex
+  let text = `dec ${dec} hex ${hex}`
   references.tooltip.childNodes[0].nodeValue = text
 }
 
 function mouseover_tooltip() {
-  var references = led_strips[this.id]
+  let references = led_strips[this.id]
   if (updates_running) {
     references.tooltip_visible = true
   } else {
@@ -329,12 +292,12 @@ function mouseover_tooltip() {
 }
 
 function mouseoff_tooltip() {
-  var references = led_strips[this.id]
+  let references = led_strips[this.id]
   references.tooltip_visible = false
 }
 
 function get_padded_num(number,num_zeroes,base) {
-  var string = number.toString(base)
+  let string = number.toString(base)
 
   while (num_zeroes > string.length) {
     string = "0" + string
@@ -356,26 +319,26 @@ function draw_all() {
 }
 
 function draw_front_panel() {
-  $("#clock-actual").val(front_panel_info["clock_speed"])
+  $("#clock-actual").val(front_panel_info.clock_speed)
 
-  display_number_on_leds("alu1_leds", front_panel_info["alu_operands"][0])
-  display_number_on_leds("alu2_leds", front_panel_info["alu_operands"][1])
-  display_number_on_leds("read_bus_leds", front_panel_info["read_bus"])
-  display_number_on_leds("data_bus_leds", front_panel_info["data_bus"])
-  display_number_on_leds("write_bus_leds", front_panel_info["write_bus"])
-  display_number_on_leds("cnd_reg_leds", front_panel_info["conditional_bit"])
+  display_number_on_leds("alu1_leds", front_panel_info.alu_operands[0])
+  display_number_on_leds("alu2_leds", front_panel_info.alu_operands[1])
+  display_number_on_leds("read_bus_leds", front_panel_info.read_bus)
+  display_number_on_leds("data_bus_leds", front_panel_info.data_bus)
+  display_number_on_leds("write_bus_leds", front_panel_info.write_bus)
+  display_number_on_leds("cnd_reg_leds", front_panel_info.conditional_bit)
 
   display_number_on_leds("pc_leds", front_panel_info["program_counter"])
   display_number_on_leds("frame_num_leds", front_panel_info["frame_number"])
 
-  var command_string = get_padded_num(front_panel_info["command_word"],16,2)
-  var first_part = parseInt(command_string.slice(0,5),2)
-  var second_part = parseInt(command_string.slice(15,16),2)
+  let command_string = get_padded_num(front_panel_info.command_word,16,2)
+  let first_part = parseInt(command_string.slice(0,5),2)
+  let second_part = parseInt(command_string.slice(15,16),2)
   display_number_on_leds("cmd_word_1st_part_leds", first_part)
   display_number_on_leds("cmd_word_2nd_part_leds", second_part)
-  display_number_on_leds("arg_num_leds", front_panel_info["args_remaining"])
+  display_number_on_leds("arg_num_leds", front_panel_info.args_remaining)
 
-  switch (front_panel_info["control_mode"]) {
+  switch (front_panel_info.control_mode) {
     case 0:
       display_number_on_leds("proc_mode_leds", 0b100)
       break
@@ -384,8 +347,6 @@ function draw_front_panel() {
       break
     case 2:
       display_number_on_leds("proc_mode_leds", 0b001)
-      break
-    default:
       break
   }
 
@@ -408,63 +369,57 @@ function draw_front_panel() {
     case "101":
       display_number_on_leds("opcode_leds", 0b000001)
       break
-    default:
-      break
   }
 
-  display_number_on_leds("arg1_leds", front_panel_info["arg_regs"][0])
-  display_number_on_leds("arg3_leds", front_panel_info["arg_regs"][2])
-  display_number_on_leds("arg2_leds", front_panel_info["arg_regs"][1])
-  display_number_on_leds("out1_leds", front_panel_info["user_output"][0])
-  display_number_on_leds("out2_leds", front_panel_info["user_output"][1])
-  display_number_on_leds("out3_leds", front_panel_info["user_output"][2])
+  display_number_on_leds("arg1_leds", front_panel_info.arg_regs[0])
+  display_number_on_leds("arg3_leds", front_panel_info.arg_regs[2])
+  display_number_on_leds("arg2_leds", front_panel_info.arg_regs[1])
+  display_number_on_leds("out1_leds", front_panel_info.user_output[0])
+  display_number_on_leds("out2_leds", front_panel_info.user_output[1])
+  display_number_on_leds("out3_leds", front_panel_info.user_output[2])
 
-  if (front_panel_info["activity_indicators"]["alu1_write"]) {
+  if (front_panel_info.activity_indicators.alu1_write) {
     display_number_on_leds("alu_write_leds",2)
-  } else if (front_panel_info["activity_indicators"]["alu2_write"]) {
+  } else if (front_panel_info.activity_indicators.alu2_write) {
     display_number_on_leds("alu_write_leds",1)
   } else {
     display_number_on_leds("alu_write_leds",0)
   }
 
-  display_number_on_leds("alu_read_leds",front_panel_info["activity_indicators"]["alu_read"])
+  display_number_on_leds("alu_read_leds",front_panel_info.activity_indicators.alu_read)
 
-  display_number_on_leds("ram_addr_leds", front_panel_info["activity_indicators"]["ram_address"])
-  display_number_on_leds("ram_write_leds", front_panel_info["activity_indicators"]["ram_write"])
-  display_number_on_leds("ram_read_leds", front_panel_info["activity_indicators"]["ram_read"])
-  display_number_on_leds("ram_offset_leds", front_panel_info["activity_indicators"]["ram_frame_offset"])
-  display_number_on_leds("ram_addr_mode_leds", front_panel_info["ram_addr_mode"])
+  display_number_on_leds("ram_addr_leds", front_panel_info.activity_indicators.ram_address)
+  display_number_on_leds("ram_write_leds", front_panel_info.activity_indicators.ram_write)
+  display_number_on_leds("ram_read_leds", front_panel_info.activity_indicators.ram_read)
+  display_number_on_leds("ram_offset_leds", front_panel_info.activity_indicators.ram_frame_offset)
+  display_number_on_leds("ram_addr_mode_leds", front_panel_info.ram_addr_mode)
 
-  display_number_on_leds("rom_addr_leds", front_panel_info["activity_indicators"]["rom_address"])
-  display_number_on_leds("rom_read_leds", front_panel_info["activity_indicators"]["rom_read"])
-  display_number_on_leds("rom_write_leds", front_panel_info["activity_indicators"]["rom_write"])
+  display_number_on_leds("rom_addr_leds", front_panel_info.activity_indicators.rom_address)
+  display_number_on_leds("rom_read_leds", front_panel_info.activity_indicators.rom_read)
+  display_number_on_leds("rom_write_leds", front_panel_info.activity_indicators.rom_write)
 }
 
 function draw_screen_updates() {
-  var img_data = canvas_context.createImageData(16,1)
+  let img_data = canvas_context.createImageData(16, 1)
 
   while (vram_changes_buffer.length > 0) {
-    var item = vram_changes_buffer.pop()
-    var address = item[0]
-    var word = item[1]
-    var y = Math.floor(address / 8)
-    var x = (address % 8) * 16
-    var value
+    let [address, word] = vram_changes_buffer.pop()
+    let y = Math.floor(address / 8)
+    let x = (address % 8) * 16
 
-    for (var i = 0; i < img_data.data.length; i += 4) {
-      var mask = 1 << (15 - (i/4))
+    for (let i = 0; i < img_data.data.length; i += 4) {
+      let mask = 1 << (15 - (i/4))
 
-      if ((word & mask) != 0) {
-        var [red, green, blue] = pixel_on_colours
-      } else {
-        var [red, green, blue] = pixel_off_colours
+      let [red, green, blue] = pixel_off_colours
+      if ((word & mask) !== 0) {
+        [red, green, blue] = pixel_on_colours
       }
       img_data.data[i]     = red
       img_data.data[i + 1] = green
       img_data.data[i + 2] = blue
       img_data.data[i + 3] = 255
     }
-    canvas_context.putImageData(img_data,x,y)
+    canvas_context.putImageData(img_data, x, y)
   }
 }
 
@@ -475,19 +430,19 @@ function on_key_event(event, mode) {
 
   event.preventDefault()
 
-  var key_name = event.code
-  var scancodes = keycode_to_scancode[key_name]
+  let key_name = event.code
+  let scancodes = keycode_to_scancode[key_name]
 
   if (scancodes === undefined) {
-    console.warn("Can't find scancodes for key '" + key_name + "'")
+    console.warn(`Can't find scancodes for key '${key_name}'`)
   } else {
-    var codes = []
+    let codes
 
     if (mode === "keydown") {
       codes = scancodes[0]
     } else if (mode === "keyup") {
       codes = scancodes[1]
     }
-    worker.postMessage(["key_code",codes])
+    worker.postMessage(["key_code", codes])
   }
 }
