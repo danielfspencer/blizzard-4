@@ -1,5 +1,8 @@
 const windows = {
   open: (url, width, height, callback) => {
+    if (callback === undefined) {
+      callback = () => {}
+    }
     switch (tools.platform()) {
       case "chrome_app": {
         chrome.app.window.create(url, {
