@@ -41,6 +41,7 @@ function link_handler() {
   }
 
   render_page(".." + this.pathname)
+  forward_history = []
   return false // prevent default action
 }
 
