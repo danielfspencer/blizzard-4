@@ -54,8 +54,14 @@ iframe {
   display: flex;
 }
 
-#button-container div.button {
+#button-container > .button {
+  display: flex;
   min-width: 38px;
+  justify-content: center;
+}
+
+#button-container > .button > a {
+  margin-left: 6px;
 }
 
 #overflow-menu {

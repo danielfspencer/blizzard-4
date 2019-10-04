@@ -55,6 +55,10 @@ div#frame #toolbar> #overflow-menu {
   filter: invert(100%);
 }
 
+div#frame #toolbar > #button-container > .button img {
+  filter: invert(100%);
+}
+
 /* elements inside the frame */
 
 .tooltip_enabled .tooltip_content {
@@ -100,10 +104,6 @@ div#log > div.item.error {
 }
 
 /* manual page */
-
-img.manual_nav_button {
-  filter: invert(1);
-}
 
 div.rendered-md a:link {
   color: #ff6800;

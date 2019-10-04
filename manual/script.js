@@ -12,7 +12,7 @@ $( document ).ready( () => {
 })
 
 function gen_button(icon) {
-  return `<img style='margin-top: 6px;' class='manual_nav_button' src='assets/icons/${icon}'/>`
+  return `<img src='assets/icons/${icon}'/>`
 }
 
 function render_page(path) {

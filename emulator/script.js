@@ -1,11 +1,7 @@
-function gen_button(icon, text) {
-  return `<img style='position:relative;top:6px;' class='manual_nav_button' src='assets/icons/${icon}'/><a>${text}</a>`
-}
-
-
 $(document).ready( () => {
-  parent.interface.funcs.add_button("ram visualiser", open_visualiser)
-  parent.interface.funcs.add_button(gen_button("compile.svg","statistics"), open_stats)
+  parent.interface.funcs.add_button(gen_button("memory.svg","ram visualiser"), open_visualiser)
+  parent.interface.funcs.add_button(gen_button("stats.svg","statistics"), open_stats)
+  visualiser = null
   stats = null
 
   canvas = document.getElementById("screen")
@@ -23,7 +19,6 @@ $(document).ready( () => {
   vram_changes_buffer = []
   front_panel_info = {}
   updates_running = false
-  visualiser = null
 
   led_strips = {
     "alu1_leds":null,
@@ -115,6 +110,10 @@ $(document).ready( () => {
   parent.interface.funcs.input_data = set_rom
   parent.interface.funcs.child_page_loaded()
 })
+
+function gen_button(icon, text) {
+  return `<img src='assets/icons/${icon}'/><a>${text}</a>`
+}
 
 function open_visualiser() {
   if (visualiser !== null) {
