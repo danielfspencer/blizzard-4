@@ -17,7 +17,8 @@ var interface = {
       $("#button-container").append(`<div class="button" id="${id}">${html}</div>`)
       $(`#${id}`).click(func)
     }
-  }
+  },
+  window_ref_store: {}
 }
 
 var theme = {

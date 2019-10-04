@@ -1,8 +1,6 @@
 $(document).ready( () => {
   parent.interface.funcs.add_button(gen_button("memory.svg","ram visualiser"), open_visualiser)
   parent.interface.funcs.add_button(gen_button("stats.svg","statistics"), open_stats)
-  visualiser = null
-  stats = null
 
   canvas = document.getElementById("screen")
   canvas_context = canvas.getContext("2d", { alpha: false })
@@ -111,28 +109,66 @@ $(document).ready( () => {
   parent.interface.funcs.child_page_loaded()
 })
 
+function handle_message(message) {
+  switch(message[0]) {
+    case "front_panel_info":
+      front_panel_info = message[1]
+      if (!updates_running) {
+        draw_front_panel()
+      }
+      break
+    case "vram_changes":
+      vram_changes_buffer.push(...message[1])
+      break
+    case "ram_changes":
+      let store = parent.interface.window_ref_store
+      if (store.visualiser !== undefined) {
+        store.visualiser.ram_changes_buffer.push(...message[1])
+      }
+      break
+    case "started":
+      //start drawing updates
+      start_updates()
+      break
+    case "stopped":
+      //stop drawing updates
+      setTimeout(stop_updates, 100)
+      break
+    case "changed":
+      //draw updates (the worker will have already sent them before responding changed)
+      if (!updates_running) {
+        draw_all()
+      }
+      break
+    case "stop":
+      stop_slow_step()
+      break
+    default:
+      console.error(`Unknown command '${message[0]}'`)
+      break
+  }
+}
+
 function gen_button(icon, text) {
   return `<img src='assets/icons/${icon}'/><a>${text}</a>`
 }
 
 function open_visualiser() {
-  if (visualiser !== null) {
-    return
+  let store = parent.interface.window_ref_store
+  if (store.visualiser === undefined) {
+    windows.open('emulator/visualiser/visualiser.html', 512, 512 + 24, ref => {
+      store.visualiser = ref
+    })
   }
-
-  windows.open('emulator/visualiser/visualiser.html', 1024 * 2, 512 * 2 + 42, (ref) => {
-    visualiser = ref
-  })
 }
 
 function open_stats() {
-  if (stats !== null && stats.parent !== null) {
-    return
+  let store = parent.interface.window_ref_store
+  if (store.stats === undefined) {
+    windows.open('emulator/stats/stats.html', 512, 512 + 24, ref => {
+      store.stats = ref
+    })
   }
-
-  windows.open('emulator/stats/stats.html', 512, 512 + 24, (ref) => {
-    stats = ref
-  })
 }
 
 function set_screen_theme(theme) {
@@ -178,43 +214,6 @@ function send_user_input(event){
   worker.postMessage(["user_input_update",formatted_inputs])
 }
 
-function handle_message(message) {
-  switch(message[0]) {
-    case "front_panel_info":
-      front_panel_info = message[1]
-      if (!updates_running) {
-        draw_front_panel()
-      }
-      break
-    case "vram_changes":
-      vram_changes_buffer = message[1]
-      break
-    case "ram_changes":
-      if (visualiser !== null) {
-        visualiser.ram_changes_buffer = message[1]
-      }
-      break
-    case "started":
-      //start drawing updates
-      start_updates()
-      break
-    case "stopped":
-      //stop drawing updates
-      setTimeout(stop_updates, 100)
-      break
-    case "changed":
-      //draw updates (the worker will have already sent them before responding changed)
-      if (!updates_running) {
-        draw_all()
-      }
-      break
-    case "stop":
-      stop_slow_step()
-      break
-    default:
-      console.error("Unknown command '"+ message[0] +"'")
-      break
-    }
 }
 
 function start_updates() {
