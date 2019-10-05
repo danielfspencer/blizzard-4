@@ -81,7 +81,7 @@ function send_log(message, level) {
 
   let text
   if (typeof message === "object") {
-    text = JSON.stringify(message)
+    text = JSON.stringify(message, null, 2)
   } else {
     text = message
   }
