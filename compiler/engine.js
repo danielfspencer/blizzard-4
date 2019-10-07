@@ -100,6 +100,7 @@ function init_vars() {
   state = {
     scope: "[root]",
     symbol_table: {"[root]":{},"[global]":{}},
+    struct_definitions: {},
     free_ram: {"[root]":gen_free_ram_map(),"[global]":gen_free_ram_map()},
     function_table: {},
     consts: [],
@@ -341,8 +342,28 @@ function free_global_block(addrs) {
 }
 
 function assert_valid_datatype(type) {
-  if (!(type in data_type_size)) {
+  if (!(type in data_type_size) && !(type in state.struct_definitions)) {
     throw new CompError(`Data type '${type}' unknown`)
+  }
+}
+
+function get_data_type_size(type) {
+  if (type in data_type_size) {
+    // it's a built in data type
+    return data_type_size[type]
+  } else if (type in state.struct_definitions) {
+    // it's a struct
+    return state.struct_definitions[type].size
+  } else {
+    throw new CompError(`Cannot determine size of data type '${type}'`)
+  }
+}
+
+function get_data_type_default(type) {
+  if (type in data_type_default_value) {
+    return data_type_default_value[type]
+  } else {
+    throw new CompError(`Type '${type}' has no default value and must initalised`)
   }
 }
 
@@ -435,6 +456,17 @@ function tokenise(input, line) {
 
   } else if (/^{(.+)}$/.test(input)) {
     token = {name:"asm",type:"command",arguments:{value:/{(.+)}/.exec(input)[1]}}
+
+  } else if (/^<(.+)>$/.test(input)) {
+    let content = /^<(.+)>$/.exec(input)[1]
+    let expr_strings = content.split(",")
+    let exprs = []
+
+    for (let string of expr_strings) {
+      exprs.push(tokenise(string, line))
+    }
+
+    token = {name:"struct_init",type:"expression",arguments:{exprs:exprs}}
 
   } else if (/^\"(.+)\"$|^(\"\")$/.test(input)) {     //string
     token = {name:"str",type:"expression",arguments:{value:input,type_guess:"str"}}
@@ -550,6 +582,15 @@ function tokenise(input, line) {
 
     token = {name:"function_def",type:"structure",body:[],arguments:{name:list[1],type:list[2],force_cast:force_cast}}
 
+  } else if (list[0] === "struct") {                  //struct [name]
+    if (list.length < 2) {
+      throw new CompError("Structs require a name")
+    } else if (list.length > 2) {
+      throw new CompError("Invalid syntax")
+    }
+
+    token = {name:"struct_def",type:"structure",body:[],arguments:{name:list[1]}}
+
   } else if (list[0] === "free") {                 // free [name]
     token = {name:"delete",type:"command",arguments:{name:list[1]}}
 
@@ -563,6 +604,15 @@ function tokenise(input, line) {
     let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.exec(input)
     let expr = tokenise(matches[2], line)
     token = {name:"set",type:"command",arguments:{expr:expr,name:matches[1]}}
+
+  } else if (/^([a-zA-Z_]\w*).([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.test(input)) {                    // [struct].[member] = [expr]
+    let matches = /^([a-zA-Z_]\w*).([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.exec(input)
+
+    let name = matches[1]
+    let member = matches[2]
+    let expr = tokenise(matches[3], line)
+
+    token = {name:"struct_member_set",type:"command",arguments:{expr:expr,name:name,member:member}}
 
   } else if (/^\*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.test(input)) {                    // *[pointer] = [expr]
     let matches = /^\*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.exec(input)
@@ -744,7 +794,7 @@ function tokenise(input, line) {
   } else if (/(^true$)|(^false$)/.test(input)) {    //is true/false (the reserved keywords for bool data type)
     token = {name:"bool",type:"expression",arguments:{value:input}}
 
-  } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(input) ) {                       //variable or const (by name)
+  } else if (/^([a-zA-Z_]\w*)$/.test(input) ) {                       //variable or const (by name)
     token = {name:"var_or_const",type:"expression",arguments:{name:input}}
 
   } else if (/^((\(.*\))?(\[.*\]))$/.test(input)) {                          //array of expressions
@@ -769,6 +819,22 @@ function tokenise(input, line) {
       exprs:token_array,
       type_size:type_size
     }}
+
+  } else if (list.length == 2) {
+    let data_type = list[0]
+    let name = list[1]
+    if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(name)) {
+      throw new CompError(`Invalid name '${name}'`)
+    }
+
+    token = {name:"struct_member_def", type:"command", arguments:{name:name,data_type:data_type}}
+
+  } else if (/^([a-zA-Z_]\w*).([a-zA-Z_]\w*)$/.test(input)) {
+    let matches = /^([a-zA-Z_]\w*).([a-zA-Z_]\w*)$/.exec(input)
+
+    let name = tokenise(matches[1], line)
+    let member = matches[2]
+    token = {name:"struct_member_val", type:"expression", arguments:{name:name,member:member}}
 
   } else {
     throw new CompError(`Invalid syntax: '${input}'`)
@@ -843,7 +909,7 @@ function translate(token, ctx_type) {
 
       let value
       if (args.expr === undefined) {
-        value = tokenise(data_type_default_value[args.type])
+        value = tokenise(get_data_type_default(args.type))
       } else {
         value = args.expr
       }
@@ -879,7 +945,7 @@ function translate(token, ctx_type) {
 
       let value
       if (args.expr === undefined) {
-        value = tokenise(data_type_default_value[args.type])
+        value = tokenise(get_data_type_default(args.type))
       } else {
         value = args.expr
       }
@@ -928,7 +994,7 @@ function translate(token, ctx_type) {
 
       let value
       if (args.expr === undefined) {
-        value = tokenise(data_type_default_value[args.type])
+        value = tokenise(get_data_type_default(args.type))
       } else {
         value = args.expr
       }
@@ -968,7 +1034,7 @@ function translate(token, ctx_type) {
 
       let value
       if (args.expr === undefined) {
-        value = tokenise(data_type_default_value[args.type])
+        value = tokenise(get_data_type_default(args.type))
       } else {
         value = args.expr
       }
@@ -1016,7 +1082,7 @@ function translate(token, ctx_type) {
       let [base_addr, current_len, max_len, data_type] = expr_values
 
       assert_valid_datatype(data_type)
-      let element_size = data_type_size[data_type]
+      let element_size = get_data_type_size(data_type)
 
       let header_memory = alloc_block(3)
       let array_memory = alloc_block(max_len * element_size)
@@ -1058,7 +1124,7 @@ function translate(token, ctx_type) {
       let [base_addr, current_len, max_len, data_type] = expr_values
 
       assert_valid_datatype(data_type)
-      let element_size = data_type_size[data_type]
+      let element_size = get_data_type_size(data_type)
 
       let header_memory = alloc_global_block(3)
       let array_memory = alloc_global_block(max_len * element_size)
@@ -1150,7 +1216,7 @@ function translate(token, ctx_type) {
 
     case "pointer_set": {            //*[pointer] = [expr]
       let [expr_prefix, expr_value, expr_type] = translate(args.expr)
-      let size = data_type_size[expr_type]
+      let size = get_data_type_size(expr_type)
 
       // run code state.required by expression
       result = expr_prefix
@@ -1206,7 +1272,7 @@ function translate(token, ctx_type) {
       let array_type = table_entry.element_data_type
 
       let base_addr = `[${ram_prefix}${table_entry.base_addr}]`
-      let item_size = data_type_size[array_type]
+      let item_size = get_data_type_size(array_type)
 
       // calculate address of the specified index
       load_lib("sys.array_pointer")
@@ -1253,6 +1319,45 @@ function translate(token, ctx_type) {
       free_block(memory)
     } break
 
+    case "struct_member_set": {
+      if (!(args.name in state.symbol_table[state.scope])) {
+        throw new CompError(`Struct '${args.name}' is undefined`)
+      }
+
+      let table_entry = state.symbol_table[state.scope][args.name]
+      let struct_type = table_entry.data_type
+      let member_addrs = table_entry.specific.ram_addresses
+
+      let members = state.struct_definitions[struct_type].members
+
+      let member_name = args.member
+
+      if (!(args.member in members)) {
+        throw new CompError(`Struct of type '${struct_type}' has no member '${args.member}'`)
+      }
+
+      let member_info = members[member_name]
+      let member_type = member_info.data_type
+
+      let range_start = member_info.offset
+      let range_end = range_start + get_data_type_size(member_type)
+
+      let target_addrs = []
+      for (let i = range_start; i < range_end; i++) {
+        target_addrs.push(member_addrs[i])
+      }
+
+      let [expr_prefix, expr_value, expr_type] = translate(args.expr, member_type)
+
+      if (expr_type !== member_type) {
+        throw new CompError(`Struct member '${member_name}' requires type '${member_type}', got '${expr_type}'`)
+      }
+
+      for (let i = 0; i < expr_value.length; i++) {
+        result.push(`write ${expr_value[i]} ram.${target_addrs[i]}`)
+      }
+    } break
+
     case "array_function": {
       let array_name = args.name
       let operation = args.operation
@@ -1277,7 +1382,7 @@ function translate(token, ctx_type) {
       let base_addr = `[${ram_prefix}${table_entry.base_addr}]`
       let current_len = `[${ram_prefix}${table_entry.current_len}]`
       let max_len = `[${ram_prefix}${table_entry.max_len}]`
-      let item_size = data_type_size[array_type]
+      let item_size = get_data_type_size(array_type)
 
       if (operation === "append") {
         // append just puts the given value at the current end of the list, then adds 1 to the size of the list
@@ -2265,7 +2370,7 @@ function translate(token, ctx_type) {
         log.warn(`line ${token.line}:\nInferring type as '${contained_type}' from first element of array`)
       }
 
-      let item_size = data_type_size[contained_type]
+      let item_size = get_data_type_size(contained_type)
       let consts_to_add = [`${label}:`]
 
       let prefix_and_value
@@ -2280,6 +2385,40 @@ function translate(token, ctx_type) {
 
       registers = [label, length, max_length, contained_type]
       type = "expr_array"
+    } break
+
+    case "struct_init": {
+      let members = state.struct_definitions[ctx_type].members
+      let num_members = Object.keys(members).length
+
+      if (args.exprs.length !== num_members) {
+        throw new CompError(`Struct '${ctx_type}' requires ${num_members} member(s), but ${args.exprs.length} were supplied`)
+      }
+
+      registers = []
+
+      let expr_index = 0
+      for (let [member_name, member_info] of Object.entries(members)) {
+        let member_type = member_info.data_type
+        let expr = args.exprs[expr_index]
+        let [expr_prefix, expr_values, expr_type] = translate(expr, member_type)
+
+        if (expr_type !== member_type) {
+          throw new CompError(`Struct member '${member_name}' requires type '${member_type}', got '${expr_type}'`)
+        }
+
+        prefix.push(...expr_prefix)
+
+        let size = get_data_type_size(expr_type)
+        let buffer = alloc_block(size)
+
+        for (let i = 0; i < size; i++) {
+          prefix.push(`write ${expr_values[i]} ram.${buffer[i]}`)
+          registers.push(`[ram.${buffer[i]}]`)
+        }
+
+        expr_index++
+      }
     } break
 
     case "var_or_const": {
@@ -2299,9 +2438,7 @@ function translate(token, ctx_type) {
       }
 
       type = table_entry.data_type
-      if (!(type in data_type_size)) {
-        throw new CompError(`Variable '${args.name}' has an invalid data type '${type}'`)
-      }
+      assert_valid_datatype(type)
 
       registers = []
       if (["variable","argument"].includes(table_entry.type)) {
@@ -2322,6 +2459,30 @@ function translate(token, ctx_type) {
         throw new CompError(`Unknown symbol type '${table_entry.type}'`)
       }
 
+    } break
+
+    case "struct_member_val": {
+      let [struct_prefix, struct_values, struct_type] = translate(args.name)
+      let members = state.struct_definitions[struct_type].members
+
+      let member_name = args.member
+
+      if (!(args.member in members)) {
+        throw new CompError(`Struct of type '${struct_type}' has no member '${args.member}'`)
+      }
+
+      let member_info = members[member_name]
+      let member_type = member_info.data_type
+
+      let range_start = member_info.offset
+      let range_end = range_start + get_data_type_size(member_type)
+
+      registers = []
+      for (let i = range_start; i < range_end; i++) {
+        registers.push(struct_values[i])
+      }
+
+      type = member_type
     } break
 
     case "array_expression": {
@@ -2348,7 +2509,7 @@ function translate(token, ctx_type) {
       let base_addr = `[${ram_prefix}${table_entry.base_addr}]`
       let current_len = `[${ram_prefix}${table_entry.current_len}]`
       let max_len = `[${ram_prefix}${table_entry.max_len}]`
-      let item_size = data_type_size[array_type]
+      let item_size = get_data_type_size(array_type)
 
 
       if (operation === "index") {
@@ -2502,7 +2663,7 @@ function translate(token, ctx_type) {
         type = "int"
       }
 
-      let size = data_type_size[type]
+      let size = get_data_type_size(type)
       let temp_buffer = alloc_block(size)
 
       // make pointer value available
@@ -2736,6 +2897,39 @@ function translate(token, ctx_type) {
       // add return instruction unless it is already there
       if (target[target.length -1] !== "  return") {
         target.push("return")
+      }
+    } break
+
+    case "struct_def": {
+      assert_global_name_available(args.name)
+
+      let members = {}
+      let total_size = 0
+      for (let entry of token.body) {
+        if (entry.name !== "struct_member_def") {
+          throw new CompError("Only struct member definitions are permitted here")
+        }
+        let name = entry.arguments.name
+        let type = entry.arguments.data_type
+
+        assert_valid_datatype(type)
+
+        let size =  get_data_type_size(type)
+
+        if (name in members) {
+          throw new CompError(`Duplicate member name '${name}'`)
+        }
+
+        members[name] = {
+          data_type: type,
+          offset: total_size
+        }
+        total_size += size
+      }
+
+      state.struct_definitions[args.name] = {
+        members: members,
+        size: total_size
       }
     } break
 
