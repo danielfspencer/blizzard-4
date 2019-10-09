@@ -712,10 +712,13 @@ function tokenise(input, line) {
       }
     }
 
-  } else if (/^\S+?(?=\((.*)\)$)/.test(input)) { // function call [name](*)
-    let name = /^\S+?(?=\((.*)\)$)/.exec(input)[0]
-    let args_string = /^\S+?(?=\((.*)\)$)/.exec(input)[1]
+  } else if (/^([\w.]+#?)\((.*)\)$/.test(input)) { // function call [name](*)
+    let matches = /^([\w.]+#?)\((.*)\)$/.exec(input)
+
+    let name = matches[1]
+    let args_string = matches[2]
     let string_list = args_string.split(",")
+    let ignore_type_mismatch = false
     let args = []
     if (args_string !== "") {
       for (let item of string_list) {
@@ -724,7 +727,12 @@ function tokenise(input, line) {
         }
       }
     }
-    token = {name:"function",type:"expression",arguments:{name:name,exprs:args,ignore_type_mismatch:false}}
+    if (name.endsWith("#")) {
+      ignore_type_mismatch = true
+      name = name.slice(0, -1)
+    }
+
+    token = {name:"function",type:"expression",arguments:{name:name,exprs:args,ignore_type_mismatch:ignore_type_mismatch}}
 
   } else if (/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/.test(input)) {          // is an expression
     let operation = find_operation(/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/g, input)
