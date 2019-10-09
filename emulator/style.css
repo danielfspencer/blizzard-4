@@ -81,8 +81,12 @@ table {
 }
 
 input {
+  margin: 0;
+  padding: 0;
+  border: 2px solid rgb(238, 238, 238);
+  box-sizing: border-box;
   width: 65px;
-  height: 12px;
+  max-height: 16px;
 }
 
 .led_row {
