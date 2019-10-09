@@ -342,6 +342,7 @@ function start() {
 function stop() {
   if (is_running) {
     is_running = false
+    zero_busses()
     clearInterval(interval_timer)
     clearInterval(frequency_measurement_timer)
     postMessage(["stopped"])
