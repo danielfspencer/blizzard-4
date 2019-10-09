@@ -294,7 +294,8 @@ function function_call(name, args) {
     type:"expression",
     arguments: {
       name: name,
-      exprs: args
+      exprs: args,
+      ignore_type_mismatch: true
     }
   }
 
@@ -723,7 +724,7 @@ function tokenise(input, line) {
         }
       }
     }
-    token = {name:"function",type:"expression",arguments:{name:name,exprs:args}}
+    token = {name:"function",type:"expression",arguments:{name:name,exprs:args,ignore_type_mismatch:false}}
 
   } else if (/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/.test(input)) {          // is an expression
     let operation = find_operation(/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/g, input)
@@ -1766,12 +1767,9 @@ function translate(token, ctx_type) {
           registers = ["[alu.+]"]
         } break
 
+        case "slong":
         case "long": {
           [prefix, registers] = function_call("sys.long_add", [args.expr1,args.expr2])
-        } break
-
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_add", [args.expr1,args.expr2])
         } break
 
         default:
@@ -1792,12 +1790,9 @@ function translate(token, ctx_type) {
           registers = ["[alu.-]"]
         } break
 
+        case "slong":
         case "long": {
           [prefix, registers] = function_call("sys.long_subtract", [args.expr1,args.expr2])
-        } break
-
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_subtract", [args.expr1,args.expr2])
         } break
 
         default:
@@ -2045,7 +2040,7 @@ function translate(token, ctx_type) {
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          prefix_and_value = function_call("sys.slong_equal", [args.expr1,args.expr2])
+          prefix_and_value = function_call("sys.long_equal", [args.expr1,args.expr2])
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -2119,7 +2114,7 @@ function translate(token, ctx_type) {
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          prefix_and_value = function_call("sys.slong_equal", [args.expr1,args.expr2])
+          prefix_and_value = function_call("sys.long_equal", [args.expr1,args.expr2])
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -2148,13 +2143,10 @@ function translate(token, ctx_type) {
           registers = ["[alu.=]"]
         } break
 
+        case "slong":
         case "long": {
           [prefix, registers] = function_call("sys.long_equal", [args.expr1,args.expr2])
-          } break
-
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_equal", [args.expr1,args.expr2])
-          } break
+        } break
 
         default:
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -2175,12 +2167,9 @@ function translate(token, ctx_type) {
           registers = ["[alu.!]"]
         } break
 
+        case "slong":
         case "long": {
           [prefix, registers] = function_call("sys.long_not_equal", [args.expr1,args.expr2])
-        } break
-
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_not_equal", [args.expr1,args.expr2])
         } break
 
         default:
@@ -2239,12 +2228,9 @@ function translate(token, ctx_type) {
           registers = ["[alu.<<]"]
         } break
 
+        case "slong":
         case "long": {
           [prefix, registers] = function_call("sys.long_lshift", [args.expr])
-        } break
-
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_lshift", [args.expr])
         } break
 
         default:
@@ -2582,7 +2568,7 @@ function translate(token, ctx_type) {
         let expr_token = args.exprs[i]
 
         let [expr_prefix, expr_value, expr_type] = translate(expr_token, target_type)
-        if (expr_type !== target_type) {
+        if ((!args.ignore_type_mismatch) && expr_type !== target_type) {
           throw new CompError(`In call to ${args.name}()\nArg '${target_args[i]}' is of type '${target_type}', but got '${expr_type}'`)
         }
 
