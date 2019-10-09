@@ -8,7 +8,7 @@
   <script src="../../assets/js/jquery.min.js"></script>
   <script src="../../assets/lib.js"></script>
   <script src="script.js"></script>
-  <title>Stats</title>
+  <title>Statistics</title>
 </head>
 <body>
   <script src="../../assets/set_theme.js"></script>
@@ -19,7 +19,20 @@
   </div>
 
   <div id="main">
-    stats go here
+    <div id="stats" class="card">
+      <table>
+        <tr>
+          <td>Clock cycles</td>
+          <td><code id="item">-</code></td>
+        </tr><tr>
+          <td>Time elapsed</td>
+          <td><code id="item">-</code></td>
+        </tr><tr>
+          <td>Invalid addr. accesses</td>
+          <td><code id="item">-</code></td>
+        </tr>
+      </table>
+    </div>
   </div>
 
 </body>

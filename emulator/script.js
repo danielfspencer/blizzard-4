@@ -129,7 +129,7 @@ function open_visualiser() {
 function open_stats() {
   let store = parent.interface.window_ref_store
   if (store.stats === undefined || store.stats.parent === null) {
-    windows.open('emulator/stats/stats.html', 512, 512 + 24, ref => {
+    windows.open('emulator/stats/stats.html', 400, 136 + 24, ref => {
       store.stats = ref
     })
   }
