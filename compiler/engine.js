@@ -255,6 +255,18 @@ function assert_global_name_available(name) {
   }
 }
 
+function assert_valid_name(name) {
+  if (!(/^[a-zA-Z_]\w*$/.test(name))) {
+    throw new CompError(`Invalid name '${name}'`)
+  }
+}
+
+function assert_valid_function_name(name) {
+  if (!(/^[a-zA-Z_][\w.]*$/.test(name))) {
+    throw new CompError(`Invalid function name '${name}'`)
+  }
+}
+
 function gen_id(type) {
   let id = state.ids[type]
   state.ids[type] += 1
@@ -434,7 +446,6 @@ function load_lib(name) {
     } catch (error) {
       if (error instanceof CompError) { // if this is CompError with no line info
         // let the user know the error in the standard library - and not their fault
-        // throw new CompError(error.message, error.line + " [in library obj. '" + name + "']")
         throw new CompError(error.message, `${error.line} [in library obj. '${name}']`)
       } else {
         throw error
@@ -471,53 +482,22 @@ function tokenise(input, line) {
   } else if (/^\"(.+)\"$|^(\"\")$/.test(input)) {     //string
     token = {name:"str",type:"expression",arguments:{value:input,type_guess:"str"}}
 
-  } else if (list[0] === "var") {                       // var [type] [name] <expr>
-    if (list.length >= 4) {
-      let expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
-      if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
-      token = {name:"var_alloc",type:"command",arguments:{type:list[1],name:list[2],expr:expr}}
-    } else if (list.length > 2) {
-      if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
-      token = {name:"var_alloc",type:"command",arguments:{type:list[1],name:list[2]}}
-    } else {
-      throw new CompError("Variable decleration syntax:\nvar [type] [name] <expr>")
+  } else if (/^(var|arg|const|global)/.test(input)) {        // (var/arg/const/global) [type] [name] <expr>
+    if (list.length < 3) {
+      throw new CompError("Decleration syntax:\nvar/arg/const/global [type] [name] <expr>")
     }
 
-  } else if (list[0] === "arg") {                      // arg [type] [name] <expr>
+    let alloc_type = list[0]      // var / arg / const / global
+    let type = list[1]
+    let name = list[2]
+    let expr
+    assert_valid_name(name)
+
     if (list.length >= 4) {
-      let expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
-      if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
-      token = {name:"arg_alloc",type:"command",arguments:{type:list[1],name:list[2],expr:expr}}
-    } else if (list.length > 2) {
-      if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
-      token = {name:"arg_alloc",type:"command",arguments:{type:list[1],name:list[2]}}
-    } else {
-      throw new CompError("Argument decleration syntax:\narg [type] [name] <expr>")
+      expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
     }
 
-  } else if (list[0] === "const") {             // const [type] [name] [expr]
-    if (list.length >= 4) {
-      let expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
-      if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
-      token = {name:"const_alloc",type:"command",arguments:{type:list[1],name:list[2],expr:expr}}
-    } else if (list.length > 2) {
-      if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
-      token = {name:"const_alloc",type:"command",arguments:{type:list[1],name:list[2]}}
-    } else {
-      throw new CompError("Constant decleration syntax:\nconst [type] [name] <expr>")
-    }
-
-  } else if (list[0] === "global") {             // global [type] [name] [expr]
-    if (list.length >= 4) {
-      let expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
-      if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
-      token = {name:"global_alloc",type:"command",arguments:{type:list[1],name:list[2],expr:expr}}
-    } else if (list.length > 2) {
-      if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(list[2])) { throw new CompError(`Invalid name '${list[2]}'`)}
-      token = {name:"global_alloc",type:"command",arguments:{type:list[1],name:list[2]}}
-    } else {
-      throw new CompError("Global decleration syntax:\nglobal [type] [name] <expr>")
-    }
+    token = {name:`${alloc_type}_alloc`,type:"command",arguments:{type:type, name:name, expr:expr}}
 
   } else if (list[0] === "if") {               // if [bool]
     if (list.length > 1) {
@@ -579,6 +559,7 @@ function tokenise(input, line) {
         list[2] = list[2].substr(1)
       }
     }
+    assert_valid_function_name(list[1])
 
     token = {name:"function_def",type:"structure",body:[],arguments:{name:list[1],type:list[2],force_cast:force_cast}}
 
@@ -588,6 +569,7 @@ function tokenise(input, line) {
     } else if (list.length > 2) {
       throw new CompError("Invalid syntax")
     }
+    assert_valid_name(list[1])
 
     token = {name:"struct_def",type:"structure",body:[],arguments:{name:list[1]}}
 
@@ -600,8 +582,8 @@ function tokenise(input, line) {
   } else if (/^continue$/.test(input)) {                 // break
     token = {name:"continue",type:"command",arguments:{}}
 
-  } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.test(input)) {                    // [name] = [expr]
-    let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.exec(input)
+  } else if (/^([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.test(input)) {                    // [name] = [expr]
+    let matches = /^([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.exec(input)
     let expr = tokenise(matches[2], line)
     token = {name:"set",type:"command",arguments:{expr:expr,name:matches[1]}}
 
@@ -614,8 +596,8 @@ function tokenise(input, line) {
 
     token = {name:"struct_member_set",type:"command",arguments:{expr:expr,name:name,member:member}}
 
-  } else if (/^\*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.test(input)) {                    // *[pointer] = [expr]
-    let matches = /^\*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^=].*)$/.exec(input)
+  } else if (/^\*([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.test(input)) {                    // *[pointer] = [expr]
+    let matches = /^\*([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.exec(input)
     let expr = tokenise(matches[2], line)
     token = {name:"pointer_set",type:"command",arguments:{expr:expr,name:matches[1]}}
 
@@ -655,9 +637,9 @@ function tokenise(input, line) {
   } else if (/.+?(?=\-\-)/.test(input)) { //  [name]--
     token = {name:"decrement_1",type:"command",arguments:{name:/.+?(?=\-\-)/.exec(input)}}
 
-  } else if (/^\*(\(.*\))?([a-zA-Z_][a-zA-Z0-9_]*)$/.test(input)) {                    // pointer lookup
-    let matches = /^\*(\(.*\))?([a-zA-Z_][a-zA-Z0-9_]*)$/.exec(input)
-    let type_cast = undefined
+  } else if (/^\*(\(.*\))?([a-zA-Z_]\w*)$/.test(input)) {                    // pointer lookup
+    let matches = /^\*(\(.*\))?([a-zA-Z_]\w*)$/.exec(input)
+    let type_cast
     if(matches[1] !== undefined) {
       type_cast = matches[1].slice(1, -1)
     }
@@ -667,7 +649,7 @@ function tokenise(input, line) {
   } else if (/^\((.*)\)$/.test(input)) {  // it is an expression that is in brackets
     throw new CompError("Not implemented")
 
-  } else if (/(^\d+$)|(^0b[10]+$)|(^0x[0-9a-fA-F]+$)/.test(input)) { //        [unsigned integer]   is dec/hex/bin number only
+  } else if (/^(\d+|0b[10]+|0x[0-9a-fA-F]+)$/.test(input)) { //        [unsigned integer]   is dec/hex/bin number only
     let dec_val = parse_int(input)
     let guess
     if (dec_val > 65535) {
@@ -690,8 +672,8 @@ function tokenise(input, line) {
   } else if (list[0] === "include") {
     token = {name:"include",type:"command",arguments:{name:list[1]}}
 
-  } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\.(append|insert)\((.*)\)$/.test(input)) {   // array function ie. array_name.insert/append(args)
-    let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\.(append|insert)\((.*)\)$/.exec(input)
+  } else if (/^([a-zA-Z_]\w*)\.(append|insert)\((.*)\)$/.test(input)) {   // array function ie. array_name.insert/append(args)
+    let matches = /^([a-zA-Z_]\w*)\.(append|insert)\((.*)\)$/.exec(input)
     let array_name = matches[1]
     let operation = matches[2]
     let argument_string = matches[3]
@@ -710,8 +692,8 @@ function tokenise(input, line) {
        }
     }
 
-  } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]\s*=\s*(.*)$/.test(input)) {       //array set ie array_name[index] = some value
-    let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]\s*=\s*(.*)$/.exec(input)
+  } else if (/^([a-zA-Z_]\w*)\[(.+)\]\s*=\s*(.*)$/.test(input)) {       //array set ie array_name[index] = some value
+    let matches = /^([a-zA-Z_]\w*)\[(.+)\]\s*=\s*(.*)$/.exec(input)
     let array_name = matches[1]
     let index_expression = matches[2]
     let value = matches[3]
@@ -723,8 +705,8 @@ function tokenise(input, line) {
       }
     }
 
-  } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\.(len|pop|max_len)\(\)$/.test(input)) {       //array function ie array_name.pop/len()
-    let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\.(len|pop|max_len)\(\)$/.exec(input)
+  } else if (/^([a-zA-Z_]\w*)\.(len|pop|max_len)\(\)$/.test(input)) {       //array function ie array_name.pop/len()
+    let matches = /^([a-zA-Z_]\w*)\.(len|pop|max_len)\(\)$/.exec(input)
     let array_name = matches[1]
     let operation = matches[2]
 
@@ -734,8 +716,8 @@ function tokenise(input, line) {
       }
     }
 
-  } else if (/^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]$/.test(input)) {       //array expression ie array_name[index]
-    let matches = /^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]$/.exec(input)
+  } else if (/^([a-zA-Z_]\w*)\[(.+)\]$/.test(input)) {       //array expression ie array_name[index]
+    let matches = /^([a-zA-Z_]\w*)\[(.+)\]$/.exec(input)
     let array_name = matches[1]
     let index_expression = matches[2]
 
@@ -821,13 +803,11 @@ function tokenise(input, line) {
     }}
 
   } else if (list.length == 2) {
-    let data_type = list[0]
+    let type = list[0]
     let name = list[1]
-    if (!/(?=^\S*)[a-zA-Z_][a-zA-Z0-9_]*/.test(name)) {
-      throw new CompError(`Invalid name '${name}'`)
-    }
+    assert_valid_name(name)
 
-    token = {name:"struct_member_def", type:"command", arguments:{name:name,data_type:data_type}}
+    token = {name:"struct_member_def", type:"command", arguments:{name:name,type:type}}
 
   } else if (/^([a-zA-Z_]\w*).([a-zA-Z_]\w*)$/.test(input)) {
     let matches = /^([a-zA-Z_]\w*).([a-zA-Z_]\w*)$/.exec(input)
@@ -2910,7 +2890,7 @@ function translate(token, ctx_type) {
           throw new CompError("Only struct member definitions are permitted here")
         }
         let name = entry.arguments.name
-        let type = entry.arguments.data_type
+        let type = entry.arguments.type
 
         assert_valid_datatype(type)
 
