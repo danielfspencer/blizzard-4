@@ -298,7 +298,7 @@ function send_ram_changes() {
 }
 
 function vram_change(address, new_data) {
-  activity_indicators["vram_write"] = 1
+  activity_indicators.vram_write = 1
   vram[address] = new_data
   if (vram_addresses_changed[address] === undefined) {
     vram_addresses_changed[address] = true
@@ -306,7 +306,7 @@ function vram_change(address, new_data) {
 }
 
 function ram_change(address, new_data) {
-  activity_indicators["ram_write"] = 1
+  activity_indicators.ram_write = 1
   ram[address] = new_data
   if (ram_addresses_changed[address] === undefined) {
     ram_addresses_changed[address] = true
@@ -344,7 +344,6 @@ function stop() {
     is_running = false
     clearInterval(interval_timer)
     clearInterval(frequency_measurement_timer)
-    zero_busses()
     postMessage(["stopped"])
   } else {
     postMessage(["stop"])
@@ -444,12 +443,12 @@ function simulate_effect_of_read_bus_change() {
 
   if (read_bus > 32767) {                                                 // ROM
     var address = read_bus - 32768
-    activity_indicators["rom_read"] = 1
-    activity_indicators["rom_address"] = address
+    activity_indicators.rom_read = 1
+    activity_indicators.rom_address = address
     data_bus = rom[address]
 
   } else if (read_bus > 16383) {                                          // RAM
-    activity_indicators["ram_read"] = 1
+    activity_indicators.ram_read = 1
 
     if (direct_ram_addressing) {
       var address = read_bus - 16384
@@ -461,19 +460,19 @@ function simulate_effect_of_read_bus_change() {
       switch (frame_offset_selector) {
         case 0:   //frame below
           address += (frame_number - 1) * 1024
-          activity_indicators["ram_frame_offset"] = 2
+          activity_indicators.ram_frame_offset = 2
           break
         case 1:   //current frame
           address += frame_number * 1024
-          activity_indicators["ram_frame_offset"] = 4
+          activity_indicators.ram_frame_offset = 4
           break
         case 2:   //frame above
           address += (frame_number + 1) * 1024
-          activity_indicators["ram_frame_offset"] = 8
+          activity_indicators.ram_frame_offset = 8
           break
         case 3:  //top frame
           address += 15 * 1024
-          activity_indicators["ram_frame_offset"] = 1
+          activity_indicators.ram_frame_offset = 1
           break
       }
 
@@ -483,7 +482,7 @@ function simulate_effect_of_read_bus_change() {
         data_bus = ram[address]
       }
     }
-    activity_indicators["ram_address"] = address
+    activity_indicators.ram_address = address
 
   } else if (read_bus < 16384) {                                          //everywhere else (card addressing)
     var card_address = (read_bus & 0b0011100000000000) >> 11
@@ -511,47 +510,47 @@ function simulate_effect_of_read_bus_change() {
         switch (address) {
           case 2:
             data_bus = alu_operands[0] + alu_operands[1]
-            activity_indicators["alu_read"] = 2 ** 10
+            activity_indicators.alu_read = 2 ** 10
             break
           case 3:
             data_bus = alu_operands[0] - alu_operands[1]
-            activity_indicators["alu_read"] = 2 ** 9
+            activity_indicators.alu_read = 2 ** 9
             break
           case 4:
             data_bus = alu_operands[0] >> 1
-            activity_indicators["alu_read"] = 2 ** 8
+            activity_indicators.alu_read = 2 ** 8
             break
           case 5:
             data_bus = alu_operands[0] << 1
-            activity_indicators["alu_read"] = 2 ** 7
+            activity_indicators.alu_read = 2 ** 7
             break
           case 6:
             data_bus = alu_operands[0] & alu_operands[1]
-            activity_indicators["alu_read"] = 2 ** 6
+            activity_indicators.alu_read = 2 ** 6
             break
           case 7:
             data_bus = alu_operands[0] | alu_operands[1]
-            activity_indicators["alu_read"] = 2 ** 5
+            activity_indicators.alu_read = 2 ** 5
             break
           case 8:
             data_bus = alu_operands[0] ^ 0xffff
-            activity_indicators["alu_read"] = 2 ** 4
+            activity_indicators.alu_read = 2 ** 4
             break
           case 9:
             data_bus = alu_operands[0] > alu_operands[1] ? 1 : 0
-            activity_indicators["alu_read"] = 2 ** 3
+            activity_indicators.alu_read = 2 ** 3
             break
           case 10:
             data_bus = alu_operands[0] < alu_operands[1] ? 1 : 0
-            activity_indicators["alu_read"] = 2 ** 2
+            activity_indicators.alu_read = 2 ** 2
             break
           case 11:
             data_bus = alu_operands[0] == alu_operands[1] ? 1 : 0
-            activity_indicators["alu_read"] = 2
+            activity_indicators.alu_read = 2
             break
           case 12:
             data_bus = (alu_operands[0] + alu_operands[1]) > 0xffff ? 1 : 0
-            activity_indicators["alu_read"] = 1
+            activity_indicators.alu_read = 1
             break
           default:
             break
@@ -567,7 +566,7 @@ function simulate_effect_of_read_bus_change() {
       case 3:                                                             //video adapter
         if (address < 1024) {
           data_bus = vram[address]
-          activity_indicators["vram_read"] = 1
+          activity_indicators.vram_read = 1
         }
         break
       case 4:                                                             //keyboard interface
@@ -604,8 +603,8 @@ function simulate_effect_of_write_bus_change() {
 
   if (write_bus > 32767) {                                                 // ROM
     var address = write_bus - 32768
-    activity_indicators["rom_write"] = 1
-    activity_indicators["rom_address"] = address
+    activity_indicators.rom_write = 1
+    activity_indicators.rom_address = address
     if (!write_protect) {
       rom[address] = data_bus
     }
@@ -621,19 +620,19 @@ function simulate_effect_of_write_bus_change() {
       switch (frame_offset_selector) {
         case 0:   //frame below
           address += (frame_number - 1) * 1024
-          activity_indicators["ram_frame_offset"] = 2
+          activity_indicators.ram_frame_offset = 2
           break
         case 1:   //current frame
           address += frame_number * 1024
-          activity_indicators["ram_frame_offset"] = 4
+          activity_indicators.ram_frame_offset = 4
           break
         case 2:   //frame above
           address += (frame_number + 1) * 1024
-          activity_indicators["ram_frame_offset"] = 8
+          activity_indicators.ram_frame_offset = 8
           break
         case 3:  //top frame
           address += 15 * 1024
-          activity_indicators["ram_frame_offset"] = 1
+          activity_indicators.ram_frame_offset = 1
           break
       }
 
@@ -643,7 +642,7 @@ function simulate_effect_of_write_bus_change() {
     }
 
     ram_change(address, data_bus)
-    activity_indicators["ram_address"] = address
+    activity_indicators.ram_address = address
 
   } else if (write_bus < 16384) {                                          //everywhere else (card addressing)
     var card_address = (write_bus & 0b0011100000000000) >> 11
@@ -671,10 +670,10 @@ function simulate_effect_of_write_bus_change() {
       case 1:                                                             //alu
         if (address == 0) {
           alu_operands[0] = data_bus
-          activity_indicators["alu1_write"] = 1
+          activity_indicators.alu1_write = 1
         } else if (address == 1) {
           alu_operands[1] = data_bus
-          activity_indicators["alu2_write"] = 1
+          activity_indicators.alu2_write = 1
         }
         break
       case 2:                                                             //user io
@@ -774,7 +773,7 @@ function run_execute_microcode_2nd_stage(instructions) {
 }
 
 function run_buffered_instructions() {
-  if (buffered_instructions["increment_mode"]) {
+  if (buffered_instructions.increment_mode) {
     debug && console.debug("increment_mode")
     first_clock = false
     if (control_mode < 2) {
@@ -784,7 +783,7 @@ function run_buffered_instructions() {
     }
   }
 
-  if (buffered_instructions["decrement_arg_counter"]) {
+  if (buffered_instructions.decrement_arg_counter) {
     debug && console.debug("decrement_arg_counter")
     args_remaining--
   }
@@ -852,7 +851,7 @@ function data_bus_to_arg2() {
 
 function increment_mode() {
   debug && console.debug("queue: increment_mode")
-  buffered_instructions["increment_mode"] = true
+  buffered_instructions.increment_mode = true
 }
 
 function increment_pc() {
@@ -863,7 +862,7 @@ function increment_pc() {
 
 function decrement_arg_counter() {
   debug && console.debug("queue: decrement_arg_counter")
-  buffered_instructions["decrement_arg_counter"] = true
+  buffered_instructions.decrement_arg_counter = true
 }
 
 function clock_stop() {
