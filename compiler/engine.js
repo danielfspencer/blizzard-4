@@ -250,6 +250,20 @@ function assert_valid_function_name(name) {
   }
 }
 
+function buffer_if_needed(address, calle) {
+  let prefix = []
+  let new_address = address
+
+  if (/(alu\.)|(ram\+\.)/.test(address)) {
+    let buffer = get_temp_word()
+    prefix.push(`write ${address} ${buffer.label}`)
+    new_address = buffer.label
+  }
+
+  log.info(`${address} -> ${new_address}`)
+  return [prefix, new_address]
+}
+
 function gen_id(type) {
   let id = state.ids[type]
   state.ids[type] += 1
@@ -2367,11 +2381,11 @@ function translate(token, ctx_type) {
         prefix.push(...expr_prefix)
 
         let size = get_data_type_size(expr_type)
-        let buffer = alloc_block(size)
 
         for (let i = 0; i < size; i++) {
-          prefix.push(`write ${expr_values[i]} ram.${buffer[i]}`)
-          registers.push(`[ram.${buffer[i]}]`)
+          let [buffer_prefix, buffer_addr] = buffer_if_needed(expr_values[i])
+          prefix.push(...buffer_prefix)
+          registers.push(buffer_addr)
         }
 
         expr_index++
@@ -2627,15 +2641,15 @@ function translate(token, ctx_type) {
       prefix.push(...addr_prefix)
 
       // copy pointer value into temp ram word
-      let pointer_addr = get_temp_word()
-      prefix.push(`write ${addr_value} ${pointer_addr.label}`)
+      let [buffer_prefix, buffer_addr] = buffer_if_needed(addr_value[0])
+      prefix.push(...buffer_prefix)
 
       // lookup pointer value and copy into temp buffer
-      prefix.push(`copy [${pointer_addr.label}] ram.${temp_buffer[0]}`)
+      prefix.push(`copy ${buffer_addr} ram.${temp_buffer[0]}`)
 
       // if the target type is more than one word, copy more words
       if (size > 1) {
-        prefix.push(`copy ${pointer_addr.label} alu.1`)
+        prefix.push(`copy ${buffer_addr} alu.1`)
 
         for (let i = 1; i < size; i++) {
           prefix.push(`write ${i} alu.2`)
@@ -2648,8 +2662,6 @@ function translate(token, ctx_type) {
       for (let addr of temp_buffer) {
         registers.push(`[ram.${addr}]`)
       }
-
-      pointer_addr.free()
     } break
 
     default:
