@@ -7,25 +7,8 @@ let token_dump = []
 let timer
 
 // load the standard library and define the timer function
-if (typeof process !== "undefined") {
-  // running in nodejs
-  try {
-    timer = require('performance-now')
-    if (process.pkg) { // packaged nodejs mode
-      let path = '/snapshot/b4c/compiler/libraries.js'
-      if (process.platform === "win32") {
-        path = "C:" + path
-      }
-      importScripts(path)
-    } else {  // normal nodejs mode
-      importScripts('compiler/libraries.js')
-    }
-  } catch (e) {throw e}
-} else {
-  // running in browser (the sane one)
-  timer = () => performance.now()
-  importScripts('libraries.js')
-}
+timer = () => performance.now()
+importScripts('libraries.js')
 
 const data_type_size = {int:1,sint:1,long:2,slong:2,float:2,bool:1,str:1,array:4,none:0}
 const data_type_default_value = {int:"0",sint:"0",long:"0",slong:"0",float:"0",bool:"false",str:"\"\""}
