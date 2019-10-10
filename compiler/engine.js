@@ -260,7 +260,6 @@ function buffer_if_needed(address, calle) {
     new_address = buffer.label
   }
 
-  log.info(`${address} -> ${new_address}`)
   return [prefix, new_address]
 }
 
