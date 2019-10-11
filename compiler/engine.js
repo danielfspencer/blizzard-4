@@ -2852,7 +2852,7 @@ function compile(input, nested) {
   }
 
   //translate
-    log.info("Tranlsating...")
+    log.info("Translating...")
     t0 = timer()
     let output = ""
     let command = []
