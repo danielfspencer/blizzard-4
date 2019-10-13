@@ -1986,7 +1986,7 @@ function translate(token, ctx_type) {
           prefix.push(`write [alu.-] ${temp_var.label}`)
           prefix.push(`write [${temp_var.label}] alu.1`)
           prefix.push("write 1 alu.2")
-          prefix.push(`write [alu.+] ${temp_var.label}`)
+          prefix.push(`write [alu.-] ${temp_var.label}`)
           prefix.push(`write [${temp_var.label}] alu.1`)
           prefix.push("write 0b0111111111111111 alu.2")
           registers = ["[alu.>]"]

@@ -472,7 +472,7 @@ const libs = {
     "  var bool ans true",
     "  ",
     "  a = a - b",
-    "  a += 1",
+    "  a -= 1",
     "",
     "  var u16 a_high a:0",
     "  var u16 a_low a:1",
