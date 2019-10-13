@@ -23,13 +23,13 @@ onmessage = (msg) => {
   }
 }
 
-function AsmError(message, line) {
+function AsmError(message, location) {
   this.message = message
-  this.line = line
+  this.location = location
 }
 
 AsmError.prototype.toString = function() {
-  return "word " + this.line + ": \n'" + this.message + "' is not defined"
+  return `${this.location}:\n${this.message}`
 }
 
 const log = {
@@ -199,6 +199,9 @@ function assemble(lines) {
     if (line.length == 1 && !(line[0] in opDefs)) { // if it's one string
       if (line[0].endsWith(":")) { // ends with : means it is a label
         let label = line[0].substr(0, line[0].length - 1)
+        if (label in labels) {
+          throw new AsmError(`Label '${label}' has already been defined`,`line ${i}`)
+        }
         labels[label] = adr + 32768
         log.debug("addr 0x" +  adr.toString(16) + " new label '" + label + "'")
         continue
@@ -275,7 +278,7 @@ function assemble(lines) {
   for (let i = 0; i < as_list.length; i++) {
     let line = as_list[i]
     if (!   /^[0-1]{16}\n?$/.test(line) && line != "") {
-      throw new AsmError(line, i)
+      throw new AsmError(`'${line}' is not defined`,`word ${i}`)
     }
   }
   log.info("↳ success, " + (as_list.length - 1) + " word(s) checked")
