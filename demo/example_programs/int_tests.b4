@@ -1,745 +1,334 @@
-var u16 line
-var u16 test
-def fail
-  arg str message
-  arg u16 line
-  sys.print_string(message,0,line)
+global u16 line
+global str current_type
+global u16 tests_passed
+global u16 total_tests
+global u16 sub_test_num
 
-//integer tests
-var u16 u16_test
-
-u16_test = 1 + 1
-
-if u16_test != 2
-  fail("u16 1 fail",line)
-  line++
+var u16 u16_tmp
+var s16 s16_tmp
+var u32 u32_tmp
+var s32 s32_tmp
 
-u16_test = 1 - 1
-
-test++
-{write $test usrio.out3}
-if u16_test != 0
-  fail("u16 2 fail",line)
-  line++
+def assert
+  arg bool condition
 
-u16_test = 1 >>
-
-test++
-{write $test usrio.out3}
-if u16_test != 0
-  fail("u16 3 fail",line)
-  line++
+  if condition
+    tests_passed++
+  else
+    sys.print_string(current_type, 0, line)
+    sys.print_u16(sub_test_num, 4, line)
+    sys.print_string("fail", 7, line)
+    if line == 15
+      line = 0
+      sys.vram.clear()
+    else
+      line++
 
-u16_test = 1 <<
-
-test++
-{write $test usrio.out3}
-if u16_test != 2
-  fail("u16 4 fail",line)
-  line++
+  sub_test_num++
+  total_tests++
+  {write $tests_passed usrio.out2}
+  {write $total_tests usrio.out3}
 
-u16_test = 1 * 1
-
-test++
-{write $test usrio.out3}
-if u16_test != 1
-  fail("u16 5 fail",line)
-  line++
 
-u16_test = 1 / 1
-
-test++
-{write $test usrio.out3}
-if u16_test != 1
-  fail("u16 6 fail",line)
-  line++
+// u16 tests
+current_type = "u16"
+sub_test_num = 0
 
-u16_test = 2 * 2
-
-test++
-{write $test usrio.out3}
-if u16_test != 4
-  fail("u16 7 fail",line)
-  line++
-
-u16_test = 4 / 2
-
-test++
-{write $test usrio.out3}
-if u16_test != 2
-  fail("u16 8 fail",line)
-  line++
+u16_tmp = 1 + 1
+assert(u16_tmp == 2)
 
-u16_test = 7 * 2
+u16_tmp = 1 - 1
+assert(u16_tmp == 0)
 
-test++
-{write $test usrio.out3}
-if u16_test != 14
-  fail("u16 9 fail",line)
-  line++
+u16_tmp = 1 >>
+assert(u16_tmp == 0)
 
-u16_test = 14 / 2
+u16_tmp = 1 <<
+assert(u16_tmp == 2)
 
-test++
-{write $test usrio.out3}
-if u16_test != 7
-  fail("u16 10 fail",line)
-  line++
+u16_tmp = 1 * 1
+assert(u16_tmp == 1)
 
-u16_test = 4 ^ 4
+u16_tmp = 1 / 1
+assert(u16_tmp == 1)
 
-test++
-{write $test usrio.out3}
-if u16_test != 256
-  fail("u16 11 fail",line)
-  line++
+u16_tmp = 2 * 2
+assert(u16_tmp == 4)
 
-u16_test = 63 % 4
+u16_tmp = 4 / 2
+assert(u16_tmp == 2)
 
-test++
-{write $test usrio.out3}
-if u16_test != 3
-  fail("u16 12 fail",line)
-  line++
+u16_tmp = 7 * 2
+assert(u16_tmp == 14)
 
-u16_test = 2
+u16_tmp = 14 / 2
+assert(u16_tmp == 7)
 
-test++
-{write $test usrio.out3}
-if u16_test > 3
-  fail("u16 13 fail",line)
-  line++
+u16_tmp = 4 ^ 4
+assert(u16_tmp == 256)
 
-u16_test = 3
+u16_tmp = 63 % 4
+assert(u16_tmp == 3)
 
-test++
-{write $test usrio.out3}
-if u16_test < 2
-  fail("u16 14 fail",line)
-  line++
+u16_tmp = 2
+assert(u16_tmp < 3)
 
-u16_test = 3
+u16_tmp = 3
+assert(u16_tmp > 2)
 
-test++
-{write $test usrio.out3}
-if u16_test <= 2
-  fail("u16 15 fail",line)
-  line++
+u16_tmp = 3
+assert(u16_tmp >= 2)
 
-u16_test = 2
+u16_tmp = 2
+assert(u16_tmp <= 3)
 
-test++
-{write $test usrio.out3}
-if u16_test >= 3
-  fail("u16 16 fail",line)
-  line++
+u16_tmp = 250 * 147
+assert(u16_tmp == 36750)
 
-u16_test = 250 * 147
+u16_tmp = 9 ^ 5
+assert(u16_tmp == 59049)
 
-test++
-{write $test usrio.out3}
-if u16_test != 36750
-  fail("u16 17 fail",line)
-  line++
+u16_tmp = 0xffff + 1
+assert(sys.ov)
 
-u16_test = 9 ^ 5
 
-test++
-{write $test usrio.out3}
-if u16_test != 59049
-  fail("u16 18 fail",line)
-  line++
+//s16 tests
+current_type = "s16"
+sub_test_num = 0
 
-u16_test = 0xffff + 1
+s16_tmp = 1 + 1
+assert(s16_tmp == 2)
 
-if sys.ov
-  test = test
-else
-  fail("u16 19 fail",line)
-  line++
-test++
-{write $test usrio.out3}
+s16_tmp = 1 - 1
+assert(s16_tmp == 0)
 
-//signed integer tests
-var s16 s16_test
+s16_tmp = 1 >>
+assert(s16_tmp == 0)
 
-s16_test = 1 + 1
-
-if s16_test != 2
-  fail("s16 1 fail",line)
-  line++
+s16_tmp = 1 <<
+assert(s16_tmp == 2)
 
-s16_test = 1 - 1
+s16_tmp = 1 * 1
+assert(s16_tmp == 1)
 
-test++
-{write $test usrio.out3}
-if s16_test != 0
-  fail("s16 2 fail",line)
-  line++
+s16_tmp = 1 / 1
+assert(s16_tmp == 1)
 
-s16_test = 1 >>
+s16_tmp = 2 * 2
+assert(s16_tmp == 4)
 
-test++
-{write $test usrio.out3}
-if s16_test != 0
-  fail("s16 3 fail",line)
-  line++
+s16_tmp = 4 / 2
+assert(s16_tmp == 2)
 
-s16_test = 1 <<
+s16_tmp = 7 * 2
+assert(s16_tmp == 14)
 
-test++
-{write $test usrio.out3}
-if s16_test != 2
-  fail("s16 4 fail",line)
-  line++
+s16_tmp = 14 / 2
+assert(s16_tmp == 7)
 
-s16_test = 1 * 1
+s16_tmp = 4 ^ 4
+assert(s16_tmp == 256)
 
-test++
-{write $test usrio.out3}
-if s16_test != 1
-  fail("s16 5 fail",line)
-  line++
+s16_tmp = 63 % 4
+assert(s16_tmp == 3)
 
-s16_test = 1 / 1
+s16_tmp = 2
+assert(s16_tmp < 3)
 
-test++
-{write $test usrio.out3}
-if s16_test != 1
-  fail("s16 6 fail",line)
-  line++
-
-s16_test = 2 * 2
-
-test++
-{write $test usrio.out3}
-if s16_test != 4
-  fail("s16 7 fail",line)
-  line++
-
-s16_test = 4 / 2
-
-test++
-{write $test usrio.out3}
-if s16_test != 2
-  fail("s16 8 fail",line)
-  line++
-
-s16_test = 7 * 2
-
-test++
-{write $test usrio.out3}
-if s16_test != 14
-  fail("s16 9 fail",line)
-  line++
-
-s16_test = 14 / 2
-
-test++
-{write $test usrio.out3}
-if s16_test != 7
-  fail("s16 10 fail",line)
-  line++
-
-s16_test = 4 ^ 4
-
-test++
-{write $test usrio.out3}
-if s16_test != 256
-  fail("s16 11 fail",line)
-  line++
-
-s16_test = 63 % 4
-
-test++
-{write $test usrio.out3}
-if s16_test != 3
-  fail("s16 12 fail",line)
-  line++
-
-s16_test = 2
-
-test++
-{write $test usrio.out3}
-if s16_test > 3
-  fail("s16 13 fail",line)
-  line++
-
-s16_test = 3
-
-test++
-{write $test usrio.out3}
-if s16_test < 2
-  fail("s16 14 fail",line)
-  line++
-
-s16_test = 3
-
-test++
-{write $test usrio.out3}
-if s16_test <= 2
-  fail("s16 15 fail",line)
-  line++
-
-s16_test = 2
-
-test++
-{write $test usrio.out3}
-if s16_test >= 3
-  fail("s16 16 fail",line)
-  line++
-
-s16_test = -2 * -2
-
-test++
-{write $test usrio.out3}
-if s16_test != 4
-  fail("s16 17 fail",line)
-  line++
-
-s16_test = -2 / -2
-
-test++
-{write $test usrio.out3}
-if s16_test != 1
-  fail("s16 18 fail",line)
-  line++
+s16_tmp = 3
+assert(s16_tmp > 2)
+
+s16_tmp = 3
+assert(s16_tmp >= 2)
+
+s16_tmp = 2
+assert(s16_tmp <= 3)
+
+s16_tmp = -2 * -2
+assert(s16_tmp == 4)
+
+s16_tmp = -2 / -2
+assert(s16_tmp == 1)
 
 const s16 minus10 -10
 const s16 minus50 -50
 const s16 minus5 -5
 
-s16_test = minus50 / minus10
+s16_tmp = minus50 / minus10
+assert(s16_tmp == 5)
 
-test++
-{write $test usrio.out3}
-if s16_test != 5
-  fail("s16 19 fail",line)
-  line++
+s16_tmp = minus50 / 10
+assert(s16_tmp == minus5)
 
-s16_test = minus50 / 10
+s16_tmp = 50 / minus10
+assert(s16_tmp == minus5)
 
-test++
-{write $test usrio.out3}
-if s16_test != minus5
-  fail("s16 20 fail",line)
-  line++
+s16_tmp = 147 * 147
+assert(s16_tmp == 21609)
 
-s16_test = 50 / minus10
-
-test++
-{write $test usrio.out3}
-if s16_test != minus5
-  fail("s16 21 fail",line)
-  line++
-
-s16_test = 147 * 147
-
-test++
-{write $test usrio.out3}
-if s16_test != 21609
-  fail("s16 22 fail",line)
-  line++
-
-s16_test = 9 ^ 4
-
-test++
-{write $test usrio.out3}
-if s16_test != 6561
-  fail("s16 23 fail",line)
-  line++
+s16_tmp = 9 ^ 4
+assert(s16_tmp == 6561)
 
 const s16 minus9 -9
 const s16 minus729 -729
 
-s16_test = minus9  ^ 4
+s16_tmp = minus9  ^ 4
+assert(s16_tmp == 6561)
 
-test++
-{write $test usrio.out3}
-if s16_test != 6561
-  fail("s16 24 fail",line)
-  line++
+s16_tmp = minus9  ^ 3
+assert(s16_tmp == minus729)
 
 
-s16_test = minus9  ^ 3
+//u32 tests
+current_type = "u32"
+sub_test_num = 0
 
-test++
-{write $test usrio.out3}
-if s16_test != minus729
-  fail("s16 25 fail",line)
-  line++
+u32_tmp = 1 + 1
+assert(u32_tmp == 2)
 
-test++
-{write $test usrio.out3}
+u32_tmp = 1 - 1
+assert(u32_tmp == 0)
 
-//long tests
-var u32 u32_test
+u32_tmp = 1 >>
+assert(u32_tmp == 0)
 
-u32_test = 1 + 1
+u32_tmp = 1 <<
+assert(u32_tmp == 2)
 
-if u32_test != 2
-  fail("u32 1 fail",line)
-  line++
+u32_tmp = 1 * 1
+assert(u32_tmp == 1)
 
-u32_test = 1 - 1
+u32_tmp = 1 / 1
+assert(u32_tmp == 1)
 
-test++
-{write $test usrio.out3}
-if u32_test != 0
-  fail("u32 2 fail",line)
-  line++
+u32_tmp = 2 * 2
+assert(u32_tmp == 4)
 
-u32_test = 1 >>
+u32_tmp = 4 / 2
+assert(u32_tmp == 2)
 
-test++
-{write $test usrio.out3}
-if u32_test != 0
-  fail("u32 3 fail",line)
-  line++
+u32_tmp = 7 * 2
+assert(u32_tmp == 14)
 
-u32_test = 1 <<
+u32_tmp = 14 / 2
+assert(u32_tmp == 7)
 
-test++
-{write $test usrio.out3}
-if u32_test != 2
-  fail("u32 4 fail",line)
-  line++
+u32_tmp = 4 ^ 4
+assert(u32_tmp == 256)
 
-u32_test = 1 * 1
+u32_tmp = 63 % 4
+assert(u32_tmp == 3)
 
-test++
-{write $test usrio.out3}
-if u32_test != 1
-  fail("u32 5 fail",line)
-  line++
+u32_tmp = 2
+assert(u32_tmp < 3)
 
-u32_test = 1 / 1
+u32_tmp = 3
+assert(u32_tmp > 2)
 
-test++
-{write $test usrio.out3}
-if u32_test != 1
-  fail("u32 6 fail",line)
-  line++
+u32_tmp = 3
+assert(u32_tmp >= 2)
 
-u32_test = 2 * 2
+u32_tmp = 2
+assert(u32_tmp <= 3)
 
-test++
-{write $test usrio.out3}
-if u32_test != 4
-  fail("u32 7 fail",line)
-  line++
+u32_tmp = 250 * 147
+assert(u32_tmp == 36750)
 
-u32_test = 4 / 2
+u32_tmp = 9 ^ 5
+assert(u32_tmp == 59049)
 
-test++
-{write $test usrio.out3}
-if u32_test != 2
-  fail("u32 8 fail",line)
-  line++
+u32_tmp = 0xffffffff + 1
+assert(u32_tmp == 0)
 
-u32_test = 7 * 2
 
-test++
-{write $test usrio.out3}
-if u32_test != 14
-  fail("u32 9 fail",line)
-  line++
+// s32 tests
+current_type = "s32"
+sub_test_num = 0
 
-u32_test = 14 / 2
+s32_tmp = 1 + 1
+assert(s32_tmp == 2)
 
-test++
-{write $test usrio.out3}
-if u32_test != 7
-  fail("u32 10 fail",line)
-  line++
+s32_tmp = 1 - 1
+assert(s32_tmp == 0)
 
-u32_test = 4 ^ 4
+s32_tmp = 1 >>
+assert(s32_tmp == 0)
 
-test++
-{write $test usrio.out3}
-if u32_test != 256
-  fail("u32 11 fail",line)
-  line++
+s32_tmp = 1 <<
+assert(s32_tmp == 2)
 
-u32_test = 63 % 4
+s32_tmp = 1 * 1
+assert(s32_tmp == 1)
 
-test++
-{write $test usrio.out3}
-if u32_test != 3
-  fail("u32 12 fail",line)
-  line++
+s32_tmp = 1 / 1
+assert(s32_tmp == 1)
 
-u32_test = 2
+s32_tmp = 2 * 2
+assert(s32_tmp == 4)
 
-test++
-{write $test usrio.out3}
-if u32_test > 3
-  fail("u32 13 fail",line)
-  line++
+s32_tmp = 4 / 2
+assert(s32_tmp == 2)
 
-u32_test = 3
+s32_tmp = 7 * 2
+assert(s32_tmp == 14)
 
-test++
-{write $test usrio.out3}
-if u32_test < 2
-  fail("u32 14 fail",line)
-  line++
+s32_tmp = 14 / 2
+assert(s32_tmp == 7)
 
-u32_test = 3
+s32_tmp = 4 ^ 4
+assert(s32_tmp == 256)
 
-test++
-{write $test usrio.out3}
-if u32_test <= 2
-  fail("u32 15 fail",line)
-  line++
+s32_tmp = 63 % 4
+assert(s32_tmp == 3)
 
-u32_test = 2
+s32_tmp = 2
+assert(s32_tmp < 3)
 
-test++
-{write $test usrio.out3}
-if u32_test >= 3
-  fail("u32 16 fail",line)
-  line++
+s32_tmp = 3
+assert(s32_tmp > 2)
 
-u32_test = 250 * 147
+s32_tmp = 3
+assert(s32_tmp >= 2)
 
-test++
-{write $test usrio.out3}
-if u32_test != 36750
-  fail("u32 17 fail",line)
-  line++
+s32_tmp = 2
+assert(s32_tmp <= 3)
 
-u32_test = 9 ^ 5
+s32_tmp = -2 * -2
+assert(s32_tmp == 4)
 
-test++
-{write $test usrio.out3}
-if u32_test != 59049
-  fail("u32 18 fail",line)
-  line++
+s32_tmp = -2 / -2
+assert(s32_tmp == 1)
 
-u32_test = 0xffffffff + 1
+const s32 s32_minus10 -10
+const s32 s32_minus50 -50
+const s32 s32_minus5 -5
 
-if sys.ov
-  test = test
-else
-  fail("u32 19 fail",line)
-  line++
-test++
-{write $test usrio.out3}
+s32_tmp = s32_minus50 / s32_minus10
+assert(s32_tmp == 5)
 
-//signed integer tests
-var s32 s32_test
+s32_tmp = s32_minus50 / 10
+assert(s32_tmp == s32_minus5)
 
-s32_test = 1 + 1
+s32_tmp = 50 / s32_minus10
+assert(s32_tmp == s32_minus5)
 
-test++
-{write $test usrio.out3}
-if s32_test != 2
-  fail("s32 1 fail",line)
-  line++
+s32_tmp = 147 * 147
+assert(s32_tmp == 21609)
 
-s32_test = 1 - 1
+s32_tmp = 9 ^ 4
+assert(s32_tmp == 6561)
 
-test++
-{write $test usrio.out3}
-if s32_test != 0
-  fail("s32 2 fail",line)
-  line++
+const s32 s32_minus9 -9
+const s32 s32_minus729 -729
+s32_tmp = s32_minus9 ^ 4
+assert(s32_tmp == 6561)
 
-s32_test = 1 >>
+s32_tmp = s32_minus9  ^ 3
+assert(s32_tmp == s32_minus729)
 
-test++
-{write $test usrio.out3}
-if s32_test != 0
-  fail("s32 3 fail",line)
-  line++
 
-s32_test = 1 <<
-
-test++
-{write $test usrio.out3}
-if s32_test != 2
-  fail("s32 4 fail",line)
-  line++
-
-s32_test = 1 * 1
-
-test++
-{write $test usrio.out3}
-if s32_test != 1
-  fail("s32 5 fail",line)
-  line++
-
-s32_test = 1 / 1
-
-test++
-{write $test usrio.out3}
-if s32_test != 1
-  fail("s32 6 fail",line)
-  line++
-
-s32_test = 2 * 2
-
-test++
-{write $test usrio.out3}
-if s32_test != 4
-  fail("s32 7 fail",line)
-  line++
-
-s32_test = 4 / 2
-
-test++
-{write $test usrio.out3}
-if s32_test != 2
-  fail("s32 8 fail",line)
-  line++
-
-s32_test = 7 * 2
-
-test++
-{write $test usrio.out3}
-if s32_test != 14
-  fail("s32 9 fail",line)
-  line++
-
-s32_test = 14 / 2
-
-test++
-{write $test usrio.out3}
-if s32_test != 7
-  fail("s32 10 fail",line)
-  line++
-
-s32_test = 4 ^ 4
-
-test++
-{write $test usrio.out3}
-if s32_test != 256
-  fail("s32 11 fail",line)
-  line++
-
-s32_test = 63 % 4
-
-test++
-{write $test usrio.out3}
-if s32_test != 3
-  fail("s32 12 fail",line)
-  line++
-
-s32_test = 2
-
-test++
-{write $test usrio.out3}
-if s32_test > 3
-  fail("s32 13 fail",line)
-  line++
-
-s32_test = 3
-
-test++
-{write $test usrio.out3}
-if s32_test < 2
-  fail("s32 14 fail",line)
-  line++
-
-s32_test = 3
-
-test++
-{write $test usrio.out3}
-if s32_test <= 2
-  fail("s32 15 fail",line)
-  line++
-
-s32_test = 2
-
-test++
-{write $test usrio.out3}
-if s32_test >= 3
-  fail("s32 16 fail",line)
-  line++
-
-s32_test = -2 * -2
-
-test++
-{write $test usrio.out3}
-if s32_test != 4
-  fail("s32 17 fail",line)
-  line++
-
-s32_test = -2 / -2
-
-test++
-{write $test usrio.out3}
-if s32_test != 1
-  fail("s32 18 fail",line)
-  line++
-
-const s32 slong_minus10 -10
-const s32 slong_minus50 -50
-const s32 slong_minus5 -5
-
-s32_test = slong_minus50 / slong_minus10
-
-test++
-{write $test usrio.out3}
-if s32_test != 5
-  fail("s32 19 fail",line)
-  line++
-
-s32_test = slong_minus50 / 10
-
-test++
-{write $test usrio.out3}
-if s32_test != slong_minus5
-  fail("s32 20 fail",line)
-  line++
-
-s32_test = 50 / slong_minus10
-
-test++
-{write $test usrio.out3}
-if s32_test != slong_minus5
-  fail("s32 21 fail",line)
-  line++
-
-s32_test = 147 * 147
-
-test++
-{write $test usrio.out3}
-if s32_test != 21609
-  fail("s32 22 fail",line)
-  line++
-
-s32_test = 9 ^ 4
-
-test++
-{write $test usrio.out3}
-if s32_test != 6561
-  fail("s32 23 fail",line)
-  line++
-
-const s32 slong_minus9 -9
-const s32 slong_minus729 -729
-
-s32_test = slong_minus9  ^ 4
-
-test++
-{write $test usrio.out3}
-if s32_test != 6561
-  fail("s32 24 fail",line)
-  line++
-
-
-s32_test = slong_minus9  ^ 3
-
-test++
-{write $test usrio.out3}
-if s32_test != slong_minus729
-  fail("s32 25 fail",line)
-  line++
-
-if line == 0
-  sys.print_u16(test)
-  sys.print_string("tests OK",3)
-else if line < 16
-  sys.print_string("some failures !",0,line)
+// print summary
+sys.print_u16(tests_passed, 0, line)
+sys.print_string("/",2, line)
+sys.print_u16(total_tests, 3, line)
+sys.print_string("passed",6, line)
