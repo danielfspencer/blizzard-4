@@ -12,7 +12,9 @@ importScripts('libraries.js')
 
 const data_type_size = {int:1,sint:1,long:2,slong:2,float:2,bool:1,str:1,array:4,none:0}
 const data_type_default_value = {int:"0",sint:"0",long:"0",slong:"0",float:"0",bool:"false",str:"\"\""}
-const reserved_keywords = {"if":"","for":"","while":"","def":"","true":"","false":"","sys.odd":"","sys.ov":"","sys":"","array":"","return":"","break":"","continue":""}
+const reserved_keywords = [
+  "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include"
+]
 
 onmessage = (msg) => {
   switch(msg.data[0]) {
@@ -218,13 +220,13 @@ function gen_free_ram_map() {
 
 function assert_local_name_available(name) {
   const places = [
-    state.symbol_table[state.scope],
-    reserved_keywords,
-    state.function_table // remove to allow var names to be the same as func names?
+    Object.keys(state.symbol_table[state.scope]),
+    Object.keys(state.function_table), // remove to allow var names to be the same as func names?
+    reserved_keywords
   ]
 
   for (let place of places) {
-    if (place !== undefined && name in place) {
+    if (place !== undefined && place.includes(name)) {
       throw new CompError(`Name '${name}' is not available`)
     }
   }
