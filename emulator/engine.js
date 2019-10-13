@@ -77,26 +77,26 @@ function init_emulator() {
 
 function init_buffered_instructions() {
   buffered_instructions = {
-    "increment_mode": false,
-    "decrement_arg_counter": false
+    increment_mode: false,
+    decrement_arg_counter: false
   }
 }
 
 function init_activity_indicators() {
   activity_indicators = {
-    "alu1_write":0,
-    "alu2_write":0,
-    "alu_read":0,
-    "ram_address":0,
-    "ram_read":0,
-    "ram_write":0,
-    "ram_frame_offset":0,
-    "rom_address":0,
-    "rom_read":0,
-    "rom_write":0,
-    "vram_address":0,
-    "vram_read":0,
-    "vram_write": 0
+    alu1_write:0,
+    alu2_write:0,
+    alu_read:0,
+    ram_address:0,
+    ram_read:0,
+    ram_write:0,
+    ram_frame_offset:0,
+    rom_address:0,
+    rom_read:0,
+    rom_write:0,
+    vram_address:0,
+    vram_read:0,
+    vram_write: 0
   }
 }
 
@@ -136,7 +136,7 @@ const execute_microcode = [
 ]
 
 onmessage = (event) => {
-  var message = event.data
+  let message = event.data
   switch (message[0]) {
     case "start":
       start()
@@ -156,7 +156,7 @@ onmessage = (event) => {
           if (number >= 0 && number <= 0xffff) {
             rom[i] = number
           } else {
-            console.error("Illegal ROM input '" + strings_as_array[i] + "', word " + i)
+            console.error(`Illegal ROM input '${strings_as_array[i]}', word ${i}`)
           }
         }
       } else {
@@ -242,7 +242,7 @@ onmessage = (event) => {
       benchmark()
       break
     default:
-      console.error("Unknown command '"+ message[0] +"'")
+      console.error(`Unknown command '${message[0]}'`)
       break
   }
 }
@@ -254,21 +254,21 @@ function measure_frequency() {
 
 function send_front_panel_info() {
   var data = {
-    "clock_speed": actual_cycles_per_second,
-    "program_counter":  program_counter,
-    "command_word": command_word,
-    "control_mode": control_mode,
-    "args_remaining": args_remaining,
-    "arg_regs": arg_regs,
-    "conditional_bit": conditional_bit,
-    "frame_number": frame_number,
-    "user_output": user_output,
-    "write_bus": write_bus,
-    "data_bus": data_bus,
-    "read_bus": read_bus,
-    "alu_operands": alu_operands,
-    "activity_indicators": activity_indicators,
-    "ram_addr_mode": direct_ram_addressing
+    clock_speed: actual_cycles_per_second,
+    program_counter:  program_counter,
+    command_word: command_word,
+    control_mode: control_mode,
+    args_remaining: args_remaining,
+    arg_regs: arg_regs,
+    conditional_bit: conditional_bit,
+    frame_number: frame_number,
+    user_output: user_output,
+    write_bus: write_bus,
+    data_bus: data_bus,
+    read_bus: read_bus,
+    alu_operands: alu_operands,
+    activity_indicators: activity_indicators,
+    ram_addr_mode: direct_ram_addressing
   }
   postMessage(["front_panel_info",data])
 }
@@ -372,8 +372,8 @@ function get_padded_num(number,num_zeroes,base) {
 function step_clock() {
   first_clock = !first_clock
   debug && console.debug("---clock rising edge:")
-  debug && console.debug(" ↳ is first clock? " + first_clock)
-  debug && console.debug(" ↳ control mode: " + control_mode.toString())
+  debug && console.debug(` ↳ is first clock? ${first_clock}`)
+  debug && console.debug(` ↳ control mode: ${control_mode.toString()}`)
 
   debug && console.debug("---running data bus-modifying microcode:")
   //run contol unit commands that modify (directly or indirectly) the data bus
@@ -386,12 +386,12 @@ function step_clock() {
   }
 
   debug && console.debug("---new state:")
-  debug && console.debug(" ↳ read bus: " + read_bus.toString())
-  debug && console.debug(" ↳ data bus: " + data_bus.toString())
-  debug && console.debug(" ↳ write bus: " + write_bus.toString())
+  debug && console.debug(` ↳ read bus: ${read_bus}`)
+  debug && console.debug(` ↳ data bus: ${data_bus}`)
+  debug && console.debug(` ↳ write bus: ${write_bus}`)
 
   //simulate read bus if it has been used
-  debug && console.debug("simulating read bus with content: " + read_bus.toString())
+  debug && console.debug(`simulating read bus with content: ${read_bus}`)
   if (read_bus !== 0) {
     simulate_effect_of_read_bus_change()
   }
@@ -405,12 +405,12 @@ function step_clock() {
   }
 
   debug && console.debug("---new state:")
-  debug && console.debug(" ↳ read bus: " + read_bus.toString())
-  debug && console.debug(" ↳ data bus: " + data_bus.toString())
-  debug && console.debug(" ↳ write bus: " + write_bus.toString())
+  debug && console.debug(` ↳ read bus: ${read_bus}`)
+  debug && console.debug(` ↳ data bus: ${data_bus}`)
+  debug && console.debug(` ↳ write bus: ${write_bus}`)
 
   //simulate write bus
-  debug && console.debug("simulating write bus with content: " + write_bus.toString())
+  debug && console.debug(`simulating write bus with content: ${write_bus}`)
   if (write_bus !== 0) {
     simulate_effect_of_write_bus_change()
   }
@@ -418,7 +418,7 @@ function step_clock() {
   debug && console.debug("---clock falling edge")
   run_buffered_instructions()
 
-  if ((write_bus + read_bus + data_bus) == 0) {
+  if ((write_bus + read_bus + data_bus) === 0) {
     total_spare_cycles++
   }
   total_cycles++
@@ -546,7 +546,7 @@ function simulate_effect_of_read_bus_change() {
             activity_indicators.alu_read = 2 ** 2
             break
           case 11:
-            data_bus = alu_operands[0] == alu_operands[1] ? 1 : 0
+            data_bus = alu_operands[0] === alu_operands[1] ? 1 : 0
             activity_indicators.alu_read = 2
             break
           case 12:
@@ -706,8 +706,8 @@ function get_load_fetch_microcode_instructions() {
     halt_error("Invalid adddress for microcode")
   }
 
-  debug && console.debug("load/fetch microcode address: " + get_padded_num(address,4,2))
-  debug && console.debug(" ↳ instructions: " + JSON.stringify(instructions))
+  debug && console.debug(`load/fetch microcode address: ${get_padded_num(address,4,2)}`)
+  debug && console.debug(` ↳ instructions: ${JSON.stringify(instructions)}`)
   return instructions
 }
 
@@ -721,13 +721,13 @@ function get_execute_microcode_instructions() {
     halt_error("Invalid adddress for microcode")
   }
 
-  debug && console.debug("execute microcode address: " + get_padded_num(address,4,2))
-  debug && console.debug(" ↳ instructions: " + JSON.stringify(instructions))
+  debug && console.debug(`execute microcode address: ${get_padded_num(address,4,2)}`)
+  debug && console.debug(` ↳ instructions: ${JSON.stringify(instructions)}`)
   return instructions
 }
 
 function run_load_fetch_microcode_1st_stage(instructions) {
-  debug && console.debug("running instructions: " + JSON.stringify(instructions))
+  debug && console.debug(`running instructions: ${JSON.stringify(instructions)}`)
 
   instructions[0] && pc_to_read_bus()
   instructions[2] && increment_mode()
@@ -737,7 +737,7 @@ function run_load_fetch_microcode_1st_stage(instructions) {
 }
 
 function run_load_fetch_microcode_2nd_stage(instructions) {
-  debug && console.debug("running instructions: " + JSON.stringify(instructions))
+  debug && console.debug(`running instructions: ${JSON.stringify(instructions)}`)
 
   instructions[1] && data_bus_to_cmd_reg()
   instructions[5] && data_bus_to_arg3()
@@ -746,7 +746,7 @@ function run_load_fetch_microcode_2nd_stage(instructions) {
 }
 
 function run_execute_microcode_1st_stage(instructions) {
-  debug && console.debug("running instructions: " + JSON.stringify(instructions))
+  debug && console.debug(`running instructions: ${JSON.stringify(instructions)}`)
 
   if (conditional_bit && (command_word & 1) == 1) {
     debug && console.log("execute disabled due to cnd bit")
@@ -764,7 +764,7 @@ function run_execute_microcode_1st_stage(instructions) {
 }
 
 function run_execute_microcode_2nd_stage(instructions) {
-  debug && console.debug("running instructions: " + JSON.stringify(instructions))
+  debug && console.debug(`running instructions: ${JSON.stringify(instructions)}`)
 
   instructions[2] && ram_caller_pointer_to_write_bus()
   instructions[3] && decrement_frame_no()
