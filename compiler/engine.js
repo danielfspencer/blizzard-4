@@ -10,8 +10,8 @@ let timer
 timer = () => performance.now()
 importScripts('libraries.js')
 
-const data_type_size = {int:1,sint:1,long:2,slong:2,float:2,bool:1,str:1,array:4,none:0}
-const data_type_default_value = {int:"0",sint:"0",long:"0",slong:"0",float:"0",bool:"false",str:"\"\""}
+const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,none:0}
+const data_type_default_value = {u16:"0",s16:"0",u32:"0",s32:"0",float:"0",bool:"false",str:"\"\""}
 const reserved_keywords = [
   "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include"
 ]
@@ -652,9 +652,9 @@ function tokenise(input, line) {
     let dec_val = parse_int(input)
     let guess
     if (dec_val > 65535) {
-      guess = "long"
+      guess = "u32"
     } else {
-      guess = "int"
+      guess = "u16"
     }
     token = {name:"number",type:"expression",arguments:{value:input,type_guess:guess}}
 
@@ -662,9 +662,9 @@ function tokenise(input, line) {
     let dec_val = parse_int(input)
     let guess
     if (Math.abs(dec_val) > 32767) {
-      guess = "slong"
+      guess = "s32"
     } else {
-      guess = "sint"
+      guess = "s16"
     }
     token = {name:"number",type:"expression",arguments:{value:input,type_guess:guess}}
 
@@ -1211,8 +1211,8 @@ function translate(token, ctx_type) {
       let ptr_expr = tokenise(args.name)
       let [ptr_prefix, ptr_value, ptr_type] = translate(ptr_expr)
 
-      if (ptr_type !== "int") {
-        throw new CompError(`Pointers must be of type 'int', got ${ptr_type}`)
+      if (ptr_type !== "u16") {
+        throw new CompError(`Pointers must be of type 'u16', got ${ptr_type}`)
       }
 
       log.debug(`Writing '${expr_type}' to a pointer`)
@@ -1235,9 +1235,9 @@ function translate(token, ctx_type) {
       let index_expr = args.index_expr
       let expr = args.expr
 
-      let [index_prefix, index_value, index_type] = translate(index_expr, "int")
-      if (index_type !== "int") {
-        throw new CompError("Array indexes must be of type 'int'")
+      let [index_prefix, index_value, index_type] = translate(index_expr, "u16")
+      if (index_type !== "u16") {
+        throw new CompError("Array indexes must be of type 'u16'")
       }
       result.push(...index_prefix)
 
@@ -1397,9 +1397,9 @@ function translate(token, ctx_type) {
         let [index_expression, item_expression] = args.exprs
 
         //evaluate the expression that gives the index
-        let [expr_prefix, expr_value, expr_type] = translate(index_expression, "int")
-        if (expr_type !== "int") {
-          throw new CompError("Array indexes must be of type 'int'")
+        let [expr_prefix, expr_value, expr_type] = translate(index_expression, "u16")
+        if (expr_type !== "u16") {
+          throw new CompError("Array indexes must be of type 'u16'")
         }
         result.push(...expr_prefix)
 
@@ -1419,10 +1419,10 @@ function translate(token, ctx_type) {
         result.push(`write [alu.+] ${target_addr.label}`)
 
         //calculate the length of the array in memory
-        load_lib("sys.int_multiply")
+        load_lib("sys.u16_multiply")
         result.push(`write ${item_size} ram+.0`)
         result.push(`write ${current_len} ram+.1`)
-        result.push("call func_sys.int_multiply_b")
+        result.push("call func_sys.u16_multiply_b")
 
         //shift entire array (that is below the specified poisiton) one item_size down
         result.push(`write [${source_addr.label}] ram+.0`)
@@ -1637,9 +1637,9 @@ function translate(token, ctx_type) {
       type = "bool"
     } break
 
-    case "int": {
+    case "u16": {
       if (!/(^[+]?\d+$)|(^0b[10]+$)|(^0x[0-9a-fA-F]+$)/.test(args.value)) {
-        throw new CompError("Invalid input for type 'int'")
+        throw new CompError("Invalid input for type 'u16'")
       }
 
       let dec_val = parse_int(args.value)
@@ -1648,13 +1648,13 @@ function translate(token, ctx_type) {
         throw new CompError("Integer too large (2^16 / 65535 max)")
       }
 
-      type = "int"
+      type = "u16"
       registers = [args.value]
     } break
 
-    case "sint": {
+    case "s16": {
       if (!/(^[+-]?\d+$)|(^-?0b[10]+$)|(^-?0x[0-9a-fA-F]+$)/.test(args.value)) {
-        throw new CompError("Invalid input for type 'sint'")
+        throw new CompError("Invalid input for type 's16'")
       }
 
       let negative = false
@@ -1682,13 +1682,13 @@ function translate(token, ctx_type) {
       }
       let word = `0b${pad(bin,16)}`
 
-      type = "sint"
+      type = "s16"
       registers = [word]
     } break
 
-    case "long": {
+    case "u32": {
       if (!/(^[+]?\d+$)|(^0b[10]+$)|(^0x[0-9a-fA-F]+$)/.test(args.value)) {
-        throw new CompError("Invalid input for type 'long'")
+        throw new CompError("Invalid input for type 'u32'")
       }
 
       let dec_val = parse_int(args.value)
@@ -1700,13 +1700,13 @@ function translate(token, ctx_type) {
       let high = `0b${bin.substring(0,16)}`
       let low = `0b${bin.substring(16,32)}`
 
-      type = "long"
+      type = "u32"
       registers = [high,low]
     } break
 
-    case "slong": {
+    case "s32": {
       if (!/(^[+-]?\d+$)|(^-?0b[10]+$)|(^-?0x[0-9a-fA-F]+$)/.test(args.value)) {
-        throw new CompError("Invalid input for type 'sint'")
+        throw new CompError("Invalid input for type 's32'")
       }
 
       let negative = false
@@ -1738,7 +1738,7 @@ function translate(token, ctx_type) {
       let low = `0b${bin.substring(16,32)}`
 
       registers = [high,low]
-      type = "slong"
+      type = "s32"
     } break
 
     case "float": {
@@ -1784,15 +1784,15 @@ function translate(token, ctx_type) {
         throw new CompError(`Addition operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
       }
       switch (ctx_type) {
-        case "int":
-        case "sint": {
+        case "u16":
+        case "s16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           registers = ["[alu.+]"]
         } break
 
-        case "slong":
-        case "long": {
-          [prefix, registers] = function_call("sys.long_add", [args.expr1,args.expr2])
+        case "s32":
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_add", [args.expr1,args.expr2])
         } break
 
         default:
@@ -1807,15 +1807,15 @@ function translate(token, ctx_type) {
         throw new CompError(`Subtraction operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
       }
       switch (ctx_type) {
-        case "sint":
-        case "int": {
+        case "s16":
+        case "u16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           registers = ["[alu.-]"]
         } break
 
-        case "slong":
-        case "long": {
-          [prefix, registers] = function_call("sys.long_subtract", [args.expr1,args.expr2])
+        case "s32":
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_subtract", [args.expr1,args.expr2])
         } break
 
         default:
@@ -1830,20 +1830,20 @@ function translate(token, ctx_type) {
         throw new CompError(`Multiplication operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
       }
       switch (ctx_type) {
-        case "int": {
-          [prefix, registers] = function_call("sys.int_multiply", [args.expr1,args.expr2])
+        case "u16": {
+          [prefix, registers] = function_call("sys.u16_multiply", [args.expr1,args.expr2])
         } break
 
-        case "sint": {
-          [prefix, registers] = function_call("sys.sint_multiply", [args.expr1,args.expr2])
+        case "s16": {
+          [prefix, registers] = function_call("sys.s16_multiply", [args.expr1,args.expr2])
         } break
 
-        case "long": {
-          [prefix, registers] = function_call("sys.long_multiply", [args.expr1,args.expr2])
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_multiply", [args.expr1,args.expr2])
         } break
 
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_multiply", [args.expr1,args.expr2])
+        case "s32": {
+          [prefix, registers] = function_call("sys.s32_multiply", [args.expr1,args.expr2])
         } break
 
         default:
@@ -1858,20 +1858,20 @@ function translate(token, ctx_type) {
         throw new CompError(`Division operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
       }
       switch (ctx_type) {
-        case "int": {
-          [prefix, registers] = function_call("sys.int_divide", [args.expr1,args.expr2])
+        case "u16": {
+          [prefix, registers] = function_call("sys.u16_divide", [args.expr1,args.expr2])
         } break
 
-        case "sint": {
-          [prefix, registers] = function_call("sys.sint_divide", [args.expr1,args.expr2])
+        case "s16": {
+          [prefix, registers] = function_call("sys.s16_divide", [args.expr1,args.expr2])
         } break
 
-        case "long": {
-          [prefix, registers] = function_call("sys.long_divide", [args.expr1,args.expr2])
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_divide", [args.expr1,args.expr2])
         } break
 
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_divide", [args.expr1,args.expr2])
+        case "s32": {
+          [prefix, registers] = function_call("sys.s32_divide", [args.expr1,args.expr2])
         } break
 
         default:
@@ -1886,20 +1886,20 @@ function translate(token, ctx_type) {
         throw new CompError(`Exponention operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
       }
       switch (ctx_type) {
-        case "int": {
-          [prefix, registers] = function_call("sys.int_exponent", [args.expr1,args.expr2])
+        case "u16": {
+          [prefix, registers] = function_call("sys.u16_exponent", [args.expr1,args.expr2])
         } break
 
-        case "sint": {
-          [prefix, registers] = function_call("sys.sint_exponent", [args.expr1,args.expr2])
+        case "s16": {
+          [prefix, registers] = function_call("sys.s16_exponent", [args.expr1,args.expr2])
         } break
 
-        case "long": {
-          [prefix, registers] = function_call("sys.long_exponent", [args.expr1,args.expr2])
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_exponent", [args.expr1,args.expr2])
         } break
 
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_exponent", [args.expr1,args.expr2])
+        case "s32": {
+          [prefix, registers] = function_call("sys.s32_exponent", [args.expr1,args.expr2])
         } break
 
         default:
@@ -1914,20 +1914,20 @@ function translate(token, ctx_type) {
         throw new CompError(`Modulo operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
       }
       switch (ctx_type) {
-        case "int": {
-          [prefix, registers] = function_call("sys.int_modulo", [args.expr1,args.expr2])
+        case "u16": {
+          [prefix, registers] = function_call("sys.u16_modulo", [args.expr1,args.expr2])
         } break
 
-        case "sint": {
-          [prefix, registers] = function_call("sys.sint_modulo", [args.expr1,args.expr2])
+        case "s16": {
+          [prefix, registers] = function_call("sys.s16_modulo", [args.expr1,args.expr2])
         } break
 
-        case "long": {
-          [prefix, registers] = function_call("sys.long_modulo", [args.expr1,args.expr2])
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_modulo", [args.expr1,args.expr2])
         } break
 
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_modulo", [args.expr1,args.expr2])
+        case "s32": {
+          [prefix, registers] = function_call("sys.s32_modulo", [args.expr1,args.expr2])
         } break
 
         default:
@@ -1939,12 +1939,12 @@ function translate(token, ctx_type) {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       ctx_type = find_type_priority(args.expr1,args.expr2)
       switch (ctx_type) {
-        case "int": {
+        case "u16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           registers = ["[alu.>]"]
         } break
 
-        case "sint": {
+        case "s16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           let temp_var = get_temp_word()
           prefix.push(`write [alu.-] ${temp_var.label}`)
@@ -1957,12 +1957,12 @@ function translate(token, ctx_type) {
           temp_var.free()
         } break
 
-        case "long": {
-          [prefix, registers] = function_call("sys.long_greater", [args.expr1,args.expr2])
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_greater", [args.expr1,args.expr2])
         } break
 
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_greater", [args.expr1,args.expr2])
+        case "s32": {
+          [prefix, registers] = function_call("sys.s32_greater", [args.expr1,args.expr2])
         } break
 
         default:
@@ -1975,12 +1975,12 @@ function translate(token, ctx_type) {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       ctx_type = find_type_priority(args.expr1,args.expr2)
       switch (ctx_type) {
-        case "int": {
+        case "u16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           registers = ["[alu.<]"]
           } break
 
-        case "sint": {
+        case "s16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           let temp_var = get_temp_word()
           prefix.push(`write [alu.-] ${temp_var.label}`)
@@ -1993,12 +1993,12 @@ function translate(token, ctx_type) {
           temp_var.free()
           } break
 
-        case "long": {
-          [prefix, registers] = function_call("sys.long_less", [args.expr1,args.expr2])
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_less", [args.expr1,args.expr2])
           } break
 
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_less", [args.expr1,args.expr2])
+        case "s32": {
+          [prefix, registers] = function_call("sys.s32_less", [args.expr1,args.expr2])
           } break
 
         default:
@@ -2011,7 +2011,7 @@ function translate(token, ctx_type) {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       ctx_type = find_type_priority(args.expr1,args.expr2)
       switch (ctx_type) {
-        case "int": {
+        case "u16": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
@@ -2025,7 +2025,7 @@ function translate(token, ctx_type) {
           temp_vars[1].free()
           } break
 
-        case "sint": {
+        case "s16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           let temp_var = get_temp_word()
           prefix.push(`write [alu.-] ${temp_var.label}`)
@@ -2035,15 +2035,15 @@ function translate(token, ctx_type) {
           temp_var.free()
           } break
 
-        case "long": {
+        case "u32": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let prefix_and_value = function_call("sys.long_greater", [args.expr1,args.expr2])
+          let prefix_and_value = function_call("sys.u32_greater", [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          prefix_and_value = function_call("sys.long_equal", [args.expr1,args.expr2])
+          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2])
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -2055,15 +2055,15 @@ function translate(token, ctx_type) {
           temp_vars[1].free()
           } break
 
-        case "slong": {
+        case "s32": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let prefix_and_value = function_call("sys.slong_greater", [args.expr1,args.expr2])
+          let prefix_and_value = function_call("sys.s32_greater", [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          prefix_and_value = function_call("sys.long_equal", [args.expr1,args.expr2])
+          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2])
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -2085,7 +2085,7 @@ function translate(token, ctx_type) {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       ctx_type = find_type_priority(args.expr1,args.expr2)
       switch (ctx_type) {
-        case "int": {
+        case "u16": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
@@ -2099,7 +2099,7 @@ function translate(token, ctx_type) {
           temp_vars[1].free()
           } break
 
-        case "sint": {
+        case "s16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           let temp_var = get_temp_word()
           prefix.push(`write [alu.-] ${temp_var.label}`)
@@ -2109,15 +2109,15 @@ function translate(token, ctx_type) {
           temp_var.free()
           } break
 
-        case "long": {
+        case "u32": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let prefix_and_value = function_call("sys.long_less", [args.expr1,args.expr2])
+          let prefix_and_value = function_call("sys.u32_less", [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          prefix_and_value = function_call("sys.long_equal", [args.expr1,args.expr2])
+          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2])
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -2129,15 +2129,15 @@ function translate(token, ctx_type) {
           temp_vars[1].free()
           } break
 
-        case "slong": {
+        case "s32": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let prefix_and_value = function_call("sys.slong_less", [args.expr1,args.expr2])
+          let prefix_and_value = function_call("sys.s32_less", [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          prefix_and_value = function_call("sys.long_equal", [args.expr1,args.expr2])
+          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2])
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -2160,15 +2160,15 @@ function translate(token, ctx_type) {
       ctx_type = find_type_priority(args.expr1,args.expr2)
       switch (ctx_type) {
         case "bool":
-        case "int":
-        case "sint": {
+        case "u16":
+        case "s16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           registers = ["[alu.=]"]
         } break
 
-        case "slong":
-        case "long": {
-          [prefix, registers] = function_call("sys.long_equal", [args.expr1,args.expr2])
+        case "s32":
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_equal", [args.expr1,args.expr2])
         } break
 
         default:
@@ -2182,17 +2182,17 @@ function translate(token, ctx_type) {
       ctx_type = find_type_priority(args.expr1,args.expr2)
       switch (ctx_type) {
         case "bool":
-        case "int":
-        case "sint": {
+        case "u16":
+        case "s16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
           prefix.push("write [alu.=] ctl.cnd")
           prefix.push("write [ctl.cnd] alu.1")
           registers = ["[alu.!]"]
         } break
 
-        case "slong":
-        case "long": {
-          [prefix, registers] = function_call("sys.long_not_equal", [args.expr1,args.expr2])
+        case "s32":
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_not_equal", [args.expr1,args.expr2])
         } break
 
         default:
@@ -2220,21 +2220,21 @@ function translate(token, ctx_type) {
     case ">>": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       switch (ctx_type) {
-        case "int": {
+        case "u16": {
           prefix = write_operand(args.expr,ctx_type)
           registers = ["[alu.>>]"]
         } break
 
-        case "sint": {
-          [prefix, registers] = function_call("sys.sint_rshift", [args.expr])
+        case "s16": {
+          [prefix, registers] = function_call("sys.s16_rshift", [args.expr])
         } break
 
-        case "long": {
-          [prefix, registers] = function_call("sys.long_rshift", [args.expr])
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_rshift", [args.expr])
         } break
 
-        case "slong": {
-          [prefix, registers] = function_call("sys.slong_rshift", [args.expr])
+        case "s32": {
+          [prefix, registers] = function_call("sys.s32_rshift", [args.expr])
         } break
 
         default:
@@ -2245,15 +2245,15 @@ function translate(token, ctx_type) {
     case "<<": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       switch (ctx_type) {
-        case "int":
-        case "sint": {
+        case "u16":
+        case "s16": {
           prefix = write_operand(args.expr,ctx_type)
           registers = ["[alu.<<]"]
         } break
 
-        case "slong":
-        case "long": {
-          [prefix, registers] = function_call("sys.long_lshift", [args.expr])
+        case "s32":
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_lshift", [args.expr])
         } break
 
         default:
@@ -2287,9 +2287,9 @@ function translate(token, ctx_type) {
       prefix = expr[0]
       let expr_regs = expr[1]
 
-      let index = translate(args.expr2,"int")
-      if (index[2] != "int") {
-        throw new CompError("Word selector index must be of type 'int'") //should also be static (ie. number token)
+      let index = translate(args.expr2,"u16")
+      if (index[2] != "u16") {
+        throw new CompError("Word selector index must be of type 'u16'") //should also be static (ie. number token)
       }
       if (index[1][0] >= expr_regs.length) {
         throw new CompError("Index out of range")
@@ -2300,7 +2300,7 @@ function translate(token, ctx_type) {
                                   //others
     case "is_odd": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      let prefix_and_value = translate(args.expr,"int")
+      let prefix_and_value = translate(args.expr,"u16")
       prefix = prefix_and_value[0]
       registers = prefix_and_value[1]
       type = "bool"
@@ -2485,9 +2485,9 @@ function translate(token, ctx_type) {
 
 
       if (operation === "index") {
-        let prefix_value_type = translate(args.expr, "int")
-        if (prefix_value_type[2] != "int") {
-          throw new CompError("Array indexes must be of type 'int'")
+        let prefix_value_type = translate(args.expr, "u16")
+        if (prefix_value_type[2] != "u16") {
+          throw new CompError("Array indexes must be of type 'u16'")
         }
         prefix.push(...prefix_value_type[0])
 
@@ -2523,11 +2523,11 @@ function translate(token, ctx_type) {
 
       } else if (operation === "len") {
         registers = [current_len]
-        type = "int"
+        type = "u16"
 
        } else if (operation === "max_len") {
         registers = [max_len]
-        type = "int"
+        type = "u16"
 
       } else if (operation === "pop") {
         // simply take one away from the length of the array, then return the item at that index
@@ -2621,9 +2621,9 @@ function translate(token, ctx_type) {
 
     case "pointer_lookup": {
       let address_expr = tokenise(args.var_or_const_name)
-      let [addr_prefix, addr_value, addr_type] = translate(address_expr, "int")
-      if (addr_type !== "int") {
-        throw new CompError(`Pointers must be of type 'int', got '${addr_type}'`)
+      let [addr_prefix, addr_value, addr_type] = translate(address_expr, "u16")
+      if (addr_type !== "u16") {
+        throw new CompError(`Pointers must be of type 'u16', got '${addr_type}'`)
       }
 
       if (args.type_cast !== undefined) {
@@ -2631,8 +2631,8 @@ function translate(token, ctx_type) {
       } else if (ctx_type !== undefined) {
         type = ctx_type
       } else {
-        log.warn(`line ${token.line}:\nNo explicit cast or context-given type for pointer lookup, defaulting to 'int'`)
-        type = "int"
+        log.warn(`line ${token.line}:\nNo explicit cast or context-given type for pointer lookup, defaulting to 'u16'`)
+        type = "u16"
       }
 
       let size = get_data_type_size(type)
@@ -2807,7 +2807,7 @@ function translate(token, ctx_type) {
     } break
 
     case "repeat": {
-      let [prefix, value, type] = translate(args.expr, "int")
+      let [prefix, value, type] = translate(args.expr, "u16")
 
       let times_to_repeat = parseInt(value[0])
 

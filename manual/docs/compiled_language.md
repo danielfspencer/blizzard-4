@@ -59,16 +59,16 @@ Items in **[square brackets]** are required parameters. Items in **<triangular b
 
 Declare a local variable of the specified type with the specified name. e.g.
 ```javascript
-var long counter 123456789
+var u32 counter 123456789
 ```
 
 + **arg** [type] [name] <expression\>
 
 Declare an argument of a function with the specified name. This can only be used in functions. MUST come at the top of the function e.g.
 ```javascript
-def add_one int
+def add_one u16
   // do not place any commands before the arg decleration
-  arg int number
+  arg u16 number
   return number + 1
 ```
 
@@ -76,7 +76,7 @@ def add_one int
 
 Declare a global constant of the specified type with the specified name. e.g.
 ```javascript
-const int speed 340
+const u16 speed 340
 ```
 
 + **global** [type] [name] <expression\>
@@ -105,7 +105,7 @@ include sys.vram.glyphs
 
 End execution of a function and pass control back to the caller of the function. If the function has a return type that is not 'none', then this command can also pass a value back to the caller.
 ```javascript
-def my_func int
+def my_func u16
   // ends the execution of the function and returns 42 to the caller
   return 42
 ```
@@ -115,7 +115,7 @@ def my_func int
 Terminate the innermost loop control structure.
 ```javascript
 // some_func is called for 0, 1 and 2
-for var int i; i < 10; i++
+for var u16 i; i < 10; i++
   if i == 3
     break
   some_func(i)
@@ -127,7 +127,7 @@ for var int i; i < 10; i++
 Skip the current cycle of the innermost loop and begin the next cycle (if the loop condition is still met).
 ```javascript
 // some_func is called for 0, 1, 2, and 4
-for var int i; i < 5; i++
+for var u16 i; i < 5; i++
   if i == 3
     continue
   some_func(i)
@@ -143,7 +143,7 @@ my_variable = 42
 
 + **\***[name] **=** [value]
 
-Write the specified *value* to the memory address contained in the ```int``` type *name*.
+Write the specified *value* to the memory address contained in the ```u16``` type *name*.
 ```javascript
 // write 0xffff to the address stored in some_addr
 *some_addr = 0xffff
@@ -208,7 +208,7 @@ my_num--
 #### Array-Only Commands
 + [array name]**.append(**[expression]**)**
 
-Append the value of *expression* to the end of array. The type of *expression* must be the same as the type of the array. The type of *index* must be ```int```.
+Append the value of *expression* to the end of array. The type of *expression* must be the same as the type of the array. The type of *index* must be ```u16```.
 ```javascript
 // appends "hello" to the end of the array
 my_array.append("hello")
@@ -216,7 +216,7 @@ my_array.append("hello")
 
 + [array name]**.insert(**[index expr.], [expression]**)**
 
-Insert the value of *expression* into the *index* position of the array. Any elements after the specified index are shifted down to make space for the new value. The type of *expression* must be the same as the type of the array. The type of *index* must be ```int```.
+Insert the value of *expression* into the *index* position of the array. Any elements after the specified index are shifted down to make space for the new value. The type of *expression* must be the same as the type of the array. The type of *index* must be ```u16```.
 ```javascript
 // inserts "hello" at the start of the array
 my_array.insert(0,"hello")
@@ -224,7 +224,7 @@ my_array.insert(0,"hello")
 
 + [array name]**[**[index expr.]**]** **=** [expression]
 
-Set the element at *index* to have the value of *expression*. The type of *expression* must be the same as the type of the array. The type of *index* must be ```int```.
+Set the element at *index* to have the value of *expression*. The type of *expression* must be the same as the type of the array. The type of *index* must be ```u16```.
 ```javascript
 // sets the 4th element of the array to "hello"
 my_array[3] = "hello"
@@ -246,7 +246,7 @@ my_var
 
 + **\***[name]
 
-Returns the value at the memory location pointed to by the ```int``` type variable/argument/constant called *name*.
+Returns the value at the memory location pointed to by the ```u16``` type variable/argument/constant called *name*.
 ```javascript
 *some_addr
 ```
@@ -266,7 +266,7 @@ my_var * other_var
 + **(**[type],<length\>**)[**[expressions]**]**
 
 ```javascript
-var array test (int,16)[1,2,3,4]
+var array test (u16,16)[1,2,3,4]
 ```
 
 #### Array-Only Expressions
@@ -280,18 +280,18 @@ sys.print_string(my_array[3])
 
 + [array name]**.len()**
 
-Returns the current length of the array as type ```int```.
+Returns the current length of the array as type ```u16```.
 ```javascript
 // prints the current length of my_array
-sys.print_int(my_array.len())
+sys.print_u16(my_array.len())
 ```
 
 + [array name]**.max_len()**
 
-Returns the maximum length of the array as type ```int```.
+Returns the maximum length of the array as type ```u16```.
 ```javascript
+for var u16 i; i < my_array.max_len(); i++
 // fill my_array with zeroes
-for var int i; i < my_array.max_len(); i++
   my_array[i] = 0
 ```
 
@@ -342,9 +342,9 @@ else
 Loops until the conditional expression is false. **NOTE the condition must initially be true for the first iteration to occur. This is the case for most languages but not all.**
 ```javascript
 // print numbers 10 to 1
-var int counter 10
+var u16 counter 10
 while counter > 0
-  sys.print_int(counter)
+  sys.print_u16(counter)
   counter--
 ```
 
@@ -353,8 +353,8 @@ while counter > 0
 Useful control structure for iteration. Firstly, the setup command is executed. Then, if the conditional expression is true, the body will be executed. Finally, the loop command will be executed. Looping continues until the conditional expression becomes false.
 ```javascript
 // print numbers 0, 1, 2, 3 and 4
-for var int i; i < 5; i++
-  sys.print_int(i)
+for var u16 i; i < 5; i++
+  sys.print_u16(i)
 ```
 
 + **def** [name] <type\>
@@ -363,10 +363,10 @@ Defines a new function. If the return data type is not specified, it defaults to
 
 ```javascript
 // the standard library function used to multiply ints
-def sys.int_multiply int
-  arg int a
-  arg int b
-  var int ans
+def sys.u16_multiply u16
+  arg u16 a
+  arg u16 b
+  var u16 ans
   while b > 0
     if b sys.odd
       ans += a  
@@ -382,8 +382,8 @@ def sys.int_multiply int
 ```javascript
 def shift_right
   // shift a portion of the screen right one pixel
-  arg int start 6144
-  arg int end 7167
+  arg u16 start 6144
+  arg u16 end 7167
   while end > start
     // the following code only needs to be written out once
     // but will be present 8 times in the assembly output
@@ -398,24 +398,24 @@ def shift_right
 ### Mathematical Operators
 | Symbol | Operation | Defined for | Return type |
 | :----: | :-------: | :---------: | ----------- |
-| `+` | addition | `int sint long slong` | (same as input) |
-| `-` | subtraction | `int sint long slong` | (same as input) |
-| `/` | division | `int sint long slong` | (same as input) |
-| `*` | multiplication | `int sint long slong` | (same as input) |
-| `^` | exponentiation | `int sint long slong` | (same as input) |
-| `%` | modulo | `int sint long slong` | (same as input) |
-| `&` | bit-wise AND | `bool int sint long slong` | (same as input) |
-| `\|` | bit-wise OR | `bool int sint long slong` | (same as input) |
-| `!` | bit-wise NOT | `bool int sint long slong` | (same as input) |
-| `>>` |  bit-shift 1 bit right | `int sint long slong` | (same as input) |
-| `<<` |  bit-shift 1 bit left | `int sint long slong` | (same as input) |
-| `>` | greater than | `int sint long slong` | `bool` |
-| `<` | less than | `int sint long slong` | `bool` |
-| `>=` |  greater than or equal to | `int sint long slong` | `bool` |
-| `<=` |  less than or equal to | `int sint long slong` | `bool` |
-| `==` |  equal | `bool int sint long slong` | `bool` |
-| `!=` |  not equal | `bool int sint long slong` | `bool` |
-| `sys.odd` | true if number is odd | `int sint long slong` | `bool` |
+| `+` | addition | `u16 s16 u32 s32` | (same as input) |
+| `-` | subtraction | `u16 s16 u32 s32` | (same as input) |
+| `/` | division | `u16 s16 u32 s32` | (same as input) |
+| `*` | multiplication | `u16 s16 u32 s32` | (same as input) |
+| `^` | exponentiation | `u16 s16 u32 s32` | (same as input) |
+| `%` | modulo | `u16 s16 u32 s32` | (same as input) |
+| `&` | bit-wise AND | `bool u16 s16 u32 s32` | (same as input) |
+| `\|` | bit-wise OR | `bool u16 s16 u32 s32` | (same as input) |
+| `!` | bit-wise NOT | `bool u16 s16 u32 s32` | (same as input) |
+| `>>` |  bit-shift 1 bit right | `u16 s16 u32 s32` | (same as input) |
+| `<<` |  bit-shift 1 bit left | `u16 s16 u32 s32` | (same as input) |
+| `>` | greater than | `u16 s16 u32 s32` | `bool` |
+| `<` | less than | `u16 s16 u32 s32` | `bool` |
+| `>=` |  greater than or equal to | `u16 s16 u32 s32` | `bool` |
+| `<=` |  less than or equal to | `u16 s16 u32 s32` | `bool` |
+| `==` |  equal | `bool u16 s16 u32 s32` | `bool` |
+| `!=` |  not equal | `bool u16 s16 u32 s32` | `bool` |
+| `sys.odd` | true if number is odd | `u16 s16 u32 s32` | `bool` |
 | `sys.ov` | true if the last calculation<br> overflowed | `n/a` | `bool` |
 
 ## Inline assembly
@@ -432,7 +432,7 @@ In this mode there are special symbols that can be used to refer to variables th
 
 | ```.b4``` becomes -> | assembly |
 | :------------------- | :------- |
-| `var int test 0xffff`<br>`{write &test vram.0}`<br>`{write $test vram.0}` | `write 0xffff ram.0`<br>`write ram.0 vram.0`<br>`write [ram.0] vram.0` |
+| `var u16 test 0xffff`<br>`{write &test vram.0}`<br>`{write $test vram.0}` | `write 0xffff ram.0`<br>`write ram.0 vram.0`<br>`write [ram.0] vram.0` |
 
 If the variable's data type is more than one word long, a (zero-based) index in square brackets can be added to specify which word in should be referred to:
 
@@ -441,7 +441,7 @@ If the variable's data type is more than one word long, a (zero-based) index in 
 
 | ```.b4``` becomes -> | assembly |
 | :------------------- | :------- |
-| `var int long 0xffffffff`<br>`{write &test[1] vram.0}`<br>`{write $test[1] vram.0}` | `write 0xffff ram.0`<br>`write 0xffff ram.1`<br>`write ram.1 vram.0`<br>`write [ram.1] vram.0` |
+| `var u16 u32 0xffffffff`<br>`{write &test[1] vram.0}`<br>`{write $test[1] vram.0}` | `write 0xffff ram.0`<br>`write 0xffff ram.1`<br>`write ram.1 vram.0`<br>`write [ram.1] vram.0` |
 
 
 
@@ -463,10 +463,10 @@ Multi-line blocks completely bypass the compiler and are included in the assembl
 | `str` | Holds an immutable ASCII string | `""` |
 | `array` | A collection of indexable values | `n/a` |
 | `none` | Dummy type for functions that<br> do not return a value | `n/a` |
-| `int` | (see numerical types) | `0` |
-| `sint` | (see numerical types) | `0` |
-| `long` | (see numerical types) | `0` |
-| `slong` | (see numerical types) | `0` |
+| `u16` | (see numerical types) | `0` |
+| `s16` | (see numerical types) | `0` |
+| `u32` | (see numerical types) | `0` |
+| `s32` | (see numerical types) | `0` |
 | `float` | *coming soon* | `0` |
 | `double` | *coming soon* | `0` |
 
@@ -474,7 +474,7 @@ Multi-line blocks completely bypass the compiler and are included in the assembl
 
 | Name | Size | Type | Format | Range |
 | ---- | ---- | ---- | ------ | :---: |
-| `int` | 16 bit | integer | unsigned | 0 to 65535 |
-| `sint` | 16 bit | integer | two's complement | -32767 to 32767 |
-| `long` | 32 bit | integer | unsigned | 0 to 4.29 x 10⁹ |
-| `slong` | 32 bit | integer | two's complement| -2.15 x 10⁹ to 2.15 x 10⁹ |
+| `u16` | 16 bit | integer | unsigned | 0 to 65535 |
+| `s16` | 16 bit | integer | two's complement | -32767 to 32767 |
+| `u32` | 32 bit | integer | unsigned | 0 to 4.29 x 10⁹ |
+| `s32` | 32 bit | integer | two's complement| -2.15 x 10⁹ to 2.15 x 10⁹ |

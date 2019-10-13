@@ -1,12 +1,12 @@
 include *
 
 def rom_to_vram
-  var int rom_addr 32768
-  var int vram_addr 6144
-  for var int page; page < 32; page++
+  var u16 rom_addr 32768
+  var u16 vram_addr 6144
+  for var u16 page; page < 32; page++
     vram_addr = 6144
-    for var int col; col < 8; col++
-      for var int row; row < 128; row++
+    for var u16 col; col < 8; col++
+      for var u16 row; row < 128; row++
         *vram_addr = *rom_addr
         rom_addr++
         vram_addr += 8

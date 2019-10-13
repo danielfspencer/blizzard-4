@@ -1,19 +1,19 @@
-var array x_coords (int,490)[10,11,12]
-var array y_coords (int,490)[10,10,10]
+var array x_coords (u16,490)[10,11,12]
+var array y_coords (u16,490)[10,10,10]
 
-var int head_x x_coords[0]
-var int head_y y_coords[0]
+var u16 head_x x_coords[0]
+var u16 head_y y_coords[0]
 
-var int direction 1
-var int temp_x
-var int temp_y
+var u16 direction 1
+var u16 temp_x
+var u16 temp_y
 
-var int key_code
+var u16 key_code
 
-def get_keypress int
-  var int kbd 8192
-  var int scancode *kbd
-  var int char_code 0
+def get_keypress u16
+  var u16 kbd 8192
+  var u16 scancode *kbd
+  var u16 char_code 0
 
   while scancode > 0
     if scancode == 0xAA
@@ -29,8 +29,8 @@ def get_keypress int
 
   return char_code
 
-var int head 120
-var int tail 0
+var u16 head 120
+var u16 tail 0
 while true
   key_code = get_keypress()
   if key_code == 29
