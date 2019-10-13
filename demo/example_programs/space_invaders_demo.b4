@@ -472,7 +472,7 @@ while true
 
 // sprites are defined below
 
-///
+###
 sprites:
 // cannon
 0b0001100000011000
@@ -557,4 +557,4 @@ sprites:
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
-///
+###

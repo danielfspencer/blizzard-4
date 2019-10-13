@@ -445,14 +445,15 @@ If the variable's data type is more than one word long, a (zero-based) index in 
 
 
 
-#### Multi-line mode
+#### Multi-line assembly mode
 ```
-///
-multi line
-block
-///
+###
+// assembly goes here
+// supports multiple lines
+0b1111111111111111
+###
 ```
-Multi-line blocks completely bypass the compiler and are included in the assembly output
+Multi-line blocks completely bypass the compiler and are included directly in the assembly output. This is useful for including raw data in a program.
 
 
 ## Data types

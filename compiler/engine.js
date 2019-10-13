@@ -461,7 +461,7 @@ function tokenise(input, line) {
   let list = input.split(" ")
   let token = {}
 
-  if (/^\/\/[^/].*$/.test(input)) { // a comment begining with two "//"
+  if (/^\/\//.test(input)) { // a comment begining with "//"
     token = {name:"comment",type:"command",arguments:{"comment":input}}
 
   } else if (/^{(.+)}$/.test(input)) {
@@ -2933,7 +2933,7 @@ function compile(input, nested) {
     for (let i = 0; i < input.length; i++) {
       let line = input[i].trim()   // remove any trailing whitesapce
       if (line === "" || line === "\n") { continue } // if it is a newline, skip it
-      if (line === "///") {
+      if (line === "###") {
         include_block_mode = ! include_block_mode
         continue
       }
