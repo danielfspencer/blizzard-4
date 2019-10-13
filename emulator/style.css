@@ -80,13 +80,17 @@ table {
   flex-grow: 1;
 }
 
-input {
+input[type="number"] {
   margin: 0;
   padding: 0;
   border: 2px solid rgb(238, 238, 238);
   box-sizing: border-box;
   width: 65px;
   max-height: 16px;
+}
+
+#clock-target, #clock-actual {
+  -moz-appearance: textfield;
 }
 
 .led_row {
