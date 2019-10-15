@@ -101,34 +101,6 @@ function pad(string, width) {
  return string.length >= width ? string : new Array(width - string.length + 1).join("0") + string
 }
 
-function CSVToArray(strData, strDelimiter){
-  if (strData === "") {return []}
-  strDelimiter = (strDelimiter || ",")
-  let objPattern = new RegExp(
-    ( "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
-     "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
-     "([^\"\\" + strDelimiter + "\\r\\n]*))" ),
-     "gi" )
-  let arrData = [[]]
-  let arrMatches = null
-  while (arrMatches = objPattern.exec( strData )){
-    let strMatchedDelimiter = arrMatches[ 1 ]
-    if (strMatchedDelimiter.length && strMatchedDelimiter !== strDelimiter){
-      arrData.push([])
-    }
-    let strMatchedValue
-    if (arrMatches[2]){
-      strMatchedValue = arrMatches[2].replace(
-        new RegExp("\"\"", "g"),
-        "\"")
-    } else {
-      strMatchedValue = arrMatches[3]
-    }
-    arrData[arrData.length-1].push(strMatchedValue)
-  }
-  return(arrData)
-}
-
 function benchmark(iterations) {
   postMessage(["update",-1])
 
@@ -758,8 +730,14 @@ function tokenise(input, line) {
       token = {name:operation,type:"expression",arguments:{expr1:expr1,expr2:expr2}}
 
     } else if (operation in {">>":"", "<<":"", "!":"", ">> 8":""}) { // single operand [non-bool]
-      let args = CSVToArray(input,operation)
-      let expr = tokenise(args[0][0], line)
+      let args = input.split(operation)
+      let arg
+      if (args[0] === "") {
+        arg = args[1]
+      } else {
+        arg = args[0]
+      }
+      let expr = tokenise(arg, line)
       token = {name:operation,type:"expression",arguments:{expr:expr}}
 
     } else if (operation === "sys.odd") {
