@@ -4,10 +4,9 @@ let state = {}
 let show_log_messages = true
 let debug = false
 let token_dump = []
-let timer
 
 // load the standard library and define the timer function
-timer = () => performance.now()
+let timer = () => performance.now()
 importScripts('libraries.js')
 
 const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,none:0}
@@ -16,12 +15,13 @@ const reserved_keywords = [
   "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include","__root","__global"
 ]
 
-onmessage = (msg) => {
-  switch(msg.data[0]) {
+onmessage = (event) => {
+  let message = event.data
+  switch(message[0]) {
     case "compile":
       let result = ""
       try {
-        let as_array = msg.data[1].split('\n')
+        let as_array = message[1].split('\n')
         result = compile(as_array, false)
       } catch (error) {
         if (error instanceof CompError) {
@@ -35,11 +35,11 @@ onmessage = (msg) => {
       }
       break
     case "debug":
-      debug = msg.data[1]
+      debug = message[1]
       break
     case "bench":
       try {
-        log.info(`${benchmark(msg.data[1])} lines/second`)
+        log.info(`${benchmark(message[1])} lines/second`)
       } catch (error) {
         if (error instanceof CompError) {
           log.error("Benchmark could not be run because the standard library did not compile:")
@@ -60,7 +60,7 @@ const log = {
 }
 
 function send_log(message, level) {
-  if (level != "error" && !show_log_messages || (level === "debug" && !debug)) {
+  if (level !== "error" && !show_log_messages || (level === "debug" && !debug)) {
     return
   }
 
@@ -105,7 +105,7 @@ function init_vars() {
     funcs: {},
     required: {},
     max_allocated_ram_slots: 0,
-    inner_structure_label: undefined,
+    inner_structure_label: null,
     labels: {__root: {if:0, for:0, while:0, str:0, expr_array:0}}
   }
 }
@@ -234,12 +234,12 @@ function gen_free_ram_map() {
 function assert_local_name_available(name) {
   const places = [
     Object.keys(state.symbol_table[state.scope]),
-    Object.keys(state.function_table), // remove to allow var names to be the same as func names?
+    Object.keys(state.function_table),
     reserved_keywords
   ]
 
   for (let place of places) {
-    if (place !== undefined && place.includes(name)) {
+    if (place.includes(name)) {
       throw new CompError(`Name '${name}' is not available`)
     }
   }
@@ -281,7 +281,7 @@ function buffer_if_needed(address, calle) {
 function gen_label(type) {
   let id = state.labels[state.scope][type]++
   if (id === undefined) {
-    throw new CompError(`Error generating ID:\nUnknown structure '${type}'`)
+    throw new CompError(`Error generating label:\nUnknown structure '${type}'`)
   }
   return `${hex_hash(state.scope)}_${id}`
 }
@@ -298,11 +298,9 @@ function write_operands(expr1, expr2, type) {
 }
 
 function write_operand(expr, type) {
-  let result = []
   let [expr_prefix, expr_reg] = translate(expr, type)
-  result = expr_prefix
-  result.push(`write ${expr_reg} alu.1`)
-  return result
+  expr_prefix.push(`write ${expr_reg} alu.1`)
+  return expr_prefix
 }
 
 function operation_assignment_token(var_name, op, value_token) {
@@ -411,7 +409,7 @@ function translate_body(tokens) {
     return result
   }
   for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i].type === "expression" && tokens[i].name != "function" || typeof tokens[i] === undefined) {
+    if (tokens[i].type === "expression" && tokens[i].name !==  "function" || typeof tokens[i] === undefined) {
       throw new CompError("Unexpected expression", tokens[i].line)
     } else {
       let command
@@ -821,7 +819,7 @@ function tokenise(input, line) {
       type_size:type_size
     }}
 
-  } else if (list.length == 2) {
+  } else if (list.length === 2) {
     let type = list[0]
     let name = list[1]
     assert_valid_name(name)
@@ -955,7 +953,7 @@ function translate(token, ctx_type) {
       }
 
       let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
-      if (args.type != expr_type) {
+      if (args.type !==  expr_type) {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
       }
 
@@ -1596,14 +1594,14 @@ function translate(token, ctx_type) {
     } break
 
     case "break": {
-      if (state.inner_structure_label === undefined) {
+      if (state.inner_structure_label === null) {
         throw new CompError("'break' can only be used in for/while loops")
       }
       result.push(`goto ${state.inner_structure_label}_end`)
     } break
 
     case "continue": {
-      if (state.inner_structure_label === undefined) {
+      if (state.inner_structure_label === null) {
         throw new CompError("'continue' can only be used in for/while loops")
       }
       result.push(`goto ${state.inner_structure_label}_cond`)
@@ -1631,10 +1629,10 @@ function translate(token, ctx_type) {
         type = ctx_type
       }
 
-      let num_token = {name:type, type:"expression", arguments:{ value:args.value }}
-      let prefix_register_type = translate(num_token, type)
-      prefix = prefix_register_type[0]
-      registers = prefix_register_type[1]
+      let num_token = { name: type, type: "expression", arguments: { value: args.value } }
+      let [expr_prefix, expr_value] = translate(num_token, type)
+      prefix = expr_prefix
+      registers = expr_value
     } break
 
     case "bool": {
@@ -1759,7 +1757,7 @@ function translate(token, ctx_type) {
     } break
 
     case "str": {
-      if (args.value[0] != "\"" || args.value[args.value.length-1] != "\"") {
+      if (args.value[0] !==  "\"" || args.value[args.value.length-1] !==  "\"") {
         throw new CompError("Strings must be quoted")
       }
       let string = args.value.slice(1,-1)
@@ -2300,7 +2298,7 @@ function translate(token, ctx_type) {
       let expr_regs = expr[1]
 
       let index = translate(args.expr2,"u16")
-      if (index[2] != "u16") {
+      if (index[2] !==  "u16") {
         throw new CompError("Word selector index must be of type 'u16'") //should also be static (ie. number token)
       }
       if (index[1][0] >= expr_regs.length) {
@@ -2360,7 +2358,7 @@ function translate(token, ctx_type) {
       let prefix_and_value
       for (let item of args.exprs) {
         prefix_and_value = translate(item,contained_type)
-        if (prefix_and_value[0].length != 0 ) {
+        if (prefix_and_value[0].length !==  0 ) {
           throw new CompError("Expressions in an array decleration must be static")
         }
         consts_to_add.push(...prefix_and_value[1])
@@ -2498,7 +2496,7 @@ function translate(token, ctx_type) {
 
       if (operation === "index") {
         let prefix_value_type = translate(args.expr, "u16")
-        if (prefix_value_type[2] != "u16") {
+        if (prefix_value_type[2] !==  "u16") {
           throw new CompError("Array indexes must be of type 'u16'")
         }
         prefix.push(...prefix_value_type[0])
@@ -2716,7 +2714,7 @@ function translate(token, ctx_type) {
       }
 
       for (let i = 0; i < exprs.length; i++) {
-        if (i != 0) {
+        if (i !==  0) {
           result.push(`${label}_${i}:`)
         }
 
@@ -2730,7 +2728,7 @@ function translate(token, ctx_type) {
         let prefix_and_value = translate(exprs[i], "bool")
         let prefix = prefix_and_value[0]
         let value = prefix_and_value[1]
-        if (prefix_and_value[2] != "bool") {
+        if (prefix_and_value[2] !==  "bool") {
           throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
         }
         result.push(...prefix)
@@ -2739,7 +2737,7 @@ function translate(token, ctx_type) {
 
         result.push(...translate_body(main_tokens[i]))
 
-        if ((else_present || else_if_present) && i != exprs.length) {
+        if ((else_present || else_if_present) && i !==  exprs.length) {
           result.push(`goto ${label}_end`)
         }
       }
@@ -2767,7 +2765,7 @@ function translate(token, ctx_type) {
       let expr_prefix_and_value = translate(args.expr, "bool")
       let expr_prefix = expr_prefix_and_value[0]
       let expr_value = expr_prefix_and_value[1][0]
-      if (expr_prefix_and_value[2] != "bool") {
+      if (expr_prefix_and_value[2] !==  "bool") {
         throw new CompError(`Conditional expression expected type 'bool', got '${expr_prefix_and_value[2]}'`)
       }
       result.push(...expr_prefix)
@@ -2797,7 +2795,7 @@ function translate(token, ctx_type) {
       let prefix_and_value = translate(args.expr, "bool")
       let prefix = prefix_and_value[0]
       let value = prefix_and_value[1][0]
-      if (prefix_and_value[2] != "bool") {
+      if (prefix_and_value[2] !==  "bool") {
         throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
       }
       result.push(...prefix)
@@ -2957,7 +2955,7 @@ function compile(input, nested) {
 
       curr_indent = Math.floor(input[i].search(/\S|$/)/2)
 
-      if (input[i].search(/\S|$/) % 2 != 0) {
+      if (input[i].search(/\S|$/) % 2 !==  0) {
         throw new CompError("Indents must be 2 spaces", i + 1)
       }
 
@@ -3034,7 +3032,7 @@ function compile(input, nested) {
     let output = ""
     let command = []
     for (let i = 0; i < tokens.length; i++) {
-      if (tokens[i].type === "expression" && tokens[i].name != "function") {
+      if (tokens[i].type === "expression" && tokens[i].name !==  "function") {
         throw new CompError("Unexpected expression", tokens[i].line)
       }
 
