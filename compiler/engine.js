@@ -81,19 +81,6 @@ function CompError(message, line) {
   }
 }
 
-function hex_hash(str) {
-  let hash = 5381
-  let i = str.length
-
-  while (i > 0) {
-    hash = (hash * 33) ^ str.charCodeAt(--i)
-  }
-
-  hash = hash >>> 0
-
-  return pad(hash.toString(16), 8)
-}
-
 function init_vars() {
   state = {
     scope: "__root",
@@ -280,10 +267,7 @@ function buffer_if_needed(address, calle) {
 
 function gen_label(type) {
   let id = state.labels[state.scope][type]++
-  if (id === undefined) {
-    throw new CompError(`Error generating label:\nUnknown structure '${type}'`)
-  }
-  return `${hex_hash(state.scope)}_${id}`
+  return `${state.scope}_${id}`
 }
 
 function write_operands(expr1, expr2, type) {
