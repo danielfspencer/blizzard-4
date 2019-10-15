@@ -1038,7 +1038,8 @@ function translate(token, ctx_type) {
       }
 
       // add argument to function
-      state.function_table[state.scope].arguments.push(args.name)
+      let func_args = state.function_table[state.scope].arguments
+      func_args.push(args.name)
 
       // make data available
       result = expr_prefix
@@ -1047,7 +1048,7 @@ function translate(token, ctx_type) {
         result.push(`write ${expr_word} ram.${memory.shift()}`)
       }
 
-      let label = `func_${state.scope}_${args.name}:`
+      let label = `func_${state.scope}_${func_args.length}:`
       result.push(label)
     } break
 
@@ -1090,7 +1091,7 @@ function translate(token, ctx_type) {
       result.push(`write ${base_addr} ram+.0`)
       result.push(`write ram.${array_memory[0]} ram+.1`)
       result.push(`write ${current_len * element_size} ram+.2`)
-      result.push("call func_sys.rom_to_ram_copy_length")
+      result.push("call func_sys.rom_to_ram_copy_3")
     } break
 
     case "global_array_alloc": {
@@ -1132,7 +1133,7 @@ function translate(token, ctx_type) {
       result.push(`write ${base_addr} ram+.0`)
       result.push(`write ram.${array_memory[0]} ram+.1`)
       result.push(`write ${current_len * element_size} ram+.2`)
-      result.push("call func_sys.rom_to_global_ram_copy_length")
+      result.push("call func_sys.rom_to_global_ram_copy_3")
     } break
 
     case "set": {            //[name] = [expr]
@@ -1260,7 +1261,7 @@ function translate(token, ctx_type) {
       result.push(`write ${index_value} ram+.0`)
       result.push(`write ${item_size} ram+.1`)
       result.push(`write ${base_addr} ram+.2`)
-      result.push("call func_sys.array_pointer_base_addr") //output is in ram+.3
+      result.push("call func_sys.array_pointer_3") //output is in ram+.3
 
       let temp_var = get_temp_word()
       result.push(`write [ram+.3] ${temp_var.label}`)
@@ -1290,10 +1291,10 @@ function translate(token, ctx_type) {
       // if this is a global array we need a different copy function
       if (scope_name === "__global") {
         load_lib("sys.ram_to_global_ram_copy")
-        result.push("call func_sys.ram_to_global_ram_copy_length")
+        result.push("call func_sys.ram_to_global_ram_copy_3")
       } else {
         load_lib("sys.ram_to_ram_copy")
-        result.push("call func_sys.ram_to_ram_copy_length")
+        result.push("call func_sys.ram_to_ram_copy_3")
       }
 
       temp_var.free()
@@ -1405,7 +1406,7 @@ function translate(token, ctx_type) {
         result.push(`write ${expr_value} ram+.0`)
         result.push(`write ${item_size} ram+.1`)
         result.push(`write ${base_addr} ram+.2`)
-        result.push("call func_sys.array_pointer_base_addr") //output is in ram+.3
+        result.push("call func_sys.array_pointer_3") //output is in ram+.3
 
         result.push(`write [ram+.3] ${source_addr.label}`)
         result.push("write [ram+.3] alu.1")
@@ -1416,7 +1417,7 @@ function translate(token, ctx_type) {
         load_lib("sys.u16_multiply")
         result.push(`write ${item_size} ram+.0`)
         result.push(`write ${current_len} ram+.1`)
-        result.push("call func_sys.u16_multiply_b")
+        result.push("call func_sys.u16_multiply_2")
 
         //shift entire array (that is below the specified poisiton) one item_size down
         result.push(`write [${source_addr.label}] ram+.0`)
@@ -1426,10 +1427,10 @@ function translate(token, ctx_type) {
         // if this is a global array we need a different copy function
         if (scope_name === "__global") {
           load_lib("sys.global_ram_to_global_ram_copy")
-          result.push("call func_sys.global_ram_to_global_ram_copy_length")
+          result.push("call func_sys.global_ram_to_global_ram_copy_3")
         } else {
           load_lib("sys.ram_to_ram_copy")
-          result.push("call func_sys.ram_to_ram_copy_length")
+          result.push("call func_sys.ram_to_ram_copy_3")
         }
 
         //put item at the specified index
@@ -2492,7 +2493,7 @@ function translate(token, ctx_type) {
         prefix.push(`write ${index} ram+.0`)
         prefix.push(`write ${item_size} ram+.1`)
         prefix.push(`write ${base_addr} ram+.2`)
-        prefix.push("call func_sys.array_pointer_base_addr") //output is in ram+.3
+        prefix.push("call func_sys.array_pointer_3") //output is in ram+.3
 
         let memory = alloc_block(item_size)
 
@@ -2504,10 +2505,10 @@ function translate(token, ctx_type) {
         // if this is a global array we need a different copy function
         if (scope_name === "__global") {
           load_lib("sys.global_ram_to_ram_copy")
-          prefix.push("call func_sys.global_ram_to_ram_copy_length")
+          prefix.push("call func_sys.global_ram_to_ram_copy_3")
         } else {
           load_lib("sys.ram_to_ram_copy")
-          prefix.push("call func_sys.ram_to_ram_copy_length")
+          prefix.push("call func_sys.ram_to_ram_copy_3")
         }
 
         registers = []
@@ -2535,7 +2536,7 @@ function translate(token, ctx_type) {
         prefix.push(`write ${current_len} ram+.0`)
         prefix.push(`write ${item_size} ram+.1`)
         prefix.push(`write ${base_addr} ram+.2`)
-        prefix.push("call func_sys.array_pointer_base_addr") //output is in ram+.3
+        prefix.push("call func_sys.array_pointer_3") //output is in ram+.3
 
         let memory = alloc_block(item_size)
 
@@ -2544,7 +2545,7 @@ function translate(token, ctx_type) {
         prefix.push("write [ram+.3] ram+.0")
         prefix.push(`write ram.${memory[0]} ram+.1`)
         prefix.push(`write ${item_size} ram+.2`)
-        prefix.push("call func_sys.ram_to_ram_copy_length")
+        prefix.push("call func_sys.ram_to_ram_copy_3")
 
         registers = []
         for (let addr of memory) {
@@ -2603,7 +2604,7 @@ function translate(token, ctx_type) {
       // skip the initialisation of arguments that we have supplied values for
       // we do this by entering the function at a different point
       if (actual_arg_no > 0) {
-        entry_point += `_${target_args[actual_arg_no - 1]}`
+        entry_point += `_${actual_arg_no}`
       }
 
       // actually call the function
