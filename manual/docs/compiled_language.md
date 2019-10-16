@@ -37,7 +37,7 @@ Variables, arguments, constants and functions are all referred to by alphanumeri
 - must not be the name of a data type
 
 ### Reserved Keywords
-`if` `for` `while` `def` `true` `false` `sys` `sys.odd` `sys.ov` `array` `return` `break` `continue`
+`if` `for` `while` `repeat` `struct` `def` `true` `false` `sys` `sys.odd` `sys.ov` `array` `return` `break` `continue` `include` `__root` `__global`
 
 # Syntax
 Each line in a `b4` program must be one of the following:
