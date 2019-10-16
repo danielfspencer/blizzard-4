@@ -2272,12 +2272,22 @@ function translate(token, ctx_type) {
     } break
                                   //others
     case "is_odd": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      let prefix_and_value = translate(args.expr,"u16")
-      prefix = prefix_and_value[0]
-      registers = prefix_and_value[1]
+      let [prefix, expr_value, expr_type] = translate(args.expr)
+      switch (expr_type) {
+        case "s16":
+        case "u16": {
+          registers = [expr_value[0]]
+        } break
+
+        case "s32":
+        case "u32": {
+          registers = [expr_value[1]]
+        } break
+
+        default:
+          throw new CompError(`Unsupported datatype '${expr_type}' for operation '${token.name}'`)
+      }
       type = "bool"
-      registers = [registers[registers.length - 1]]
     } break
 
     case "overflow": {
