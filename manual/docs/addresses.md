@@ -6,7 +6,7 @@
 
 | Absolute<br>Address | Internal<br>Address | Description |	Mnemonic | Read/Write | Width<br>(bits) |
 | --- | --- | --- | --- | --- | --- |
-| 1 |	1	| Conditional Bit | `ctl.cnd`	| R/W	| 1
+| 1 |	1	| Conditional Bit | `ctl.cnd`	| W	| 1
 | 2	| 2	| RAM addressing mode	| `ctl.addrmode` |W |	1
 | 4	| 4	| RAM frame number | `ctl.framenum`	| R/W |	1
 | 8	| 8	| 32-bit timer (lower 16 bits) | `ctl.lowtimer`	| R |	16

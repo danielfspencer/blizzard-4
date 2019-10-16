@@ -2157,9 +2157,11 @@ function translate(token, ctx_type) {
         case "bool":
         case "u16":
         case "s16": {
+          let buffer = get_temp_word()
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
-          prefix.push("write [alu.=] ctl.cnd")
-          prefix.push("write [ctl.cnd] alu.1")
+          prefix.push(`write [alu.=] ${buffer.label}`)
+          prefix.push(`write [${buffer.label}] alu.1`)
+          buffer.free()
           registers = ["[alu.!]"]
         } break
 

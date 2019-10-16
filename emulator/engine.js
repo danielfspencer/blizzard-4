@@ -492,9 +492,6 @@ function simulate_effect_of_read_bus_change() {
     switch (card_address) {                                               //control unit
       case 0:
         switch (address) {
-          case 1:
-            data_bus = conditional_bit
-            break
           case 4:
             data_bus = frame_number
             break
