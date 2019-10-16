@@ -1,11 +1,12 @@
 let debug = false
 
-onmessage = (msg) => {
-  switch(msg.data[0]) {
+onmessage = (event) => {
+  let message = event.data
+  switch(message[0]) {
     case "assemble":
       let result = ""
       try {
-        let as_array = msg.data[1].split("\n")
+        let as_array = message[1].split("\n")
         result = assemble(as_array)
       } catch (error) {
         if (error instanceof AsmError) {
@@ -18,7 +19,7 @@ onmessage = (msg) => {
       }
       break
     case "debug":
-      debug = msg.data[1]
+      debug = message[1]
       break
   }
 }
@@ -40,12 +41,12 @@ const log = {
 }
 
 function send_log(message, level) {
-  if (level == "debug" && !debug) {
+  if (level === "debug" && !debug) {
     return
   }
 
   let text
-  if (typeof message == "object") {
+  if (typeof message === "object") {
     text = JSON.stringify(message)
   } else {
     text = message
@@ -190,13 +191,13 @@ function assemble(lines) {
 
   log.info("1st Pass...")
   for (var i = 0; i < lines.length; i++) {
-    if (lines[i] == "" ) {continue} // skip empty lines
+    if (lines[i] === "" ) {continue} // skip empty lines
     if (/\s*\/\//.test(lines[i])) {continue} // skip comments
     var line = lines[i].trim()
     line = line.split(" ") // turns "copy ram1" into ["copy", "ram1"]
     line.map(function(str){str.replace(/(\r|\n)/g,"")}) // strips trailing whitespace
 
-    if (line.length == 1 && !(line[0] in opDefs)) { // if it's one string
+    if (line.length === 1 && !(line[0] in opDefs)) { // if it's one string
       if (line[0].endsWith(":")) { // ends with : means it is a label
         let label = line[0].substr(0, line[0].length - 1)
         if (label in labels) {
