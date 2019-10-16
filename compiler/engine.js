@@ -2598,8 +2598,12 @@ function translate(token, ctx_type) {
       // actually call the function
       prefix.push(`call ${entry_point}`)
 
-      registers = state.function_table[args.name].return_value
-      type = state.function_table[args.name].data_type
+      registers = function_table_entry.return_value
+      if (args.ignore_type_mismatch) {
+        type = ctx_type
+      } else {
+        type = function_table_entry.data_type
+      }
     } break
 
     case "pointer_lookup": {
