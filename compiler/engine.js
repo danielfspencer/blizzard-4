@@ -1803,20 +1803,11 @@ function translate(token, ctx_type) {
         throw new CompError(`Multiplication operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
       }
       switch (ctx_type) {
+        case "s32":
+        case "u32":
+        case "s16":
         case "u16": {
-          [prefix, registers] = function_call("sys.u16_multiply", [args.expr1,args.expr2])
-        } break
-
-        case "s16": {
-          [prefix, registers] = function_call("sys.s16_multiply", [args.expr1,args.expr2])
-        } break
-
-        case "u32": {
-          [prefix, registers] = function_call("sys.u32_multiply", [args.expr1,args.expr2])
-        } break
-
-        case "s32": {
-          [prefix, registers] = function_call("sys.s32_multiply", [args.expr1,args.expr2])
+          [prefix, registers] = function_call(`sys.${ctx_type}_multiply`, [args.expr1,args.expr2])
         } break
 
         default:
@@ -1831,20 +1822,11 @@ function translate(token, ctx_type) {
         throw new CompError(`Division operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
       }
       switch (ctx_type) {
+        case "s32":
+        case "u32":
+        case "s16":
         case "u16": {
-          [prefix, registers] = function_call("sys.u16_divide", [args.expr1,args.expr2])
-        } break
-
-        case "s16": {
-          [prefix, registers] = function_call("sys.s16_divide", [args.expr1,args.expr2])
-        } break
-
-        case "u32": {
-          [prefix, registers] = function_call("sys.u32_divide", [args.expr1,args.expr2])
-        } break
-
-        case "s32": {
-          [prefix, registers] = function_call("sys.s32_divide", [args.expr1,args.expr2])
+          [prefix, registers] = function_call(`sys.${ctx_type}_divide`, [args.expr1,args.expr2])
         } break
 
         default:
@@ -1859,20 +1841,11 @@ function translate(token, ctx_type) {
         throw new CompError(`Exponention operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
       }
       switch (ctx_type) {
+        case "s32":
+        case "u32":
+        case "s16":
         case "u16": {
-          [prefix, registers] = function_call("sys.u16_exponent", [args.expr1,args.expr2])
-        } break
-
-        case "s16": {
-          [prefix, registers] = function_call("sys.s16_exponent", [args.expr1,args.expr2])
-        } break
-
-        case "u32": {
-          [prefix, registers] = function_call("sys.u32_exponent", [args.expr1,args.expr2])
-        } break
-
-        case "s32": {
-          [prefix, registers] = function_call("sys.s32_exponent", [args.expr1,args.expr2])
+          [prefix, registers] = function_call(`sys.${ctx_type}_exponent`, [args.expr1,args.expr2])
         } break
 
         default:
@@ -1887,20 +1860,11 @@ function translate(token, ctx_type) {
         throw new CompError(`Modulo operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
       }
       switch (ctx_type) {
+        case "s32":
+        case "u32":
+        case "s16":
         case "u16": {
-          [prefix, registers] = function_call("sys.u16_modulo", [args.expr1,args.expr2])
-        } break
-
-        case "s16": {
-          [prefix, registers] = function_call("sys.s16_modulo", [args.expr1,args.expr2])
-        } break
-
-        case "u32": {
-          [prefix, registers] = function_call("sys.u32_modulo", [args.expr1,args.expr2])
-        } break
-
-        case "s32": {
-          [prefix, registers] = function_call("sys.s32_modulo", [args.expr1,args.expr2])
+          [prefix, registers] = function_call(`sys.${ctx_type}_modulo`, [args.expr1,args.expr2])
         } break
 
         default:
@@ -1930,12 +1894,9 @@ function translate(token, ctx_type) {
           temp_var.free()
         } break
 
+        case "s32":
         case "u32": {
-          [prefix, registers] = function_call("sys.u32_greater", [args.expr1,args.expr2])
-        } break
-
-        case "s32": {
-          [prefix, registers] = function_call("sys.s32_greater", [args.expr1,args.expr2])
+          [prefix, registers] = function_call(`sys.${ctx_type}_greater`, [args.expr1,args.expr2])
         } break
 
         default:
@@ -1966,12 +1927,9 @@ function translate(token, ctx_type) {
           temp_var.free()
           } break
 
-        case "u32": {
-          [prefix, registers] = function_call("sys.u32_less", [args.expr1,args.expr2])
-          } break
-
-        case "s32": {
-          [prefix, registers] = function_call("sys.s32_less", [args.expr1,args.expr2])
+          case "s32":
+          case "u32": {
+            [prefix, registers] = function_call(`sys.${ctx_type}_less`, [args.expr1,args.expr2])
           } break
 
         default:
@@ -2008,30 +1966,11 @@ function translate(token, ctx_type) {
           temp_var.free()
           } break
 
+        case "s32":
         case "u32": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let prefix_and_value = function_call("sys.u32_greater", [args.expr1,args.expr2])
-          prefix = prefix_and_value[0]
-
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
-
-          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2])
-          prefix.push(...prefix_and_value[0])
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
-
-          prefix.push(`write [${temp_vars[0].label}] alu.1`)
-          prefix.push(`write [${temp_vars[1].label}] alu.2`)
-          registers = ["[alu.|]"]
-
-          temp_vars[0].free()
-          temp_vars[1].free()
-          } break
-
-        case "s32": {
-          let temp_vars = [get_temp_word(), get_temp_word()]
-
-          let prefix_and_value = function_call("sys.s32_greater", [args.expr1,args.expr2])
+          let prefix_and_value = function_call(`sys.${ctx_type}_greater`, [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
@@ -2082,30 +2021,11 @@ function translate(token, ctx_type) {
           temp_var.free()
           } break
 
+        case "s32":
         case "u32": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let prefix_and_value = function_call("sys.u32_less", [args.expr1,args.expr2])
-          prefix = prefix_and_value[0]
-
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
-
-          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2])
-          prefix.push(...prefix_and_value[0])
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
-
-          prefix.push(`write [${temp_vars[0].label}] alu.1`)
-          prefix.push(`write [${temp_vars[1].label}] alu.2`)
-          registers = ["[alu.|]"]
-
-          temp_vars[0].free()
-          temp_vars[1].free()
-          } break
-
-        case "s32": {
-          let temp_vars = [get_temp_word(), get_temp_word()]
-
-          let prefix_and_value = function_call("sys.s32_less", [args.expr1,args.expr2])
+          let prefix_and_value = function_call(`sys.${ctx_type}_less`, [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
@@ -2200,16 +2120,10 @@ function translate(token, ctx_type) {
           registers = ["[alu.>>]"]
         } break
 
+        case "u32":
+        case "s32":
         case "s16": {
-          [prefix, registers] = function_call("sys.s16_rshift", [args.expr])
-        } break
-
-        case "u32": {
-          [prefix, registers] = function_call("sys.u32_rshift", [args.expr])
-        } break
-
-        case "s32": {
-          [prefix, registers] = function_call("sys.s32_rshift", [args.expr])
+          [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr])
         } break
 
         default:
