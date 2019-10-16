@@ -1510,10 +1510,11 @@ function translate(token, ctx_type) {
         throw new CompError("Statement 'return' can only be used in functions")
       }
 
-      let func_type = state.function_table[state.scope].data_type
-      let force_cast = state.function_table[state.scope].force_cast
+      let table_entry = state.function_table[state.scope]
+      let func_type = table_entry.data_type
+      let force_cast = table_entry.force_cast
       if (func_type === "none" && args.expr !== undefined) {
-        throw new CompError("Functions of type 'none' cannot return values")
+        throw new CompError(`Functions of type '${func_type}' cannot return values`)
       }
 
       // if the return statement should have an expression, evaluate it
@@ -1539,7 +1540,7 @@ function translate(token, ctx_type) {
           //this next replace prevents recursive function calls producing ram++++.x addresses
           map.push(temp.replace("ram++","ram+"))
         }
-        state.function_table[state.scope].return_value = map
+        table_entry.return_value = map
       }
 
       // add the actual return instruction
@@ -1749,8 +1750,7 @@ function translate(token, ctx_type) {
       throw new CompError("Not implemented")
     } break
 
-                                        //arithmetic operations
-    case "+": {  //add
+    case "+": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
@@ -1773,7 +1773,7 @@ function translate(token, ctx_type) {
       }
     } break
 
-    case "-": {  //subtract
+    case "-": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
@@ -1796,7 +1796,7 @@ function translate(token, ctx_type) {
       }
     } break
 
-    case "*": {  //multiply
+    case "*": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
@@ -1824,7 +1824,7 @@ function translate(token, ctx_type) {
       }
     } break
 
-    case "/": {  //divide
+    case "/": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
@@ -1852,7 +1852,7 @@ function translate(token, ctx_type) {
       }
     } break
 
-    case "^": {  //exponent
+    case "^": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
@@ -1880,7 +1880,7 @@ function translate(token, ctx_type) {
       }
     } break
 
-    case "%": {  //modulo
+    case "%": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
       if (types[0] !== types[1]) {
@@ -1907,7 +1907,7 @@ function translate(token, ctx_type) {
           throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
       }
     } break
-                                          //comparison expressions
+
     case ">": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       ctx_type = find_type_priority(args.expr1,args.expr2)
@@ -2173,7 +2173,7 @@ function translate(token, ctx_type) {
       }
       type = "bool"
     } break
-                                    //bit-wise operations, only needs to test word length
+
     case "&": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       types = [translate(args.expr1)[2],translate(args.expr2)[2]]
@@ -2234,7 +2234,7 @@ function translate(token, ctx_type) {
       }
     } break
 
-    case "!": {   //(not)
+    case "!": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       prefix = write_operand(args.expr,ctx_type)
       registers = ["[alu.!]"]
@@ -2254,7 +2254,7 @@ function translate(token, ctx_type) {
       registers.push(...expr2_reg)
     } break
 
-    case ":": { //word selector
+    case ":": {
       log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       let expr = translate(args.expr1,ctx_type)
       prefix = expr[0]
@@ -2270,7 +2270,7 @@ function translate(token, ctx_type) {
 
       registers = [expr_regs[index[1][0]]]
     } break
-                                  //others
+
     case "is_odd": {
       let [prefix, expr_value, expr_type] = translate(args.expr)
       switch (expr_type) {
@@ -2568,8 +2568,9 @@ function translate(token, ctx_type) {
       log.debug(`calling '${args.name}' with ${actual_arg_no}/${target_arg_no} arguments`)
 
       for (let i = 0; i < actual_arg_no; i++) {
-        let target_type = state.symbol_table[args.name][target_args[i]].data_type
-        let target_regs = state.symbol_table[args.name][target_args[i]].specific.ram_addresses
+        let arg_table_entry = state.symbol_table[args.name][target_args[i]]
+        let target_type = arg_table_entry.data_type
+        let target_regs = arg_table_entry.specific.ram_addresses
 
         let expr_token = args.exprs[i]
 
