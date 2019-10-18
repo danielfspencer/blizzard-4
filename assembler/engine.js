@@ -84,7 +84,6 @@ const defs = {
   "usrio.out2" : 4100,
   "usrio.out3" : 4101,
   "kbd.pop": 8192,
-  "kbd.len": 8193,
   "ctl.cnd" : 1,
   "ctl.addrmode" : 2,
   "ctl.framenum" : 4,

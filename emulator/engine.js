@@ -577,9 +577,6 @@ function simulate_effect_of_read_bus_change() {
               data_bus = 0
             }
             break
-          case 1:
-            data_bus = key_fifo.length
-            break
           default:
             break
         }
