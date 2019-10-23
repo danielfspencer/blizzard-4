@@ -1,29 +1,27 @@
-const path = "example_programs/"
+const path = 'example_programs'
 
-$(document).ready( () => {
-  $.getJSON(path + "index.json", (data) => {
-    $.each(data, (key,value) => {
-      let html = ""
-      html += "<div class='card entry' id="+key+">"
-      html += "<div class='img-container'><div class='img-box'>"
-      html += "<img src='" + path + "/img/" + key + ".png'/>"
-      html += "</div></div><div class='text-container'><div class='text-box'>"
-      html += "<h3>" + value.name + "</h3>"
-      html += value.desc
-      html += "</div></div><div class='button-container'> \
-        <div class='button run'>run</div> \
-        <div class='button src'>view source</div> \
-        </div></div>"
-      $("#content").append(html)
+$(document).ready(() => {
+  $.getJSON(`${path}/index.json`, (data) => {
+    $.each(data, (key, value) => {
+      let html = `
+      <div class='card entry' id='${key}'>
+        <div class='img-container'><div class='img-box'>
+          <img src='${path}/img/${key}.png'/>
+        </div></div>
+        <div class='text-container'><div class='text-box'>
+          <h3>${value.name}</h3>${value.desc}
+        </div></div>
+        <div class='button-container'>
+          <div class='button run'>run</div>
+          <div class='button src'>view source</div>
+        </div>
+      </div>`
 
-      $("#" + key + " > .button-container > .run").click( () => {
-        run(key, value.clock_speed)
-      })
+      $('#content').append(html)
 
-      $("#" + key + " > .button-container > .src").click( () => {
-        view(key)
-      })
+      $(`#${key} > .button-container > .run`).click(() => run(key, value.clock_speed))
 
+      $(`#${key} > .button-container > .src`).click(() => view(key))
     })
   })
 })
@@ -42,26 +40,24 @@ function view(name) {
   load(name, (input) => switch_cmp(input))
 }
 
-function load(name, success) {
+function load(name, callback) {
   $.ajax({
-    url: path + name + ".b4",
-    dataType: "text",
-    success: (data) => {
-      success(data)
-    }
+    url: `${path}/${name}.b4`,
+    dataType: 'text',
+    success: data => callback(data)
   })
 }
 
 function switch_emu(input, clock_speed) {
-  parent.postMessage(["menu-item-emu", input, true, clock_speed],"*")
+  parent.postMessage(['menu-item-emu', input, true, clock_speed],'*')
 }
 
 function switch_cmp(input) {
-  parent.postMessage(["menu-item-cmp", input],"*")
+  parent.postMessage(['menu-item-cmp', input],'*')
 }
 
 function switch_asm(input) {
-  parent.postMessage(["menu-item-asm", input],"*")
+  parent.postMessage(['menu-item-asm', input],'*')
 }
 
 function compile(input, success, fail) {

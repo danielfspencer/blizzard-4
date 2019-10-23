@@ -1,6 +1,5 @@
-body, html{
-  margin:0;
-  padding:0;
+body {
+  padding: 0;
 }
 
 table {
@@ -81,9 +80,17 @@ table {
   flex-grow: 1;
 }
 
-input {
+input[type="number"] {
+  margin: 0;
+  padding: 0;
+  border: 2px solid rgb(238, 238, 238);
+  box-sizing: border-box;
   width: 65px;
-  height: 12px;
+  max-height: 16px;
+}
+
+#clock-target, #clock-actual {
+  -moz-appearance: textfield;
 }
 
 .led_row {
@@ -120,26 +127,26 @@ input {
   margin-right: 4px;
 }
 
-.led.on {
+.led_row > div.led.on {
   opacity: 1;
 }
 
-.led.red {
+.led_row > div.led.red {
   background: red;
 }
 
-.led.green {
+.led_row > div.led.green {
   background: green;
 }
 
-.led.blue {
+.led_row > div.led.blue {
   background: blue;
 }
 
-.led.blank {
+.led_row > div.led.blank {
   background: #b0b0b0;
 }
 
-.led.blank.on {
+.led_row > div.led.blank.on {
   opacity: 0.2;
 }

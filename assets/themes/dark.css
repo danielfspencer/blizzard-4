@@ -1,0 +1,134 @@
+/* general elements */
+
+body {
+  background: #111111;
+  color: #ffffff;
+}
+
+.card {
+  background: #151515;
+}
+
+.button {
+  background: #182027;
+}
+
+/* parts of the frame (toolbar, window buttons etc) */
+
+div#frame #dim.active {
+  opacity: 0.6;
+}
+
+div#frame #menu {
+  background: #171717;
+}
+
+div#frame #menu-list > li.active {
+  color: #ff6800;
+}
+
+div#frame #menu-list > li > img {
+  filter: invert(100%);
+}
+
+div#frame #dropdown-menu-list > li > img {
+  filter: invert(100%);
+}
+
+div#frame #statusbar {
+  background: #171717;
+}
+
+div#frame #statusbar.light-accent {
+  background: #232323;
+}
+
+div#frame #toolbar {
+  background: #232323;
+}
+
+div#frame #toolbar > div.material-design-hamburger {
+  filter: invert(100%);
+}
+
+div#frame #toolbar> #overflow-menu {
+  filter: invert(100%);
+}
+
+div#frame #toolbar > #button-container > .button img {
+  filter: invert(100%);
+}
+
+/* elements inside the frame */
+
+.tooltip_enabled .tooltip_content {
+  background: #151515;
+}
+
+textarea {
+  background: #151515;
+  color: inherit;
+}
+
+div.led_row > div.led {
+  filter: saturate(60%);
+  opacity: 0.1;
+}
+
+div.led_row > div.led.blue {
+  background: #01dcff;
+}
+
+div.led_row > div.led.red {
+  background: #ff0000;
+}
+
+div.led_row > div.led.green {
+  background: #00cc00;
+}
+
+.linedwrap {
+  border: 1px solid #888888;
+}
+
+div#log > div.item.info {
+  background: #182027;
+}
+
+div#log > div.item.warn {
+  background: #423400;
+}
+
+div#log > div.item.error {
+  background: #2f0c0c;
+}
+
+/* manual page */
+
+div.rendered-md a:link {
+  color: #ff6800;
+}
+
+div.rendered-md a:visited {
+  color: #ff6800;
+}
+
+div.rendered-md a:hover {
+  color: #ff6800;
+}
+
+div.rendered-md a:active {
+ color: #005eff;
+}
+
+div.rendered-md ul {
+  border-color: #447fbb;
+}
+
+div.rendered-md ol {
+  border-color: #447fbb;
+}
+
+code {
+  background-color: #1f2429;
+}

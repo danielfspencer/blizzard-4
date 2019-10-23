@@ -1,75 +1,81 @@
-function load_file(e, target) {
-  var file = e.target.files[0];
-  if (!file) {
-    return;
-  }
-  var reader = new FileReader();
-  reader.fileName = file.name;
-  reader.onload = function(e) {
-    var contents = e.target.result;
-    $("#"+target).val(contents);
-    $("#name").val(e.target.fileName.split(".")[0]);
-  };
-  reader.readAsText(file);
-}
+// platform(): returns one of "website/chrome_app/electron"
+// files:
+//       - open(event, callback)
+//         given a file picker event, call the callback with the content of the file
+// storage:
+//       - get_key(key, callback, default)
+//         call callback with the value of the key, or default if the key is not set
+//       - set_key(key,valie)
+//         set the key to have the given value
+//       - clear()
+//         unset all keys
+const tools = {
+  platform: () => {
+    try {
+      var ref = chrome.storage.local
+      return 'chrome_app'
+    } catch (e) {}
 
-function get_platform() {
-  try {
-    var ref = chrome.storage.local
-  } catch (e) {
+    if (navigator.userAgent.toLowerCase().indexOf(' electron/') > -1) {
+      return 'electron'
+    }
 
-  }
-
-  if (typeof ref !== 'undefined') {
-    return "chrome_app"
-  }
-
-  if (typeof require !== 'undefined') {
-    return "electron"
-  }
-
-  return "website"
-}
-
-function storage_set_key(key,value) {
-  if (get_platform() == "chrome_app") {
-    var obj = {}
-    obj[key] = value
-    chrome.storage.local.set(obj)
-  } else {
-    localStorage.setItem(key, JSON.stringify(value))
-  }
-}
-
-function storage_get_key(key,callback,default_value) {
-  if (get_platform() == "chrome_app") {
-    chrome.storage.local.get([key], (items) => {
-      var result = items[key]
-      if (result === undefined) {
-        callback(default_value)
-      } else {
-        callback(result)
+    return 'website'
+  },
+  files: {
+    load: (event, callback) => {
+      let file = event.target.files[0]
+      if (!file) {
+        return
       }
-    })
 
-  } else {
-    var result = localStorage.getItem(key)
-    if (result == null) {
-      callback(default_value)
-    } else {
-      try {
-        callback(JSON.parse(result))
-      } catch (e) {
-        callback(result)
+      let reader = new FileReader()
+      reader.fileName = file.name
+      reader.onload = (event) => {
+        callback(event.target.result)
+      }
+      reader.readAsText(file)
+    }
+  },
+  storage: {
+    get_key: (key, callback, default_value) => {
+      if (tools.platform() ==='chrome_app') {
+        chrome.storage.local.get([key], (items) => {
+          let result = items[key]
+          if (result === undefined) {
+            callback(default_value)
+          } else {
+            callback(result)
+          }
+        })
+      } else {
+        let result = localStorage.getItem(key)
+        if (result === null) {
+          callback(default_value)
+        } else {
+          try {
+            callback(JSON.parse(result))
+          } catch (e) {
+            callback(result)
+          }
+        }
+      }
+    },
+    set_key: (key, value) => {
+      if (tools.platform() ==='chrome_app') {
+        let obj = {}
+        obj[key] = value
+        chrome.storage.local.set(obj)
+      } else {
+        localStorage.setItem(key, JSON.stringify(value))
+      }
+    },
+    clear: () => {
+      if (tools.platform() ==='chrome_app') {
+        chrome.storage.local.clear()
+      } else {
+        localStorage.clear()
       }
     }
-  }
-}
-
-function storage_clear(key,value) {
-  if (get_platform() == "chrome_app") {
-    chrome.storage.local.clear()
-  } else {
-    localStorage.clear()
   }
 }
