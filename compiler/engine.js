@@ -1150,61 +1150,51 @@ function translate(token, ctx_type) {
       result.push("call func_sys.rom_to_global_ram_copy_3")
     } break
 
-    case "set": {            //[name] = [expr] TODO=cleanup
-      if (args.name in state.symbol_table[state.scope]) {
+    case "set": {            //[name] = [expr]
+      let is_global
+      let table_entry
+
+      let local_table = state.symbol_table[state.scope]
+      let global_table = state.symbol_table.__global
+
+      if (args.name in local_table) {
         // this is a local variable or argument
-
-        let table_entry = state.symbol_table[state.scope][args.name]
-
-        if (!["variable","argument"].includes(table_entry.type)) {
-          throw new CompError("Only variables and arguments can be modified")
-        }
-
-        let dst_regs = table_entry.specific.ram_addresses
-        let dst_type = table_entry.data_type
-
-        // get the value and type of the expression
-        let [prefix, value, expr_type] = translate(args.expr, dst_type)
-        assert_compatable_types(dst_type, expr_type, token.line, () => {
-          throw new CompError(`Variable expected type '${dst_type}', got '${expr_type}'`)
-        })
-
-        // run the code state.required by the expression
-        result = prefix
-
-        // copy the new value into the variable's memory
-        for (let i = 0; i < dst_regs.length; i++) {
-          result.push(`write ${value[i]} ram.${dst_regs[i]}`)
-        }
-
-      } else if (args.name in state.symbol_table.__global) {
+        is_global = false
+        table_entry = local_table[args.name]
+      } else if (args.name in global_table) {
         // this is a global variable
-
-        let table_entry = state.symbol_table.__global[args.name]
-
-        if (table_entry.type !== "variable") {
-          throw new CompError("Only variables can be modified")
-        }
-
-        let dst_regs = table_entry.specific.ram_addresses
-        let dst_type = table_entry.data_type
-
-        // get the value and type of the expression
-        let [prefix, value, expr_type] = translate(args.expr, dst_type)
-        assert_compatable_types(dst_type, expr_type, token.line, () => {
-          throw new CompError(`Variable expected type '${dst_type}', got '${expr_type}'`)
-        })
-
-        // run the code state.required by the expression
-        result = prefix
-
-        // copy the new value into the variable's memory
-        for (let i = 0; i < dst_regs.length; i++) {
-          result.push(`write ${value[i]} ram^.${dst_regs[i]}`)
-        }
-
+        is_global = true
+        table_entry = global_table[args.name]
       } else {
         throw new CompError(`Variable '${args.name}' is undefined`)
+      }
+
+      if (!["variable", "argument"].includes(table_entry.type)) {
+        throw new CompError("Only variables and arguments can be modified")
+      }
+
+      let dst_regs = table_entry.specific.ram_addresses
+      let dst_type = table_entry.data_type
+
+      // get the value and type of the expression
+      let [prefix, value, expr_type] = translate(args.expr, dst_type)
+      assert_compatable_types(dst_type, expr_type, token.line, () => {
+        throw new CompError(`Variable expected type '${dst_type}', got '${expr_type}'`)
+      })
+
+      // run the code state.required by the expression
+      result = prefix
+
+      let ram_prefix
+      if (is_global) {
+        ram_prefix = "ram^"
+      } else {
+        ram_prefix = "ram"
+      }
+
+      // copy the new value into the variable's memory
+      for (let i = 0; i < dst_regs.length; i++) {
+        result.push(`write ${value[i]} ${ram_prefix}.${dst_regs[i]}`)
       }
     } break
 
