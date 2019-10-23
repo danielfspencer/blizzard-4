@@ -11,6 +11,7 @@ importScripts('libraries.js')
 
 const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,none:0}
 const data_type_default_value = {u16:"0",s16:"0",u32:"0",s32:"0",float:"0",bool:"false",str:"\"\""}
+const mixable_numeric_types = [["u16","s16"],["u32","s32"]]
 const reserved_keywords = [
   "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include","__root","__global"
 ]
@@ -166,13 +167,51 @@ function parse_int(string) {
   }
 }
 
-function find_type_priority(expr1,expr2) {
-  if (expr1.name === "var_or_const") {
-    return translate(expr1)[2]
-  } else if (expr2.name === "var_or_const") {
-    return translate(expr2)[2]
+function find_type_priority(expr1, expr2, target_type) {
+  let strong_typed_expr, weak_typed_expr
+
+  // if both expressions are numbers, use the target_type (given by the context)
+  if (target_type !== undefined && expr1.name === "number" && expr2.name === "number") {
+    return target_type
+  }
+
+  // only number tokens are weakly-typed
+  if (expr1.name === "number") {
+    [strong_typed_expr, weak_typed_expr] = [expr2, expr1]
+  } else if (expr2.name === "number") {
+    [strong_typed_expr, weak_typed_expr] = [expr1, expr2]
   } else {
-    return translate(expr1)[2]
+    // if both are strongly-typed, default to the 1st one
+    [strong_typed_expr, weak_typed_expr] = [expr2, expr1]
+  }
+
+  // find the type of strong_typed_expr
+  let priority_type = translate(strong_typed_expr)[2]
+
+  // try to coerce the weak_typed_expr to the same type
+  let coerced_type = translate(weak_typed_expr, priority_type)[2]
+
+  assert_compatable_types(priority_type, coerced_type, expr1.line)
+
+  return priority_type
+}
+
+function assert_compatable_types(type1, type2, line, custom_fail) {
+  if (type1 === type2) {
+    return
+  } else {
+    for (let set of mixable_numeric_types) {
+      if (set.includes(type1) && set.includes(type2)) {
+        log.warn(`line ${line}:\nImplicit cast '${type1}' -> '${type2}'`)
+        return
+      }
+    }
+  }
+
+  if (custom_fail === undefined) {
+    throw new CompError(`Expected compatable types, but got '${type1}' & '${type2}'`)
+  } else {
+    custom_fail()
   }
 }
 
@@ -874,10 +913,9 @@ function translate(token, ctx_type) {
       }
 
       let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
-
-      if (args.type !== expr_type) {
+      assert_compatable_types(args.type, expr_type, token.line, () => {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
-      }
+      })
 
       let memory = alloc_block(expr_value.length)
 
@@ -915,9 +953,9 @@ function translate(token, ctx_type) {
       }
 
       let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
-      if (args.type !==  expr_type) {
+      assert_compatable_types(args.type, expr_type, token.line, () => {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
-      }
+      })
 
       let label = `const_${args.name}`
       let memory = []
@@ -959,10 +997,9 @@ function translate(token, ctx_type) {
       }
 
       let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
-
-      if (args.type !== expr_type) {
+      assert_compatable_types(args.type, expr_type, token.line, () => {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
-      }
+      })
 
       let memory = alloc_global_block(expr_value.length)
 
@@ -999,10 +1036,9 @@ function translate(token, ctx_type) {
       }
 
       let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
-
-      if (args.type !== expr_type) {
+      assert_compatable_types(args.type, expr_type, token.line, () => {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
-      }
+      })
 
       let memory = alloc_block(expr_value.length)
 
@@ -1114,7 +1150,7 @@ function translate(token, ctx_type) {
       result.push("call func_sys.rom_to_global_ram_copy_3")
     } break
 
-    case "set": {            //[name] = [expr]
+    case "set": {            //[name] = [expr] TODO=cleanup
       if (args.name in state.symbol_table[state.scope]) {
         // this is a local variable or argument
 
@@ -1129,10 +1165,9 @@ function translate(token, ctx_type) {
 
         // get the value and type of the expression
         let [prefix, value, expr_type] = translate(args.expr, dst_type)
-
-        if (expr_type !== dst_type) {
+        assert_compatable_types(dst_type, expr_type, token.line, () => {
           throw new CompError(`Variable expected type '${dst_type}', got '${expr_type}'`)
-        }
+        })
 
         // run the code state.required by the expression
         result = prefix
@@ -1156,10 +1191,9 @@ function translate(token, ctx_type) {
 
         // get the value and type of the expression
         let [prefix, value, expr_type] = translate(args.expr, dst_type)
-
-        if (expr_type !== dst_type) {
+        assert_compatable_types(dst_type, expr_type, token.line, () => {
           throw new CompError(`Variable expected type '${dst_type}', got '${expr_type}'`)
-        }
+        })
 
         // run the code state.required by the expression
         result = prefix
@@ -1247,9 +1281,10 @@ function translate(token, ctx_type) {
 
       //evaluate the expression and put the result in a buffer area
       let [expr_prefix, expr_values, expr_type] = translate(expr, array_type)
-      if (expr_type !== array_type) {
+      assert_compatable_types(array_type, expr_type, token.line, () => {
         throw new CompError(`Array expected type '${array_type}', got '${expr_type}'`)
-      }
+      })
+
       result.push(...expr_prefix)
 
       let memory = alloc_block(item_size)
@@ -1308,10 +1343,9 @@ function translate(token, ctx_type) {
       }
 
       let [expr_prefix, expr_value, expr_type] = translate(args.expr, member_type)
-
-      if (expr_type !== member_type) {
+      assert_compatable_types(member_type, expr_type, token.line, () => {
         throw new CompError(`Struct member '${member_name}' requires type '${member_type}', got '${expr_type}'`)
-      }
+      })
 
       for (let i = 0; i < expr_value.length; i++) {
         result.push(`write ${expr_value[i]} ram.${target_addrs[i]}`)
@@ -1581,7 +1615,6 @@ function translate(token, ctx_type) {
     let prefix = []
     let registers = [""]
     let type = ctx_type
-    let types = []
     switch (token.name) {
 
     // number types
@@ -1751,12 +1784,8 @@ function translate(token, ctx_type) {
     } break
 
     case "+": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
-      if (types[0] !== types[1]) {
-        throw new CompError(`Addition operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
-      }
-      switch (ctx_type) {
+      type = find_type_priority(args.expr1, args.expr2, ctx_type)
+      switch (type) {
         case "u16":
         case "s16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
@@ -1768,18 +1797,13 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call("sys.u32_add", [args.expr1,args.expr2])
         } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
       }
     } break
 
     case "-": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
-      if (types[0] !== types[1]) {
-        throw new CompError(`Subtraction operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
-      }
-      switch (ctx_type) {
+      type = find_type_priority(args.expr1, args.expr2, ctx_type)
+      switch (type) {
         case "s16":
         case "u16": {
           prefix = write_operands(args.expr1,args.expr2,ctx_type)
@@ -1791,18 +1815,13 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call("sys.u32_subtract", [args.expr1,args.expr2])
         } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
       }
     } break
 
     case "*": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
-      if (types[0] !== types[1]) {
-        throw new CompError(`Multiplication operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
-      }
-      switch (ctx_type) {
+      type = find_type_priority(args.expr1, args.expr2, ctx_type)
+      switch (type) {
         case "s32":
         case "u32":
         case "s16":
@@ -1810,18 +1829,13 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call(`sys.${ctx_type}_multiply`, [args.expr1,args.expr2])
         } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
       }
     } break
 
     case "/": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
-      if (types[0] !== types[1]) {
-        throw new CompError(`Division operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
-      }
-      switch (ctx_type) {
+      type = find_type_priority(args.expr1, args.expr2, ctx_type)
+      switch (type) {
         case "s32":
         case "u32":
         case "s16":
@@ -1829,18 +1843,13 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call(`sys.${ctx_type}_divide`, [args.expr1,args.expr2])
         } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
       }
     } break
 
     case "^": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
-      if (types[0] !== types[1]) {
-        throw new CompError(`Exponention operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
-      }
-      switch (ctx_type) {
+      type = find_type_priority(args.expr1, args.expr2, ctx_type)
+      switch (type) {
         case "s32":
         case "u32":
         case "s16":
@@ -1848,18 +1857,13 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call(`sys.${ctx_type}_exponent`, [args.expr1,args.expr2])
         } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
       }
     } break
 
     case "%": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      types = [translate(args.expr1,ctx_type)[2],translate(args.expr2,ctx_type)[2]]
-      if (types[0] !== types[1]) {
-        throw new CompError(`Modulo operator expected '${ctx_type}', got '${types[0]}' & '${types[1]}'`)
-      }
-      switch (ctx_type) {
+      type = find_type_priority(args.expr1, args.expr2, ctx_type)
+      switch (type) {
         case "s32":
         case "u32":
         case "s16":
@@ -1867,22 +1871,20 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call(`sys.${ctx_type}_modulo`, [args.expr1,args.expr2])
         } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
       }
     } break
 
     case ">": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      ctx_type = find_type_priority(args.expr1,args.expr2)
-      switch (ctx_type) {
+      let operand_type = find_type_priority(args.expr1, args.expr2)
+      switch (operand_type) {
         case "u16": {
-          prefix = write_operands(args.expr1,args.expr2,ctx_type)
+          prefix = write_operands(args.expr1, args.expr2, operand_type)
           registers = ["[alu.>]"]
         } break
 
         case "s16": {
-          prefix = write_operands(args.expr1,args.expr2,ctx_type)
+          prefix = write_operands(args.expr1, args.expr2, operand_type)
           let temp_var = get_temp_word()
           prefix.push(`write [alu.-] ${temp_var.label}`)
           prefix.push(`write [${temp_var.label}] alu.1`)
@@ -1896,26 +1898,24 @@ function translate(token, ctx_type) {
 
         case "s32":
         case "u32": {
-          [prefix, registers] = function_call(`sys.${ctx_type}_greater`, [args.expr1,args.expr2])
+          [prefix, registers] = function_call(`sys.${operand_type}_greater`, [args.expr1,args.expr2])
         } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
       }
       type = "bool"
     } break
 
     case "<": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      ctx_type = find_type_priority(args.expr1,args.expr2)
-      switch (ctx_type) {
+      let operand_type = find_type_priority(args.expr1, args.expr2)
+      switch (operand_type) {
         case "u16": {
-          prefix = write_operands(args.expr1,args.expr2,ctx_type)
+          prefix = write_operands(args.expr1, args.expr2, operand_type)
           registers = ["[alu.<]"]
           } break
 
         case "s16": {
-          prefix = write_operands(args.expr1,args.expr2,ctx_type)
+          prefix = write_operands(args.expr1, args.expr2, operand_type)
           let temp_var = get_temp_word()
           prefix.push(`write [alu.-] ${temp_var.label}`)
           prefix.push(`write [${temp_var.label}] alu.1`)
@@ -1929,23 +1929,21 @@ function translate(token, ctx_type) {
 
           case "s32":
           case "u32": {
-            [prefix, registers] = function_call(`sys.${ctx_type}_less`, [args.expr1,args.expr2])
+            [prefix, registers] = function_call(`sys.${operand_type}_less`, [args.expr1,args.expr2])
           } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
       }
       type = "bool"
     } break
 
     case ">=": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      ctx_type = find_type_priority(args.expr1,args.expr2)
-      switch (ctx_type) {
+      let operand_type = find_type_priority(args.expr1, args.expr2)
+      switch (operand_type) {
         case "u16": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          prefix = write_operands(args.expr1,args.expr2,ctx_type)
+          prefix = write_operands(args.expr1, args.expr2, operand_type)
           prefix.push(`write [alu.=] ${temp_vars[0].label}`)
           prefix.push(`write [alu.>] ${temp_vars[1].label}`)
           prefix.push(`write [${temp_vars[0].label}] alu.1`)
@@ -1957,7 +1955,7 @@ function translate(token, ctx_type) {
           } break
 
         case "s16": {
-          prefix = write_operands(args.expr1,args.expr2,ctx_type)
+          prefix = write_operands(args.expr1, args.expr2, operand_type)
           let temp_var = get_temp_word()
           prefix.push(`write [alu.-] ${temp_var.label}`)
           prefix.push(`write [${temp_var.label}] alu.1`)
@@ -1970,7 +1968,7 @@ function translate(token, ctx_type) {
         case "u32": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let prefix_and_value = function_call(`sys.${ctx_type}_greater`, [args.expr1,args.expr2])
+          let prefix_and_value = function_call(`sys.${operand_type}_greater`, [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
@@ -1987,20 +1985,18 @@ function translate(token, ctx_type) {
           temp_vars[1].free()
           } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
       }
       type = "bool"
     } break
 
     case "<=": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      ctx_type = find_type_priority(args.expr1,args.expr2)
-      switch (ctx_type) {
+      let operand_type = find_type_priority(args.expr1, args.expr2)
+      switch (operand_type) {
         case "u16": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          prefix = write_operands(args.expr1,args.expr2,ctx_type)
+          prefix = write_operands(args.expr1, args.expr2, operand_type)
           prefix.push(`write [alu.=] ${temp_vars[0].label}`)
           prefix.push(`write [alu.<] ${temp_vars[1].label}`)
           prefix.push(`write [${temp_vars[0].label}] alu.1`)
@@ -2012,7 +2008,7 @@ function translate(token, ctx_type) {
           } break
 
         case "s16": {
-          prefix = write_operands(args.expr1,args.expr2,ctx_type)
+          prefix = write_operands(args.expr1, args.expr2, operand_type)
           let temp_var = get_temp_word()
           prefix.push(`write [alu.-] ${temp_var.label}`)
           prefix.push(`write [${temp_var.label}] alu.1`)
@@ -2025,7 +2021,7 @@ function translate(token, ctx_type) {
         case "u32": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let prefix_and_value = function_call(`sys.${ctx_type}_less`, [args.expr1,args.expr2])
+          let prefix_and_value = function_call(`sys.${operand_type}_less`, [args.expr1,args.expr2])
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
@@ -2042,20 +2038,18 @@ function translate(token, ctx_type) {
           temp_vars[1].free()
           } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
       }
       type = "bool"
     } break
 
     case "==": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      ctx_type = find_type_priority(args.expr1,args.expr2)
-      switch (ctx_type) {
+      let operand_type = find_type_priority(args.expr1, args.expr2)
+      switch (operand_type) {
         case "bool":
         case "u16":
         case "s16": {
-          prefix = write_operands(args.expr1,args.expr2,ctx_type)
+          prefix = write_operands(args.expr1, args.expr2, operand_type)
           registers = ["[alu.=]"]
         } break
 
@@ -2064,21 +2058,19 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call("sys.u32_equal", [args.expr1,args.expr2])
         } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
       }
       type = "bool"
     } break
 
     case "!=": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      ctx_type = find_type_priority(args.expr1,args.expr2)
-      switch (ctx_type) {
+      let operand_type = find_type_priority(args.expr1, args.expr2)
+      switch (operand_type) {
         case "bool":
         case "u16":
         case "s16": {
           let buffer = get_temp_word()
-          prefix = write_operands(args.expr1,args.expr2,ctx_type)
+          prefix = write_operands(args.expr1, args.expr2, operand_type)
           prefix.push(`write [alu.=] ${buffer.label}`)
           prefix.push(`write [${buffer.label}] alu.1`)
           buffer.free()
@@ -2090,30 +2082,22 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call("sys.u32_not_equal", [args.expr1,args.expr2])
         } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
       }
       type = "bool"
     } break
 
     case "&": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      types = [translate(args.expr1)[2],translate(args.expr2)[2]]
-
       prefix = write_operands(args.expr1,args.expr2,ctx_type)
       registers = ["[alu.&]"]
     } break
 
     case "|": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
-      types = [translate(args.expr1)[2],translate(args.expr2)[2]]
-
       prefix = write_operands(args.expr1,args.expr2,ctx_type)
       registers = ["[alu.|]"]
     } break
 
     case ">>": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       switch (ctx_type) {
         case "u16": {
           prefix = write_operand(args.expr,ctx_type)
@@ -2126,13 +2110,11 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr])
         } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
       }
     } break
 
     case "<<": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       switch (ctx_type) {
         case "u16":
         case "s16": {
@@ -2145,19 +2127,16 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call("sys.u32_lshift", [args.expr])
         } break
 
-        default:
-          throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
       }
     } break
 
     case "!": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       prefix = write_operand(args.expr,ctx_type)
       registers = ["[alu.!]"]
     } break
 
     case "..": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       let expr1 = translate(args.expr1,ctx_type)
       let expr1_prefix = expr1[0]
       let expr1_reg = expr1[1]
@@ -2171,7 +2150,6 @@ function translate(token, ctx_type) {
     } break
 
     case ":": {
-      log.debug(`op: ${token.name}, target type: ${ctx_type}`)
       let expr = translate(args.expr1,ctx_type)
       prefix = expr[0]
       let expr_regs = expr[1]
@@ -2272,11 +2250,11 @@ function translate(token, ctx_type) {
       for (let [member_name, member_info] of Object.entries(members)) {
         let member_type = member_info.data_type
         let expr = args.exprs[expr_index]
-        let [expr_prefix, expr_values, expr_type] = translate(expr, member_type)
 
-        if (expr_type !== member_type) {
+        let [expr_prefix, expr_values, expr_type] = translate(expr, member_type)
+        assert_compatable_types(member_type, expr_type, token.line, () => {
           throw new CompError(`Struct member '${member_name}' requires type '${member_type}', got '${expr_type}'`)
-        }
+        })
 
         prefix.push(...expr_prefix)
 
@@ -2491,8 +2469,10 @@ function translate(token, ctx_type) {
         let expr_token = args.exprs[i]
 
         let [expr_prefix, expr_value, expr_type] = translate(expr_token, target_type)
-        if ((!args.ignore_type_mismatch) && expr_type !== target_type) {
-          throw new CompError(`In call to ${args.name}()\nArg '${target_args[i]}' is of type '${target_type}', but got '${expr_type}'`)
+        if ((!args.ignore_type_mismatch)) {
+          assert_compatable_types(target_type, expr_type, token.line, () => {
+            throw new CompError(`In call to ${args.name}()\nArg '${target_args[i]}' is of type '${target_type}', but got '${expr_type}'`)
+          })
         }
 
         // run code state.required by expression
