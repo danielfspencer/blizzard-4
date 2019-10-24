@@ -10,7 +10,7 @@ var u16 temp_y
 
 var u16 key_code
 
-def get_keypress u16
+def get_keypress() -> u16
   var u16 kbd 8192
   var u16 scancode *kbd
   var u16 char_code 0

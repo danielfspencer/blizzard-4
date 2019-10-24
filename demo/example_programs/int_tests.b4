@@ -9,9 +9,7 @@ var s16 s16_tmp
 var u32 u32_tmp
 var s32 s32_tmp
 
-def assert
-  arg bool condition
-
+def assert(bool condition)
   if condition
     tests_passed++
   else

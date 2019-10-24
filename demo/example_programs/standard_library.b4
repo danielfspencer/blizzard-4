@@ -1,6 +1,6 @@
 include *
 
-def rom_to_vram
+def rom_to_vram()
   var u16 rom_addr 32768
   var u16 vram_addr 6144
   for var u16 page; page < 32; page++
