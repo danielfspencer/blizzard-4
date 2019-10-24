@@ -1,8 +1,6 @@
 const libs = {
   "sys.u16_multiply": [
-    "def sys.u16_multiply u16",
-    "  arg u16 a",
-    "  arg u16 b",
+    "def sys.u16_multiply(u16 a, u16 b) -> u16",
     "  var u16 c",
     "  while b > 0",
     "    if b sys.odd",
@@ -12,10 +10,7 @@ const libs = {
     "  return c"
   ],
   "sys.u16_divide": [
-    "def sys.u16_divide u16",
-    "  arg u16 a",
-    "  arg u16 b",
-    "",
+    "def sys.u16_divide(u16 a, u16 b) -> u16",
     "  if b == 0",
     "    return b",
     "",
@@ -39,9 +34,7 @@ const libs = {
     "  return answer"
   ],
   "sys.u16_exponent": [
-    "def sys.u16_exponent u16",
-    "  arg u16 a",
-    "  arg u16 b",
+    "def sys.u16_exponent(u16 a, u16 b) -> u16",
     "  var u16 c 1",
     "  while b > 0",
     "    c = c * a",
@@ -49,9 +42,7 @@ const libs = {
     "  return c"
   ],
   "sys.u16_modulo": [
-    "def sys.u16_modulo u16",
-    "  arg u16 a",
-    "  arg u16 b",
+    "def sys.u16_modulo(u16 a, u16 b) -> u16",
     "  var u16 c",
     "  c = a / b",
     "  c = c * b",
@@ -59,9 +50,7 @@ const libs = {
     "  return c"
   ],
   "sys.s16_multiply": [
-    "def sys.s16_multiply s16",
-    "  arg s16 a",
-    "  arg s16 b",
+    "def sys.s16_multiply(s16 a, s16 b) -> s16",
     "  var bool sign",
     "  if a < 0",
     "    sign = true",
@@ -80,10 +69,7 @@ const libs = {
     "  return c"
   ],
   "sys.s16_divide": [
-    "def sys.s16_divide s16",
-    "  arg s16 a",
-    "  arg s16 b",
-    "",
+    "def sys.s16_divide(s16 a, s16 b) -> s16",
     "  if b == 0",
     "    return b",
     "",
@@ -119,9 +105,7 @@ const libs = {
     "  return answer"
   ],
   "sys.s16_exponent": [
-    "def sys.s16_exponent s16",
-    "  arg s16 a",
-    "  arg s16 b",
+    "def sys.s16_exponent(s16 a, s16 b) -> s16",
     "  var s16 c 1",
     "  while b > 0",
     "    c = c * a",
@@ -129,9 +113,7 @@ const libs = {
     "  return c"
   ],
   "sys.s16_modulo": [
-    "def sys.s16_modulo s16",
-    "  arg s16 a",
-    "  arg s16 b",
+    "def sys.s16_modulo(s16 a, s16 b) -> s16",
     "  var s16 c",
     "  c = a / b",
     "  c = c * b",
@@ -139,8 +121,7 @@ const libs = {
     "  return c"
   ],
   "sys.s16_rshift": [
-    "def sys.s16_rshift s16",
-    "  arg s16 a",
+    "def sys.s16_rshift(s16 a) -> s16",
     "  var bool negative",
     "  var s16 answer",
     "  {write $a alu.1}",
@@ -154,10 +135,8 @@ const libs = {
     "  return answer"
   ],
   "sys.u32_add": [
-    "def sys.u32_add u32",
+    "def sys.u32_add(u32 a, u32 b) -> u32",
     "  var u16 carry",
-    "  arg u32 a",
-    "  arg u32 b",
     "  {write $a[1] alu.1}",
     "  {write $b[1] alu.2}",
     "  {write [alu.+] &b[1]}",
@@ -171,9 +150,7 @@ const libs = {
     "  return b"
   ],
   "sys.u32_subtract": [
-    "def sys.u32_subtract u32",
-    "  arg u32 a",
-    "  arg u32 b",
+    "def sys.u32_subtract(u32 a, u32 b) -> u32",
     "  {write $b[0] alu.1}",
     "  {write [alu.!] &b[0]}",
     "  {write $b[1] alu.1}",
@@ -183,9 +160,7 @@ const libs = {
     "  return c"
   ],
   "sys.u32_multiply": [
-    "def sys.u32_multiply u32",
-    "  arg u32 a",
-    "  arg u32 b",
+    "def sys.u32_multiply(u32 a, u32 b) -> u32",
     "  var u32 c",
     "  if a == 0",
     "    return 0",
@@ -197,10 +172,7 @@ const libs = {
     "  return c "
   ],
   "sys.u32_divide": [
-    "def sys.u32_divide u32",
-    "  arg u32 a",
-    "  arg u32 b",
-    "",
+    "def sys.u32_divide(u32 a, u32 b) -> u32",
     "  if b == 0",
     "    return b",
     "",
@@ -224,9 +196,7 @@ const libs = {
     "  return answer"
   ],
   "sys.u32_exponent": [
-    "def sys.u32_exponent u32",
-    "  arg u32 a",
-    "  arg u32 b",
+    "def sys.u32_exponent(u32 a, u32 b) -> u32",
     "  var u32 c 1",
     "  while b > 0",
     "    c = c * a",
@@ -234,9 +204,7 @@ const libs = {
     "  return c"
   ],
   "sys.u32_modulo": [
-    "def sys.u32_modulo u32",
-    "  arg u32 a",
-    "  arg u32 b",
+    "def sys.u32_modulo(u32 a, u32 b) -> u32",
     "  var u32 c",
     "  c = a / b",
     "  c = c * b",
@@ -244,8 +212,7 @@ const libs = {
     "  return c"
   ],
   "sys.u32_lshift": [
-    "def sys.u32_lshift u32",
-    "  arg u32 a",
+    "def sys.u32_lshift(u32 a) -> u32",
     "  var u16 a_high a:0",
     "  var u16 a_low a:1",
     "  var u32 c",
@@ -259,8 +226,7 @@ const libs = {
     "  return c"
   ],
   "sys.u32_rshift": [
-    "def sys.u32_rshift u32",
-    "  arg u32 a",
+    "def sys.u32_rshift(u32 a) -> u32",
     "  var u16 a_high a:0",
     "  var u16 a_low a:1",
     "  var u32 c",
@@ -273,9 +239,7 @@ const libs = {
     "  return c"
   ],
   "sys.u32_not_equal": [
-    "def sys.u32_not_equal bool",
-    "  arg u32 a",
-    "  arg u32 b",
+    "def sys.u32_not_equal(u32 a, u32 b) -> bool",
     "  var u16 a_high a:1",
     "  var u16 a_low a:0",
     "  var u16 b_high b:1",
@@ -289,9 +253,7 @@ const libs = {
     "    return result"
   ],
   "sys.u32_equal": [
-    "def sys.u32_equal bool",
-    "  arg u32 a",
-    "  arg u32 b",
+    "def sys.u32_equal(u32 a, u32 b) -> bool",
     "  var u16 a_high a:1",
     "  var u16 a_low a:0",
     "  var u16 b_high b:1",
@@ -305,9 +267,7 @@ const libs = {
     "    return result"
   ],
   "sys.u32_greater": [
-    "def sys.u32_greater bool",
-    "  arg u32 a",
-    "  arg u32 b",
+    "def sys.u32_greater(u32 a, u32 b) -> bool",
     "  var u16 a_high a:0",
     "  var u16 a_low a:1 ",
     "  var u16 b_high b:0",
@@ -324,9 +284,7 @@ const libs = {
     "  return result"
   ],
   "sys.u32_less": [
-    "def sys.u32_less bool",
-    "  arg u32 a",
-    "  arg u32 b",
+    "def sys.u32_less(u32 a, u32 b) -> bool",
     "  var u16 a_high a:0",
     "  var u16 a_low a:1 ",
     "  var u16 b_high b:0",
@@ -343,9 +301,7 @@ const libs = {
     "  return result"
   ],
   "sys.s32_multiply": [
-    "def sys.s32_multiply s32",
-    "  arg s32 a",
-    "  arg s32 b",
+    "def sys.s32_multiply(s32 a, s32 b) -> s32",
     "  var bool sign",
     "  if a < 0",
     "    sign = true",
@@ -364,10 +320,7 @@ const libs = {
     "  return c"
   ],
   "sys.s32_divide": [
-    "def sys.s32_divide s32",
-    "  arg s32 a",
-    "  arg s32 b",
-    "",
+    "def sys.s32_divide(s32 a, s32 b) -> s32",
     "  if b == 0",
     "    return b",
     "",
@@ -403,9 +356,7 @@ const libs = {
     "  return answer"
   ],
   "sys.s32_exponent": [
-    "def sys.s32_exponent s32",
-    "  arg s32 a",
-    "  arg s32 b",
+    "def sys.s32_exponent(s32 a, s32 b) -> s32",
     "  var s32 c 1",
     "  while b > 0",
     "    c = c * a",
@@ -413,9 +364,7 @@ const libs = {
     "  return c"
   ],
   "sys.s32_modulo": [
-    "def sys.s32_modulo s32",
-    "  arg s32 a",
-    "  arg s32 b",
+    "def sys.s32_modulo(s32 a, s32 b) -> s32",
     "  var s32 c",
     "  c = a / b",
     "  c = c * b",
@@ -423,8 +372,7 @@ const libs = {
     "  return c"
   ],
   "sys.s32_rshift": [
-    "def sys.s32_rshift #s32",
-    "  arg s32 a",
+    "def sys.s32_rshift(s32 a) -> s32",
     "  var u16 a_high a:0",
     "  var u16 a_low a:1",
     "  var bool carry a_high sys.odd",
@@ -445,9 +393,7 @@ const libs = {
     "  return a_high..a_low"
   ],
   "sys.s32_greater": [
-    "def sys.s32_greater bool",
-    "  arg s32 a",
-    "  arg s32 b",
+    "def sys.s32_greater(s32 a, s32 b) -> bool",
     "  var bool ans true",
     "  ",
     "  a = a - b",
@@ -463,9 +409,7 @@ const libs = {
     "  return ans"
   ],
   "sys.s32_less": [
-    "def sys.s32_less bool",
-    "  arg s32 a",
-    "  arg s32 b",
+    "def sys.s32_less(s32 a, s32 b) -> bool",
     "  var bool ans true",
     "  ",
     "  a = a - b",
@@ -481,20 +425,13 @@ const libs = {
     "  return ans"
   ],
   "sys.array_pointer": [
-    "def sys.array_pointer u16",
-    "  arg u16 index",
-    "  arg u16 item_size",
-    "  arg u16 base_addr",
+    "def sys.array_pointer(u16 index, u16 item_size, u16 base_addr) -> u16",
     "  var u16 addr index*item_size",
     "  addr += base_addr",
     "  return addr"
   ],
   "sys.rom_to_ram_copy": [
-    "def sys.rom_to_ram_copy",
-    "  arg u16 origin_address ",
-    "  arg u16 target_address",
-    "  arg u16 length",
-    "",
+    "def sys.rom_to_ram_copy(u16 origin_address, u16 target_address, u16 length) -> u16",
     "  target_address -= 4096",
     "  for var u16 i; i < length; i++",
     "    {copy $origin_address $target_address}",
@@ -502,11 +439,7 @@ const libs = {
     "    target_address++"
   ],
   "sys.ram_to_ram_copy": [
-    "def sys.ram_to_ram_copy",
-    "  arg u16 origin_address ",
-    "  arg u16 target_address",
-    "  arg u16 length",
-    "",
+    "def sys.ram_to_ram_copy(u16 origin_address, u16 target_address, u16 length) -> u16",
     "  origin_address -= 4096",
     "  target_address -= 4096",
     "",
@@ -519,11 +452,7 @@ const libs = {
     "    {copy $origin_address $target_address}",
   ],
   "sys.rom_to_global_ram_copy": [
-    "def sys.rom_to_global_ram_copy",
-    "  arg u16 origin_address ",
-    "  arg u16 target_address",
-    "  arg u16 length",
-    "",
+    "def sys.rom_to_global_ram_copy(u16 origin_address, u16 target_address, u16 length) -> u16",
     "  target_address += 8192",
     "  for var u16 i; i < length; i++",
     "    {copy $origin_address $target_address}",
@@ -531,11 +460,7 @@ const libs = {
     "    target_address++"
   ],
   "sys.global_ram_to_ram_copy": [
-    "def sys.global_ram_to_ram_copy",
-    "  arg u16 origin_address ",
-    "  arg u16 target_address",
-    "  arg u16 length",
-    "",
+    "def sys.global_ram_to_ram_copy(u16 origin_address, u16 target_address, u16 length) -> u16",
     "  target_address -= 4096",
     "",
     "  origin_address += length",
@@ -547,11 +472,7 @@ const libs = {
     "    {copy $origin_address $target_address}",
   ],
   "sys.ram_to_global_ram_copy": [
-    "def sys.ram_to_global_ram_copy",
-    "  arg u16 origin_address ",
-    "  arg u16 target_address",
-    "  arg u16 length",
-    "",
+    "def sys.ram_to_global_ram_copy(u16 origin_address, u16 target_address, u16 length) -> u16",
     "  origin_address -= 4096",
     "",
     "  origin_address += length",
@@ -563,11 +484,7 @@ const libs = {
     "    {copy $origin_address $target_address}",
   ],
   "sys.global_ram_to_global_ram_copy": [
-    "def sys.global_ram_to_global_ram_copy",
-    "  arg u16 origin_address ",
-    "  arg u16 target_address",
-    "  arg u16 length",
-    "",
+    "def sys.global_ram_to_global_ram_copy(u16 origin_address, u16 target_address, u16 length) -> u16",
     "  origin_address += length",
     "  target_address += length ",
     "",
@@ -577,18 +494,14 @@ const libs = {
     "    {copy $origin_address $target_address}",
   ],
   "sys.vram.or_word": [
-    "def sys.vram.or_word",
-    "  arg u16 word",
-    "  arg u16 addr",
+    "def sys.vram.or_word(u16 word, u16 addr)",
     "  addr += 6144",
     "  {copy $addr alu.1}",
     "  {copy &word alu.2}",
     "  {write [alu.|] $addr}"
   ],
   "sys.vram.nand_word": [
-    "def sys.vram.nand_word",
-    "  arg u16 word",
-    "  arg u16 addr",
+    "def sys.vram.nand_word(u16 word, u16 addr)",
     "  addr += 6144",
     "  {copy $addr alu.2}",
     "  word = !word",
@@ -596,11 +509,8 @@ const libs = {
     "  {write [alu.&] $addr}"
   ],
   "sys.vram.set_pixel": [
-    "def sys.vram.set_pixel",
+    "def sys.vram.set_pixel(u16 x, u16 y, bool data = true)",
     "  include sys.vram.shifted_pixels",
-    "  arg u16 x",
-    "  arg u16 y",
-    "  arg bool data true",
     "  var u16 large",
     "  var u16 small",
     "  var u16 addr y",
@@ -637,12 +547,8 @@ const libs = {
     "    {write [alu.&] $addr}"
   ],
   "sys.vram.render_char": [
-    "def sys.vram.render_char",
+    "def sys.vram.render_char(u16 char_code, u16 x, u16 y, bool dont_render_spaces = true)",
     "  include sys.vram.glyphs",
-    "  arg u16 char_code",
-    "  arg u16 x",
-    "  arg u16 y",
-    "  arg bool dont_render_spaces true",
     "  ",
     "  if char_code < 32",
     "    char_code = 127",
@@ -692,18 +598,14 @@ const libs = {
     "    vram_pointer += 8"
   ],
   "sys.vram.draw_hex_digit": [
-    "def sys.vram.draw_hex_digit",
-    "  arg u16 num",
-    "  arg u16 x",
-    "  arg u16 y",
+    "def sys.vram.draw_hex_digit(u16 num, u16 x, u16 y)",
     "  if num < 10",
     "    sys.vram.render_char(48+num,x,y)",
     "  else ",
     "    sys.vram.render_char(55+num,x,y)"
   ],
   "sys.vram.fast_fill": [
-    "def sys.vram.fast_fill",
-    "  arg u16 data 0xffff",
+    "def sys.vram.fast_fill(u16 data)",
     "  {write vram.0 alu.1}",
     "  {func_sys.vram.fast_fill_loop:}",
     "  {write 0 alu.2}",
@@ -730,15 +632,11 @@ const libs = {
     "  {goto? func_sys.vram.fast_fill_loop}"
   ],
   "sys.vram.clear": [
-    "def sys.vram.clear",
+    "def sys.vram.clear()",
     "  sys.vram.fast_fill(0)"
   ],
   "sys.vram.draw_square": [
-    "def sys.vram.draw_square",
-    "  arg u16 x ",
-    "  arg u16 y",
-    "  arg u16 length",
-    "  arg bool data true",
+    "def sys.vram.draw_square(u16 x, u16 y, u16 length, bool data = true)",
     "  var u16 x_offset x+length",
     "  var u16 y_offset y+length",
     "  var u16 counter",
@@ -755,12 +653,7 @@ const libs = {
     "    counter++"
   ],
   "sys.vram.draw_circle": [
-    "def sys.vram.draw_circle",
-    "  arg u16 x",
-    "  arg u16 y",
-    "  arg u16 radius",
-    "  arg bool data true",
-    "",
+    "def sys.vram.draw_circle(u16 x, u16 y, u16 radius, bool data = true)",
     "  var s16 minustwo -2",
     "  var s16 f 1 - radius",
     "  var s16 dx 1",
@@ -792,13 +685,7 @@ const libs = {
     "    sys.vram.set_pixel(x + x1, y - y1, data)"
   ],
   "sys.vram.draw_line": [
-    "def sys.vram.draw_line",
-    "  arg u16 x0_i",
-    "  arg u16 y0_i",
-    "  arg u16 x1_i",
-    "  arg u16 y1_i",
-    "  arg bool data true",
-    "",
+    "def sys.vram.draw_line(u16 x0_i, u16 y0_i, u16 x1_i, u16 y1_i, bool data = true)",
     "  var s16 x0 x0_i:0",
     "  var s16 y0 y0_i:0",
     "  var s16 x1 x1_i:0",
@@ -852,10 +739,7 @@ const libs = {
     "      y0 += sy"
   ],
   "sys.print_string": [
-    "def sys.print_string",
-    "  arg str string",
-    "  arg u16 x ",
-    "  arg u16 y",
+    "def sys.print_string(str string, u16 x = 0, u16 y = 0)",
     "  var u16 pointer string:0",
     "  var u16 char *pointer",
     "  ",
@@ -869,12 +753,7 @@ const libs = {
     "    char = *pointer"
   ],
   "sys.print_u16": [
-    "def sys.print_u16",
-    "  arg u16 num",
-    "  arg u16 x",
-    "  arg u16 y",
-    "  arg bool print_all_places false",
-    "  ",
+    "def sys.print_u16(u16 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
     "  var u16 x_offset x",
     "  var bool is_rendering",
     "",
@@ -922,12 +801,7 @@ const libs = {
     "  sys.vram.render_char(num+48,x_offset,y)"
   ],
   "sys.print_u16_as_hex": [
-    "def sys.print_u16_as_hex",
-    "  arg u16 num",
-    "  arg u16 x",
-    "  arg u16 y",
-    "  arg bool print_all_places false",
-    "  ",
+    "def sys.print_u16_as_hex(u16 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
     "  var u16 x_offset x",
     "  var bool is_rendering",
     "",
@@ -973,12 +847,7 @@ const libs = {
     "  sys.vram.draw_hex_digit(_0_power,x_offset,y)"
   ],
   "sys.print_s16": [
-    "def sys.print_s16",
-    "  arg s16 num",
-    "  arg u16 x",
-    "  arg u16 y",
-    "  arg bool print_all_places false",
-    "",
+    "def sys.print_s16(s16 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
     "  var bool negative",
     "",
     "  if num < 1",
@@ -995,12 +864,7 @@ const libs = {
     "  sys.print_u16(num,x,y,print_all_places)"
   ],
   "sys.print_u32":[
-    "def sys.print_u32",
-   "  arg u32 num",
-   "  arg u16 x",
-   "  arg u16 y",
-   "  arg bool print_all_places false",
-   "",
+    "def sys.print_u32(u32 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
    "  var u16 char",
    "  var bool did_render",
    "  var u32 power",
@@ -1022,12 +886,7 @@ const libs = {
    "  sys.vram.render_char(ones+48,x,y)"
   ],
   "sys.print_s32":[
-    "def sys.print_s32",
-    "  arg s32 num",
-    "  arg u16 x",
-    "  arg u16 y",
-    "  arg bool print_all_places false",
-    "",
+    "def sys.print_s32(s32 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
     "  var bool negative",
     "",
     "  if num < 1",
@@ -1044,11 +903,8 @@ const libs = {
    "  sys.print_u32(num,x,y,print_all_places)"
   ],
   "sys.kbd.scancode_to_charcode": [
-    "def sys.kbd.scancode_to_charcode u16",
+    "def sys.kbd.scancode_to_charcode(u16 scancode, bool shifted = false) -> u16",
     "  include sys.kbd.scancode_charcode_table",
-    "  arg u16 scancode",
-    "  arg bool shifted false",
-    "",
     "  if scancode == 0",
     "    return 0",
     "",
@@ -1816,7 +1672,7 @@ const libs = {
     "###"
   ],
   "sys.get_lib_version":[
-    "def sys.get_lib_version str",
+    "def sys.get_lib_version() -> str",
     "  return \"0.46.1\"",
   ]
 }
