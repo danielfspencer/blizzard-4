@@ -549,8 +549,8 @@ function tokenise(input, line) {
       throw new CompError("Repeat statement has no number")
     }
 
-  } else if (/def\ ([\w\.]+)\((.*)\)(?:\s*->\s*(\w*))?/.test(input)) { // def [name](<args>) -> [type]
-    let matches = /def\ ([\w\.]+)\((.*)\)(?:\s*->\s*(\w*))?/.exec(input)
+  } else if (/def\ ([\w\.]+)\((.*)\)(?:\s*->\s*(#?\w*))?/.test(input)) { // def [name](<args>) -> [type]
+    let matches = /def\ ([\w\.]+)\((.*)\)(?:\s*->\s*(#?\w*))?/.exec(input)
     let name = matches[1]
     let arg_string = matches[2]
     let type = matches[3]
@@ -1511,15 +1511,19 @@ function translate(token, ctx_type) {
       // if the return statement should have an expression, evaluate it
       if (func_type !== "none") {
 
+        if (args.expr === undefined) {
+          throw new CompError(`${state.scope}() is of type '${func_type}' and must return a value`)
+        }
+
         let [prefix, value, expr_type] = translate(args.expr, func_type)
 
         if (force_cast) {
           // cast any return expression to this type, ignoring any mis-match
           log.warn(`line ${token.line}:\nCasting return expression of type '${expr_type}' to '${func_type}'`)
-
-        } else if (expr_type !== func_type) {
-          // the type of the expression in the return statement does not match the data type of the function
-          throw new CompError(`Function returns type '${func_type}', but return expression is of type '${expr_type}'`)
+        } else {
+          assert_compatable_types(func_type, expr_type, token.line, () => {
+            throw new CompError(`${state.scope}() is of type '${func_type}', but return statement got '${expr_type}'`)
+          })
         }
 
         // include the code to evaluate the expression
