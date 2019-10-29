@@ -26,8 +26,8 @@ function render_page(path) {
       back_history.push(path)
     },
     error: (err) => {
-      $("#content").html(`<div class="error">\
-        Cannot load manual page '${path}'\
+      $("#content").html(`<div class="error">
+        Cannot load manual page '${path}'
         </div>`)
     }
   })
@@ -40,7 +40,7 @@ function link_handler() {
     return true
   }
 
-  render_page(".." + this.pathname)
+  render_page(`..${this.pathname}`)
   forward_history = []
   return false // prevent default action
 }
@@ -49,7 +49,7 @@ function remap_img_src() {
   // electron + filesystem hosting requires this change
   let element = $(this)
   let src = element.attr('src')
-  element.attr('src',".." + src);
+  element.attr('src', `..${src}`);
 }
 
 function navigate_back() {

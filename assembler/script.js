@@ -92,9 +92,8 @@ function assemble() {
 }
 
 function log(level,msg) {
-  var first = "<div class='item "+level+"'><img class='img' src='../assets/icons/"+level+".svg'/><src>"
-  var second = "</src></div>"
-  $("#log").append(first+msg+second)
+  let html = `<div class='item ${level}'><img class='img' src='../assets/icons/${level}.svg'/><src>${msg}</src></div>`
+  $("#log").append(html)
   $("#log").scrollTop($("#log")[0].scrollHeight - $("#log").height())
 }
 
