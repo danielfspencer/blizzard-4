@@ -358,9 +358,19 @@ function free_global_block(addrs) {
 }
 
 function assert_valid_datatype(type) {
-  if (!(type in data_type_size) && !(type in state.struct_definitions)) {
+  if (!is_data_type(type)) {
     throw new CompError(`Data type '${type}' unknown`)
   }
+}
+
+function assert_datatype_name_available(type) {
+  if (is_data_type(type)) {
+    throw new CompError(`Data type name '${type}' is not available`)
+  }
+}
+
+function is_data_type(name) {
+  return type in data_type_size || type in state.struct_definitions
 }
 
 function get_data_type_size(type) {
@@ -2746,7 +2756,7 @@ function translate(token, ctx_type) {
     } break
 
     case "struct_def": {
-      assert_global_name_available(args.name)
+      assert_datatype_name_available(args.name)
 
       let members = {}
       let total_size = 0
