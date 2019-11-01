@@ -369,7 +369,7 @@ function assert_datatype_name_available(type) {
   }
 }
 
-function is_data_type(name) {
+function is_data_type(type) {
   return type in data_type_size || type in state.struct_definitions
 }
 
