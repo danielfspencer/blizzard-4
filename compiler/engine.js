@@ -932,7 +932,7 @@ function translate(token, ctx_type) {
       // add entry to symbol table
       state.symbol_table[state.scope][args.name] = {
         type: "variable",
-        data_type: expr_type,
+        data_type: args.type,
         specific: {
           ram_addresses: memory.slice()
         }
@@ -1055,7 +1055,7 @@ function translate(token, ctx_type) {
       // add entry to symbol table
       state.symbol_table[state.scope][args.name] = {
         type: "argument",
-        data_type: expr_type,
+        data_type: args.type,
         specific: {
           ram_addresses: memory.slice()
         }
