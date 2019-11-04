@@ -549,11 +549,12 @@ function tokenise(input, line) {
       throw new CompError("Repeat statement has no number")
     }
 
-  } else if (/def\ ([\w\.]+)\((.*)\)(?:\s*->\s*(#?\w*))?/.test(input)) { // def [name](<args>) -> [type]
-    let matches = /def\ ([\w\.]+)\((.*)\)(?:\s*->\s*(#?\w*))?/.exec(input)
-    let name = matches[1]
-    let arg_string = matches[2]
-    let type = matches[3]
+  } else if (/(def|sig)\ ([\w\.]+)\((.*)\)(?:\s*->\s*(#?\w*))?/.test(input)) { // def/sig [name](<args>) -> [type]
+    let matches = /(def|sig)\ ([\w\.]+)\((.*)\)(?:\s*->\s*(#?\w*))?/.exec(input)
+    let def_type = matches[1]
+    let name = matches[2]
+    let arg_string = matches[3]
+    let type = matches[4]
     assert_valid_function_name(name)
 
     let args = []
@@ -571,8 +572,14 @@ function tokenise(input, line) {
       force_cast = true
       type = type.substr(1)
     }
-
-    token = {name:"function_def",type:"structure",body:[],arguments:{name:name,args:args,type:type,force_cast:force_cast}}
+    switch (def_type) {
+      case "def":
+        token = {name:"function_def",type:"structure",body:[],arguments:{name:name,args:args,type:type,force_cast:force_cast}}
+        break
+      case "sig":
+        token = {name:"signature_def",type:"command",arguments:{name:name,args:args,type:type,force_cast:force_cast}}
+        break
+    }
 
   } else if (list[0] === "struct") {                  //struct [name]
     if (list.length < 2) {
@@ -935,7 +942,7 @@ function translate(token, ctx_type) {
       // add entry to symbol table
       state.symbol_table[state.scope][args.name] = {
         type: "variable",
-        data_type: expr_type,
+        data_type: args.type,
         specific: {
           ram_addresses: memory.slice()
         }
@@ -1529,13 +1536,11 @@ function translate(token, ctx_type) {
         // include the code to evaluate the expression
         result = prefix
 
-        let map = []
-        for (let item of value) {
-          let temp = item.replace("ram","ram+")
-          //this next replace prevents recursive function calls producing ram++++.x addresses
-          map.push(temp.replace("ram++","ram+"))
+        // copy result into return buffer
+        let return_buffer = table_entry.return_value
+        for (let i = 0; i < value.length; i++) {
+          result.push(`write ${value[i]} ram.${return_buffer[i]}`)
         }
-        table_entry.return_value = map
       }
 
       // add the actual return instruction
@@ -1564,6 +1569,15 @@ function translate(token, ctx_type) {
         throw new CompError("'continue' can only be used in for/while loops")
       }
       result.push(`goto ${state.inner_structure_label}_cond`)
+    } break
+
+    case "signature_def": {
+      // signature definitions are commands (therefore are not followed by and indent)
+      // however, we want to use the function definition token (which does expect an indent)
+      // so we rename this token and run that instead
+      token.name = "function_def_by_signature"
+      token.type = "structure"
+      translate(token)
     } break
 
     default:
@@ -2463,7 +2477,11 @@ function translate(token, ctx_type) {
       // actually call the function
       prefix.push(`call ${entry_point}`)
 
-      registers = table_entry.return_value
+      registers = []
+      for (let addr of table_entry.return_value) {
+        registers.push(`[ram+.${addr}]`)
+      }
+
       if (args.ignore_type_mismatch) {
         type = ctx_type
       } else {
@@ -2676,13 +2694,25 @@ function translate(token, ctx_type) {
       }
     } break
 
-    case "function_def": {
+    case "function_def":
+    case "function_def_by_signature": {
+      // if the function is being defined by a signature, we don't actually compile the function
+      // only enter its details in the function table so it can be called
+      let is_full_definition = token.name === "function_def"
       assert_global_name_available(args.name)
 
       // init output area for generated code
+      let target
+      if (is_full_definition) {
+        state.funcs[args.name] = []
+        target = state.funcs[args.name]
+      } else {
+        // if this is a function signature, don't generate any code
+        target = []
+      }
+
       let label = `func_${args.name}`
-      state.funcs[args.name] = [`${label}:`]
-      let target = state.funcs[args.name]
+      target.push(`${label}:`)
 
       // save previous scope for later
       let old_state = state.scope
@@ -2701,7 +2731,7 @@ function translate(token, ctx_type) {
         data_type: args.type,
         force_cast: args.force_cast,
         arguments: {},
-        return_value: []
+        fully_defined: is_full_definition
       }
 
       // process argument definitions
@@ -2720,6 +2750,7 @@ function translate(token, ctx_type) {
 
         let memory = alloc_block(size)
 
+        // put argument into symbol table
         state.symbol_table[args.name][name] = {
           type: "argument",
           data_type: type,
@@ -2728,27 +2759,32 @@ function translate(token, ctx_type) {
           }
         }
 
+        // add to argument table
         state.function_table[args.name].arguments[name] = {
           data_type: type,
           optional: is_optional_arg,
           ram_addresses: memory.slice()
         }
 
+        // set default value of argument (if it has one)
         if (is_optional_arg) {
           optional_arg_encountered = true
-          let [expr_prefix, expr_value, expr_type] = translate(expr, type)
-          assert_compatable_types(type, expr_type, token.line, () => {
-            throw new CompError(`Argument '${name}' is of type '${type}', but got '${expr_type}'`)
-          })
+          // only evaluate the argument's default if it is in a full function definition
+          if (is_full_definition) {
+            let [expr_prefix, expr_value, expr_type] = translate(expr, type)
+            assert_compatable_types(type, expr_type, token.line, () => {
+              throw new CompError(`Argument '${name}' is of type '${type}', but got '${expr_type}'`)
+            })
 
-          target.push(...expr_prefix)
+            target.push(...expr_prefix)
 
-          for (let word of expr_value) {
-            target.push(`write ${word} ram.${memory.shift()}`)
+            for (let word of expr_value) {
+              target.push(`write ${word} ram.${memory.shift()}`)
+            }
           }
         } else {
           if (optional_arg_encountered) {
-            throw new CompError("Non-optional arg. cannot follow optional args")
+            throw new CompError(`Non-optional arg. '${name}' cannot follow optional args`)
           }
         }
 
@@ -2756,13 +2792,18 @@ function translate(token, ctx_type) {
         target.push(`${label}_${arg_num}:`)
       }
 
+      // allocate space for return value (or 0 words if type is "none")
+      state.function_table[args.name].return_value = alloc_block(get_data_type_size(args.type))
+
       // indent function header
       for (let i = 1; i < target.length; i++) {
         target[i] = `  ${target[i]}`
       }
 
-      // translate the body of the function
-      target.push(...translate_body(token.body))
+      if (is_full_definition) {
+        // translate the body of the function
+        target.push(...translate_body(token.body))
+      }
 
       // restore previous state.scope
       state.scope = old_state
@@ -3007,6 +3048,12 @@ function compile(input, nested) {
     log.info(ram_message)
 
     log.info(`Standard library functions used: ${Object.keys(state.required).length}`)
+  }
+
+  for (let [name, table_entry] of Object.entries(state.function_table)) {
+    if (!table_entry.fully_defined) {
+      log.warn(`${name}() is not defined and must be linked at assemble time`)
+    }
   }
 
   return output
