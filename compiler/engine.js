@@ -13,7 +13,7 @@ const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,non
 const data_type_default_value = {u16:"0",s16:"0",u32:"0",s32:"0",float:"0",bool:"false",str:"\"\""}
 const mixable_numeric_types = [["u16","s16"],["u32","s32"]]
 const reserved_keywords = [
-  "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include","__root","__global"
+  "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include","__root","__global", "__return"
 ]
 
 onmessage = (event) => {
@@ -1522,6 +1522,12 @@ function translate(token, ctx_type) {
           throw new CompError(`${state.scope}() is of type '${func_type}' and must return a value`)
         }
 
+        if (args.expr.name === "var_or_const" && args.expr.arguments.name == "__return") {
+          // the __return special variable already points to the return_buffer so we don't need to copy
+          result.push("return")
+          break;
+        }
+
         let [prefix, value, expr_type] = translate(args.expr, func_type)
 
         if (force_cast) {
@@ -2793,7 +2799,19 @@ function translate(token, ctx_type) {
       }
 
       // allocate space for return value (or 0 words if type is "none")
-      state.function_table[args.name].return_value = alloc_block(get_data_type_size(args.type))
+      let return_buffer = alloc_block(get_data_type_size(args.type))
+      state.function_table[args.name].return_value = return_buffer
+
+      // add __return variable to symbol table
+      // this is a special variable that represents the return buffer and it used in performance-
+      // critical functions
+      state.symbol_table[state.scope]["__return"] = {
+        type: "argument",
+        data_type: args.type,
+        specific: {
+          ram_addresses: return_buffer
+        }
+      }
 
       // indent function header
       for (let i = 1; i < target.length; i++) {

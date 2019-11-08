@@ -1,20 +1,20 @@
 const libs = {
   "sys.u16_multiply": [
     "def sys.u16_multiply(u16 a, u16 b) -> u16",
-    "  var u16 c",
+    "  __return = 0",
     "  while b > 0",
     "    if b sys.odd",
-    "      c += a",
+    "      __return += a",
     "    a = a <<",
     "    b = b >>",
-    "  return c"
+    "  return __return"
   ],
   "sys.u16_divide": [
     "def sys.u16_divide(u16 a, u16 b) -> u16",
     "  if b == 0",
     "    return b",
     "",
-    "  var u16 answer",
+    "  __return = 0",
     "  var u16 place 1",
     "  var u16 a_div_2 a >>",
     "  a_div_2++",
@@ -26,28 +26,27 @@ const libs = {
     "  while place > 0",
     "    if a >= b",
     "      a -= b",
-    "      answer += place",
+    "      __return += place",
     "",
     "    place = place >>",
     "    b = b >>",
     "",
-    "  return answer"
+    "  return __return"
   ],
   "sys.u16_exponent": [
     "def sys.u16_exponent(u16 a, u16 b) -> u16",
-    "  var u16 c 1",
+    "  __return = 1",
     "  while b > 0",
-    "    c = c * a",
+    "    __return = __return * a",
     "    b -= 1",
-    "  return c"
+    "  return __return"
   ],
   "sys.u16_modulo": [
     "def sys.u16_modulo(u16 a, u16 b) -> u16",
-    "  var u16 c",
-    "  c = a / b",
-    "  c = c * b",
-    "  c = a - c",
-    "  return c"
+    "  __return = 0",
+    "  __return = a / b",
+    "  __return = __return * b",
+    "  return a - __return"
   ],
   "sys.s16_multiply": [
     "def sys.s16_multiply(s16 a, s16 b) -> s16",
@@ -58,15 +57,16 @@ const libs = {
     "  if b < 0",
     "    sign = !sign",
     "    b = 0 - b",
-    "  var s16 c",
+    "  __return = 0",
     "  while b != 0",
     "    if b sys.odd",
-    "      c += a",
+    "      __return += a",
     "    a = a <<",
     "    b = b >>",
     "  if sign",
-    "    c = 0 - c",
-    "  return c"
+    "    return 0 - __return",
+    "  else",
+    "    return __return"
   ],
   "sys.s16_divide": [
     "def sys.s16_divide(s16 a, s16 b) -> s16",
@@ -82,7 +82,7 @@ const libs = {
     "    sign = !sign",
     "    b = 0 - b",
     "",
-    "  var s16 answer",
+    "  __return = 0",
     "  var s16 place 1",
     "  var s16 a_div_2 a >>",
     "  a_div_2++",
@@ -94,60 +94,58 @@ const libs = {
     "  while place != 0",
     "    if a >= b",
     "      a -= b",
-    "      answer += place",
+    "      __return += place",
     "",
     "    place = place >>",
     "    b = b >>",
     "",
     "  if sign",
-    "    answer = 0 - answer",
-    "",
-    "  return answer"
+    "    return 0 - __return",
+    "  else",
+    "    return __return"
   ],
   "sys.s16_exponent": [
     "def sys.s16_exponent(s16 a, s16 b) -> s16",
-    "  var s16 c 1",
+    "  __return = 1",
     "  while b > 0",
-    "    c = c * a",
+    "    __return = __return * a",
     "    b -= 1",
-    "  return c"
+    "  return __return"
   ],
   "sys.s16_modulo": [
     "def sys.s16_modulo(s16 a, s16 b) -> s16",
-    "  var s16 c",
-    "  c = a / b",
-    "  c = c * b",
-    "  c = a - c",
-    "  return c"
+    "  __return = 0",
+    "  __return = a / b",
+    "  __return = __return * b",
+    "  return a - __return"
   ],
   "sys.s16_rshift": [
     "def sys.s16_rshift(s16 a) -> s16",
     "  var bool negative",
-    "  var s16 answer",
     "  {write $a alu.1}",
     "  {write 0b1000000000000000 alu.2}",
     "  {write [alu.ov] &negative}",
-    "  {write [alu.>>] &answer}",
+    "  {write [alu.>>] &__return}",
     "  if negative",
-    "    {write $answer alu.1}",
+    "    {write $__return alu.1}",
     "    {write 0b1000000000000000 alu.2}",
-    "    {write [alu.|] &answer}",
-    "  return answer"
+    "    {write [alu.|] &__return}",
+    "  return __return"
   ],
   "sys.u32_add": [
     "def sys.u32_add(u32 a, u32 b) -> u32",
     "  var u16 carry",
     "  {write $a[1] alu.1}",
     "  {write $b[1] alu.2}",
-    "  {write [alu.+] &b[1]}",
+    "  {write [alu.+] &__return[1]}",
     "  {write [alu.ov] &carry}",
     "  {write $a[0] alu.1}",
     "  {write $b[0] alu.2}",
-    "  {write [alu.+] &b[0]}",
-    "  {write $b[0] alu.1}",
+    "  {write [alu.+] &__return[0]}",
+    "  {write $__return[0] alu.1}",
     "  {write $carry alu.2}",
-    "  {write [alu.+] &b[0]}",
-    "  return b"
+    "  {write [alu.+] &__return[0]}",
+    "  return __return"
   ],
   "sys.u32_subtract": [
     "def sys.u32_subtract(u32 a, u32 b) -> u32",
@@ -156,27 +154,24 @@ const libs = {
     "  {write $b[1] alu.1}",
     "  {write [alu.!] &b[1]}",
     "  b++",
-    "  var u32 c a + b",
-    "  return c"
+    "  return a + b"
   ],
   "sys.u32_multiply": [
     "def sys.u32_multiply(u32 a, u32 b) -> u32",
-    "  var u32 c",
-    "  if a == 0",
-    "    return 0",
+    "  __return = 0",
     "  while b != 0",
     "    if b sys.odd",
-    "      c = c + a",
+    "      __return = __return + a",
     "    a = a <<",
     "    b = b >>",
-    "  return c "
+    "  return __return "
   ],
   "sys.u32_divide": [
     "def sys.u32_divide(u32 a, u32 b) -> u32",
     "  if b == 0",
     "    return b",
     "",
-    "  var u32 answer",
+    "  __return = 0",
     "  var u32 place 1",
     "  var u32 a_div_2 a >>",
     "  a_div_2++",
@@ -188,55 +183,50 @@ const libs = {
     "  while place != 0",
     "    if a >= b",
     "      a -= b",
-    "      answer += place",
+    "      __return += place",
     "",
     "    place = place >>",
     "    b = b >>",
     "",
-    "  return answer"
+    "  return __return"
   ],
   "sys.u32_exponent": [
     "def sys.u32_exponent(u32 a, u32 b) -> u32",
-    "  var u32 c 1",
+    "  __return = 1",
     "  while b > 0",
-    "    c = c * a",
+    "    __return = __return * a",
     "    b -= 1",
-    "  return c"
+    "  return __return"
   ],
   "sys.u32_modulo": [
     "def sys.u32_modulo(u32 a, u32 b) -> u32",
-    "  var u32 c",
-    "  c = a / b",
-    "  c = c * b",
-    "  c = a - c",
-    "  return c"
+    "  __return = 0",
+    "  __return = a / b",
+    "  __return = __return * b",
+    "  return a - __return",
   ],
   "sys.u32_lshift": [
     "def sys.u32_lshift(u32 a) -> u32",
     "  var u16 a_high a:0",
     "  var u16 a_low a:1",
-    "  var u32 c",
     "  var u16 carry a_low & 0b1000000000000000",
     "  carry += 0xffff",
     "  {copy alu.ov &carry}",
     "  a_high = a_high <<",
     "  a_low = a_low <<",
     "  a_high += carry",
-    "  c = a_high..a_low",
-    "  return c"
+    "  return a_high..a_low"
   ],
   "sys.u32_rshift": [
     "def sys.u32_rshift(u32 a) -> u32",
     "  var u16 a_high a:0",
     "  var u16 a_low a:1",
-    "  var u32 c",
     "  var u16 carry a_high",
     "  a_high = a_high >>",
     "  a_low = a_low >>",
     "  if carry sys.odd",
     "    a_low = a_low | 0b1000000000000000",
-    "  c = a_high..a_low",
-    "  return c"
+    "  return a_high..a_low"
   ],
   "sys.u32_not_equal": [
     "def sys.u32_not_equal(u32 a, u32 b) -> bool",
@@ -244,13 +234,11 @@ const libs = {
     "  var u16 a_low a:0",
     "  var u16 b_high b:1",
     "  var u16 b_low b:0",
-    "  var bool result true",
     "  if a_high == b_high",
     "    if a_low == b_low",
-    "      result = false",
-    "      return result",
+    "      return false",
     "  else",
-    "    return result"
+    "    return true"
   ],
   "sys.u32_equal": [
     "def sys.u32_equal(u32 a, u32 b) -> bool",
@@ -258,13 +246,11 @@ const libs = {
     "  var u16 a_low a:0",
     "  var u16 b_high b:1",
     "  var u16 b_low b:0",
-    "  var bool result",
     "  if a_high == b_high",
     "    if a_low == b_low",
-    "      result = true",
-    "      return result",
+    "      return true",
     "  else",
-    "    return result"
+    "    return false"
   ],
   "sys.u32_greater": [
     "def sys.u32_greater(u32 a, u32 b) -> bool",
@@ -272,16 +258,14 @@ const libs = {
     "  var u16 a_low a:1 ",
     "  var u16 b_high b:0",
     "  var u16 b_low b:1",
-    "  var bool result true",
     "",
     "  if a_high > b_high",
-    "    return result",
+    "    return true",
     "  else if a_high == b_high",
     "    if a_low > b_low",
-    "      return result",
-    "    ",
-    "  result = false",
-    "  return result"
+    "      return true",
+    "",
+    "  return false"
   ],
   "sys.u32_less": [
     "def sys.u32_less(u32 a, u32 b) -> bool",
@@ -289,16 +273,14 @@ const libs = {
     "  var u16 a_low a:1 ",
     "  var u16 b_high b:0",
     "  var u16 b_low b:1",
-    "  var bool result true",
     "",
     "  if a_high < b_high",
-    "    return result",
+    "    return true",
     "  else if a_high == b_high",
     "    if a_low < b_low",
-    "      return result",
-    "    ",
-    "  result = false",
-    "  return result"
+    "      return true",
+    "",
+    "  return false"
   ],
   "sys.s32_multiply": [
     "def sys.s32_multiply(s32 a, s32 b) -> s32",
@@ -309,15 +291,16 @@ const libs = {
     "  if b < 0",
     "    sign = !sign",
     "    b = 0 - b",
-    "  var s32 c",
+    "  __return = 0",
     "  while b != 0",
     "    if b sys.odd",
-    "      c += a",
+    "      __return += a",
     "    a = a <<",
     "    b = b >>",
     "  if sign",
-    "    c = 0 - c",
-    "  return c"
+    "    return 0 - __return",
+    "  else",
+    "    return __return"
   ],
   "sys.s32_divide": [
     "def sys.s32_divide(s32 a, s32 b) -> s32",
@@ -333,7 +316,7 @@ const libs = {
     "    sign = !sign",
     "    b = 0 - b",
     "",
-    "  var s32 answer",
+    "  __return = 0",
     "  var s32 place 1",
     "  var s32 a_div_2 a >>",
     "  a_div_2++",
@@ -345,31 +328,30 @@ const libs = {
     "  while place != 0",
     "    if a >= b",
     "      a -= b",
-    "      answer += place",
+    "      __return += place",
     "",
     "    place = place >>",
     "    b = b >>",
     "",
     "  if sign",
-    "    answer = 0 - answer",
-    "",
-    "  return answer"
+    "    return 0 - __return",
+    "  else",
+    "    return __return"
   ],
   "sys.s32_exponent": [
     "def sys.s32_exponent(s32 a, s32 b) -> s32",
-    "  var s32 c 1",
+    "  __return = 1",
     "  while b > 0",
-    "    c = c * a",
+    "    __return = __return * a",
     "    b -= 1",
-    "  return c"
+    "  return __return"
   ],
   "sys.s32_modulo": [
     "def sys.s32_modulo(s32 a, s32 b) -> s32",
-    "  var s32 c",
-    "  c = a / b",
-    "  c = c * b",
-    "  c = a - c",
-    "  return c"
+    "  __return = 0",
+    "  __return = a / b",
+    "  __return = __return * b",
+    "  return a - __return",
   ],
   "sys.s32_rshift": [
     "def sys.s32_rshift(s32 a) -> s32",
@@ -394,35 +376,23 @@ const libs = {
   ],
   "sys.s32_greater": [
     "def sys.s32_greater(s32 a, s32 b) -> bool",
-    "  var bool ans true",
-    "  ",
     "  a = a - b",
     "  a -= 1",
     "",
     "  var u16 a_high a:0",
     "  var u16 a_low a:1",
     "",
-    "  if a_high < 0b1000000000000000",
-    "    return ans",
-    "",
-    "  ans = false",
-    "  return ans"
+    "  return a_high < 0b1000000000000000"
   ],
   "sys.s32_less": [
     "def sys.s32_less(s32 a, s32 b) -> bool",
-    "  var bool ans true",
-    "  ",
     "  a = a - b",
     "  a -= 1",
     "",
     "  var u16 a_high a:0",
     "  var u16 a_low a:1",
     "",
-    "  if a_high > 0b0111111111111111",
-    "    return ans",
-    "",
-    "  ans = false",
-    "  return ans"
+    "  return a_high > 0b0111111111111111"
   ],
   "sys.array_pointer": [
     "def sys.array_pointer(u16 index, u16 item_size, u16 base_addr) -> u16",
