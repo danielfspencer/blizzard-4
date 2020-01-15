@@ -278,7 +278,7 @@ function update_tool_tip(id) {
   let dec = get_padded_num(references.value, references.num_dec_digits,10)
   let hex = get_padded_num(references.value , references.num_hex_digits,16)
 
-  let text = `dec ${dec} hex ${hex}`
+  let text = `${dec} / 0x${hex}`
   references.tooltip.childNodes[0].nodeValue = text
 }
 
