@@ -1698,9 +1698,6 @@ const libs = {
     "sig sys.print_u32(u32 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
     "sig sys.print_s32(s32 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
     "sig sys.kbd.scancode_to_charcode(u16 scancode, bool shifted = false) -> u16",
-    "sig sys.get_lib_version() -> str",
-    "sig sys.glyphs()",
-    "sig sys.scancode_charcode_table()",
-    "sig sys.vram.shifted_pixels()"
+    "sig sys.get_lib_version() -> str"
   ]
 }

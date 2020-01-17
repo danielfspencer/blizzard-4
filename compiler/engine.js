@@ -85,6 +85,7 @@ function CompError(message, line) {
 function init_vars() {
   state = {
     scope: "__root",
+    include_only_signatures_mode: false,
     symbol_table: {__root:{}, __global:{}},
     struct_definitions: {},
     free_ram: {__root:gen_free_ram_map(), __global:gen_free_ram_map()},
@@ -438,11 +439,17 @@ function load_lib(name) {
   if (!(name in libs)) {
     throw new CompError(`Library '${name}' not found`)
   }
+  if (state.include_only_signatures_mode) {
+    return
+  }
   if (name in state.required || name in state.function_table) {
     log.debug("↳ already loaded")
   } else {
     state.required[name] = ""
     log.debug("↳ compiling")
+    if (name == "sys.signatures") {
+      state.include_only_signatures_mode = true
+    }
     let old_log_status = show_log_messages
     try {
       show_log_messages = false
@@ -2711,6 +2718,9 @@ function translate(token, ctx_type) {
         // TODO assert signature is the same for this definition (ie same args w/ same data types)
       } else if (!is_full_definition && args.name in state.function_table && state.function_table[args.name].fully_defined) {
         // this is the function signature for a already defined function
+        // TODO assert signature is the same as defined function
+        // also do not overwrite full definition
+        break
       } else {
         // this is a stand-alone function definition, so we need to check if the name is available
         assert_global_name_available(args.name)
