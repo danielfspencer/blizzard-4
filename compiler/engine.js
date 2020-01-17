@@ -2709,6 +2709,8 @@ function translate(token, ctx_type) {
       if (is_full_definition && args.name in state.function_table && !state.function_table[args.name].fully_defined) {
         // this is the function definition for a already existing signature
         // TODO assert signature is the same for this definition (ie same args w/ same data types)
+      } else if (!is_full_definition && args.name in state.function_table && state.function_table[args.name].fully_defined) {
+        // this is the function signature for a already defined function
       } else {
         // this is a stand-alone function definition, so we need to check if the name is available
         assert_global_name_available(args.name)
