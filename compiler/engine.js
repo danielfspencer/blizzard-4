@@ -13,7 +13,7 @@ const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,non
 const data_type_default_value = {u16:"0",s16:"0",u32:"0",s32:"0",float:"0",bool:"false",str:"\"\""}
 const mixable_numeric_types = [["u16","s16"],["u32","s32"]]
 const reserved_keywords = [
-  "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include","__root","__global"
+  "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include","__root","__global", "__return"
 ]
 
 onmessage = (event) => {
@@ -85,6 +85,7 @@ function CompError(message, line) {
 function init_vars() {
   state = {
     scope: "__root",
+    include_only_signatures_mode: false,
     symbol_table: {__root:{}, __global:{}},
     struct_definitions: {},
     free_ram: {__root:gen_free_ram_map(), __global:gen_free_ram_map()},
@@ -448,11 +449,17 @@ function load_lib(name) {
   if (!(name in libs)) {
     throw new CompError(`Library '${name}' not found`)
   }
-  if (name in state.required) {
+  if (state.include_only_signatures_mode) {
+    return
+  }
+  if (name in state.required || name in state.function_table) {
     log.debug("↳ already loaded")
   } else {
     state.required[name] = ""
     log.debug("↳ compiling")
+    if (name == "sys.signatures") {
+      state.include_only_signatures_mode = true
+    }
     let old_log_status = show_log_messages
     try {
       show_log_messages = false
@@ -496,12 +503,12 @@ function tokenise(input, line) {
   } else if (/^\"(.+)\"$|^(\"\")$/.test(input)) {     //string
     token = {name:"str",type:"expression",arguments:{value:input,type_guess:"str"}}
 
-  } else if (/^(var|arg|const|global)/.test(input)) {        // (var/arg/const/global) [type] [name] <expr>
+  } else if (/^(var|const|global)/.test(input)) {        // (var/arg/const/global) [type] [name] <expr>
     if (list.length < 3) {
-      throw new CompError("Decleration syntax:\nvar/arg/const/global [type] [name] <expr>")
+      throw new CompError("Decleration syntax:\nvar/const/global [type] [name] <expr>")
     }
 
-    let alloc_type = list[0]      // var / arg / const / global
+    let alloc_type = list[0]      // var / const / global
     let type = list[1]
     let name = list[2]
     let expr
@@ -559,23 +566,37 @@ function tokenise(input, line) {
       throw new CompError("Repeat statement has no number")
     }
 
-  } else if (list[0] === "def") {                  //def [name] [opt. return type]       need to check if name is available
-    if (list.length < 2) {
-      throw new CompError("Functions require a name")
-    } else if (list.length > 3) {
-      throw new CompError("Invalid syntax")
+  } else if (/(def|sig)\ ([\w\.]+)\((.*)\)(?:\s*->\s*(#?\w*))?/.test(input)) { // def/sig [name](<args>) -> [type]
+    let matches = /(def|sig)\ ([\w\.]+)\((.*)\)(?:\s*->\s*(#?\w*))?/.exec(input)
+    let def_type = matches[1]
+    let name = matches[2]
+    let arg_string = matches[3]
+    let type = matches[4]
+    assert_valid_function_name(name)
+
+    let args = []
+    if (arg_string !== "") {
+      let items = arg_string.split(",")
+      for (let item of items) {
+        args.push(tokenise(item, line))
+      }
     }
 
     let force_cast = false
-    if (list[2] !== undefined) {
-      if (list[2].startsWith("#")) {
-        force_cast = true
-        list[2] = list[2].substr(1)
-      }
+    if (type === undefined) {
+      type = "none"
+    } else if (type.startsWith("#")) {
+      force_cast = true
+      type = type.substr(1)
     }
-    assert_valid_function_name(list[1])
-
-    token = {name:"function_def",type:"structure",body:[],arguments:{name:list[1],type:list[2],force_cast:force_cast}}
+    switch (def_type) {
+      case "def":
+        token = {name:"function_def",type:"structure",body:[],arguments:{name:name,args:args,type:type,force_cast:force_cast}}
+        break
+      case "sig":
+        token = {name:"signature_def",type:"command",arguments:{name:name,args:args,type:type,force_cast:force_cast}}
+        break
+    }
 
   } else if (list[0] === "struct") {                  //struct [name]
     if (list.length < 2) {
@@ -601,8 +622,8 @@ function tokenise(input, line) {
     let expr = tokenise(matches[2], line)
     token = {name:"set",type:"command",arguments:{expr:expr,name:matches[1]}}
 
-  } else if (/^([a-zA-Z_]\w*).([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.test(input)) {                    // [struct].[member] = [expr]
-    let matches = /^([a-zA-Z_]\w*).([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.exec(input)
+  } else if (/^([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.test(input)) {                    // [struct].[member] = [expr]
+    let matches = /^([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.exec(input)
 
     let name = matches[1]
     let member = matches[2]
@@ -764,6 +785,19 @@ function tokenise(input, line) {
 
     token = {name:"function",type:"expression",arguments:{name:name,exprs:args,ignore_type_mismatch:ignore_type_mismatch}}
 
+  } else if (/^([a-zA-Z_]\w*)\ ([a-zA-Z_]\w*)(?:\s*\=\s*([^=].*))?$/.test(input)) { // [type] [name] (= <expression>)
+    let matches = /^([a-zA-Z_]\w*)\ ([a-zA-Z_]\w*)(?:\s*\=\s*([^=].*))?$/.exec(input)
+    let type = matches[1]
+    let name = matches[2]
+    assert_valid_name(name)
+
+    let expr
+    let expr_string = matches[3]
+    if (expr_string !== undefined) {
+      expr = tokenise(expr_string, line)
+    }
+    token = {name:"type_name_assignment_tuple", type:"command", arguments:{name:name,type:type,expr:expr}}
+
   } else if (/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/.test(input)) {          // is an expression
     let operation = find_operation(/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/g, input)
     if (operation in {"+":"", "-":"", "/":"", "*":"", "^":"", "%":""}) { // dual operand [non bool]
@@ -830,15 +864,8 @@ function tokenise(input, line) {
       type_size:type_size
     }}
 
-  } else if (list.length === 2) {
-    let type = list[0]
-    let name = list[1]
-    assert_valid_name(name)
-
-    token = {name:"struct_member_def", type:"command", arguments:{name:name,type:type}}
-
-  } else if (/^([a-zA-Z_]\w*).([a-zA-Z_]\w*)$/.test(input)) {
-    let matches = /^([a-zA-Z_]\w*).([a-zA-Z_]\w*)$/.exec(input)
+  } else if (/^([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)$/.test(input)) {
+    let matches = /^([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)$/.exec(input)
 
     let name = tokenise(matches[1], line)
     let member = matches[2]
@@ -1028,52 +1055,6 @@ function translate(token, ctx_type) {
       for (let expr_word of expr_value) {
         result.push(`write ${expr_word} ram^.${memory.shift()}`)
       }
-    } break
-
-    case "arg_alloc": {      //arg [type] [name] [expr]
-      if (state.scope === "__root") {
-        throw new CompError("Argument declaration can only be used in functions")
-      }
-
-      assert_valid_datatype(args.type)
-      assert_local_name_available(args.name)
-
-      let value
-      if (args.expr === undefined) {
-        value = tokenise(get_data_type_default(args.type))
-      } else {
-        value = args.expr
-      }
-
-      let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
-      assert_compatable_types(args.type, expr_type, token.line, () => {
-        throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
-      })
-
-      let memory = alloc_block(expr_value.length)
-
-      // add entry to symbol table
-      state.symbol_table[state.scope][args.name] = {
-        type: "argument",
-        data_type: args.type,
-        specific: {
-          ram_addresses: memory.slice()
-        }
-      }
-
-      // add argument to function
-      let func_args = state.function_table[state.scope].arguments
-      func_args.push(args.name)
-
-      // make data available
-      result = expr_prefix
-
-      for (let expr_word of expr_value) {
-        result.push(`write ${expr_word} ram.${memory.shift()}`)
-      }
-
-      let label = `func_${state.scope}_${func_args.length}:`
-      result.push(label)
     } break
 
     case "var_array_alloc": {
@@ -1554,27 +1535,35 @@ function translate(token, ctx_type) {
       // if the return statement should have an expression, evaluate it
       if (func_type !== "none") {
 
+        if (args.expr === undefined) {
+          throw new CompError(`${state.scope}() is of type '${func_type}' and must return a value`)
+        }
+
+        if (args.expr.name === "var_or_const" && args.expr.arguments.name == "__return") {
+          // the __return special variable already points to the return_buffer so we don't need to copy
+          result.push("return")
+          break;
+        }
+
         let [prefix, value, expr_type] = translate(args.expr, func_type)
 
         if (force_cast) {
           // cast any return expression to this type, ignoring any mis-match
           log.warn(`line ${token.line}:\nCasting return expression of type '${expr_type}' to '${func_type}'`)
-
-        } else if (expr_type !== func_type) {
-          // the type of the expression in the return statement does not match the data type of the function
-          throw new CompError(`Function returns type '${func_type}', but return expression is of type '${expr_type}'`)
+        } else {
+          assert_compatable_types(func_type, expr_type, token.line, () => {
+            throw new CompError(`${state.scope}() is of type '${func_type}', but return statement got '${expr_type}'`)
+          })
         }
 
         // include the code to evaluate the expression
         result = prefix
 
-        let map = []
-        for (let item of value) {
-          let temp = item.replace("ram","ram+")
-          //this next replace prevents recursive function calls producing ram++++.x addresses
-          map.push(temp.replace("ram++","ram+"))
+        // copy result into return buffer
+        let return_buffer = table_entry.return_value
+        for (let i = 0; i < value.length; i++) {
+          result.push(`write ${value[i]} ram.${return_buffer[i]}`)
         }
-        table_entry.return_value = map
       }
 
       // add the actual return instruction
@@ -1603,6 +1592,15 @@ function translate(token, ctx_type) {
         throw new CompError("'continue' can only be used in for/while loops")
       }
       result.push(`goto ${state.inner_structure_label}_cond`)
+    } break
+
+    case "signature_def": {
+      // signature definitions are commands (therefore are not followed by and indent)
+      // however, we want to use the function definition token (which does expect an indent)
+      // so we rename this token and run that instead
+      token.name = "function_def_by_signature"
+      token.type = "structure"
+      translate(token)
     } break
 
     default:
@@ -2450,28 +2448,35 @@ function translate(token, ctx_type) {
         throw new CompError(`Function '${args.name}' is undefined`)
       }
 
-      let function_table_entry = state.function_table[args.name]
+      let table_entry = state.function_table[args.name]
 
-      let target_args = function_table_entry.arguments
-      let target_arg_no = target_args.length
-      let actual_arg_no = Object.keys(args.exprs).length
-
-      if (actual_arg_no > target_arg_no) {
-        throw new CompError(`'${args.name}' takes at most ${target_arg_no} arg(s), but ${actual_arg_no} have been given`)
+      let min_arg_num = 0
+      for (let [name, details] of Object.entries(table_entry.arguments)) {
+        if (!details.optional) { min_arg_num++ }
       }
-      log.debug(`calling '${args.name}' with ${actual_arg_no}/${target_arg_no} arguments`)
+      let max_arg_num = Object.keys(table_entry.arguments).length
+      let actual_arg_num = Object.keys(args.exprs).length
 
-      for (let i = 0; i < actual_arg_no; i++) {
-        let arg_table_entry = state.symbol_table[args.name][target_args[i]]
-        let target_type = arg_table_entry.data_type
-        let target_regs = arg_table_entry.specific.ram_addresses
+      if (actual_arg_num < min_arg_num) {
+        throw new CompError(`${args.name}() requires at least ${min_arg_num} arg(s), but ${actual_arg_num} were given`)
+      } else if (actual_arg_num > max_arg_num) {
+        throw new CompError(`${args.name}() takes at most ${max_arg_num} arg(s), but ${actual_arg_num} were given`)
+      }
 
-        let expr_token = args.exprs[i]
+      let args_processed = 0
+      for (let [arg_name, details] of Object.entries(table_entry.arguments)) {
+        if (args_processed == actual_arg_num) {
+          // we have run out of supplied arguments
+          break
+        }
 
-        let [expr_prefix, expr_value, expr_type] = translate(expr_token, target_type)
+        let arg_type = details.data_type
+        let arg_token = args.exprs.shift()
+
+        let [expr_prefix, expr_value, expr_type] = translate(arg_token, arg_type)
         if ((!args.ignore_type_mismatch)) {
-          assert_compatable_types(target_type, expr_type, token.line, () => {
-            throw new CompError(`In call to ${args.name}()\nArg '${target_args[i]}' is of type '${target_type}', but got '${expr_type}'`)
+          assert_compatable_types(arg_type, expr_type, token.line, () => {
+            throw new CompError(`In call to ${args.name}()\nArgument '${arg_name}' is of type '${arg_type}', but got '${expr_type}'`)
           })
         }
 
@@ -2479,27 +2484,31 @@ function translate(token, ctx_type) {
         prefix.push(...expr_prefix)
 
         // copy each word into argument memory
-        for (let y = 0; y < target_regs.length; y++) {
-          let expr_word = expr_value[y]
-          let arg_word = `ram+.${target_regs[y]}`
-          prefix.push(`write ${expr_word} ${arg_word}`)
+        for (let i = 0; i < details.ram_addresses.length; i++) {
+          prefix.push(`write ${expr_value[i]} ram+.${details.ram_addresses[i]}`)
         }
+
+        args_processed++
       }
 
       // skip the initialisation of arguments that we have supplied values for
       // we do this by entering the function at a different point
-      if (actual_arg_no > 0) {
-        entry_point += `_${actual_arg_no}`
+      if (actual_arg_num > 0) {
+        entry_point += `_${actual_arg_num}`
       }
 
       // actually call the function
       prefix.push(`call ${entry_point}`)
 
-      registers = function_table_entry.return_value
+      registers = []
+      for (let addr of table_entry.return_value) {
+        registers.push(`[ram+.${addr}]`)
+      }
+
       if (args.ignore_type_mismatch) {
         type = ctx_type
       } else {
-        type = function_table_entry.data_type
+        type = table_entry.data_type
       }
     } break
 
@@ -2708,42 +2717,140 @@ function translate(token, ctx_type) {
       }
     } break
 
-    case "function_def": {
-      assert_global_name_available(args.name)
+    case "function_def":
+    case "function_def_by_signature": {
+      // if the function is being defined by a signature, we don't actually compile the function
+      // only enter its details in the function table so it can be called
+      let is_full_definition = token.name === "function_def"
+
+      if (is_full_definition && args.name in state.function_table && !state.function_table[args.name].fully_defined) {
+        // this is the function definition for a already existing signature
+        // TODO assert signature is the same for this definition (ie same args w/ same data types)
+      } else if (!is_full_definition && args.name in state.function_table && state.function_table[args.name].fully_defined) {
+        // this is the function signature for a already defined function
+        // TODO assert signature is the same as defined function
+        // also do not overwrite full definition
+        break
+      } else {
+        // this is a stand-alone function definition, so we need to check if the name is available
+        assert_global_name_available(args.name)
+      }
 
       // init output area for generated code
-      let label = `func_${args.name}:`
-      state.funcs[args.name] = [label]
-      let target = state.funcs[args.name]
+      let target
+      if (is_full_definition) {
+        state.funcs[args.name] = []
+        target = state.funcs[args.name]
+      } else {
+        // if this is a function signature, don't generate any code
+        target = []
+      }
 
-      // save previous state.scope for later
+      let label = `func_${args.name}`
+      target.push(`${label}:`)
+
+      // save previous scope for later
       let old_state = state.scope
       state.scope = args.name
-      log.debug(`namespace -> ${state.scope}`)
 
-      // generate free ram and symbol table for this state.scope
+      // generate free ram and symbol table for this scope
       state.free_ram[state.scope] = gen_free_ram_map()
       state.symbol_table[state.scope] = {}
       state.labels[state.scope] = {if:0,for:0,while:0,str:0,expr_array:0}
 
-      let data_type
-      if (args.type === undefined) {
-        data_type = "none"
-      } else {
-        data_type = args.type
-      }
-      assert_valid_datatype(data_type)
+      // check function's return type
+      assert_valid_datatype(args.type)
 
       // add entry in function table
       state.function_table[args.name] = {
-        data_type: data_type,
+        data_type: args.type,
         force_cast: args.force_cast,
-        arguments: [],
-        return_value: []
+        arguments: {},
+        fully_defined: is_full_definition
       }
 
-      // translate the body of the function
-      target.push(...translate_body(token.body))
+      // process argument definitions
+      let arg_num = 0
+      let optional_arg_encountered = false
+      for (let entry of args.args) {
+        if (entry.name !== "type_name_assignment_tuple") {
+          throw new CompError("Only argument definitions are allowed here")
+        }
+        let {name, type, expr} = entry.arguments
+        assert_local_name_available(name)
+        assert_valid_datatype(type)
+
+        let is_optional_arg = entry.arguments.expr !== undefined
+        let size = get_data_type_size(type)
+
+        let memory = alloc_block(size)
+
+        // put argument into symbol table
+        state.symbol_table[args.name][name] = {
+          type: "argument",
+          data_type: type,
+          specific: {
+            ram_addresses: memory.slice()
+          }
+        }
+
+        // add to argument table
+        state.function_table[args.name].arguments[name] = {
+          data_type: type,
+          optional: is_optional_arg,
+          ram_addresses: memory.slice()
+        }
+
+        // set default value of argument (if it has one)
+        if (is_optional_arg) {
+          optional_arg_encountered = true
+          // only evaluate the argument's default if it is in a full function definition
+          if (is_full_definition) {
+            let [expr_prefix, expr_value, expr_type] = translate(expr, type)
+            assert_compatable_types(type, expr_type, token.line, () => {
+              throw new CompError(`Argument '${name}' is of type '${type}', but got '${expr_type}'`)
+            })
+
+            target.push(...expr_prefix)
+
+            for (let word of expr_value) {
+              target.push(`write ${word} ram.${memory.shift()}`)
+            }
+          }
+        } else {
+          if (optional_arg_encountered) {
+            throw new CompError(`Non-optional arg. '${name}' cannot follow optional args`)
+          }
+        }
+
+        arg_num++
+        target.push(`${label}_${arg_num}:`)
+      }
+
+      // allocate space for return value (or 0 words if type is "none")
+      let return_buffer = alloc_block(get_data_type_size(args.type))
+      state.function_table[args.name].return_value = return_buffer
+
+      // add __return variable to symbol table
+      // this is a special variable that represents the return buffer and it used in performance-
+      // critical functions
+      state.symbol_table[state.scope]["__return"] = {
+        type: "argument",
+        data_type: args.type,
+        specific: {
+          ram_addresses: return_buffer
+        }
+      }
+
+      // indent function header
+      for (let i = 1; i < target.length; i++) {
+        target[i] = `  ${target[i]}`
+      }
+
+      if (is_full_definition) {
+        // translate the body of the function
+        target.push(...translate_body(token.body))
+      }
 
       // restore previous state.scope
       state.scope = old_state
@@ -2761,11 +2868,15 @@ function translate(token, ctx_type) {
       let members = {}
       let total_size = 0
       for (let entry of token.body) {
-        if (entry.name !== "struct_member_def") {
+        if (entry.name !== "type_name_assignment_tuple") {
           throw new CompError("Only struct member definitions are permitted here")
         }
         let name = entry.arguments.name
         let type = entry.arguments.type
+
+        if (entry.arguments.expr !== undefined) {
+          throw new CompError("Struct members cannot have default values")
+        }
 
         assert_valid_datatype(type)
 
@@ -2984,6 +3095,12 @@ function compile(input, nested) {
     log.info(ram_message)
 
     log.info(`Standard library functions used: ${Object.keys(state.required).length}`)
+  }
+
+  for (let [name, table_entry] of Object.entries(state.function_table)) {
+    if (!table_entry.fully_defined) {
+      log.warn(`${name}() is not defined and must be linked at assemble time`)
+    }
   }
 
   return output

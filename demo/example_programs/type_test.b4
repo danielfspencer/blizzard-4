@@ -1,6 +1,6 @@
 global bool shift false
 
-def get_keypress u16
+def get_keypress() -> u16
   var u16 kbd 8192
   var u16 scancode *kbd
   var u16 char_code 0

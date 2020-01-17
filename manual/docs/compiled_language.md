@@ -15,11 +15,11 @@ local variables/arguments can shadow global variables/constants, for example
 ```javascript
 global str my_string "global"
 
-def func1
+def func1()
   var str my_string "local"
   sys.print_string(my_string)
 
-def func2
+def func2()
   sys.print_string(my_string)
 
 // prints "local"
@@ -62,16 +62,6 @@ Declare a local variable of the specified type with the specified name. e.g.
 var u32 counter 123456789
 ```
 
-+ **arg** [type] [name] <expression\>
-
-Declare an argument of a function with the specified name. This can only be used in functions. MUST come at the top of the function e.g.
-```javascript
-def add_one u16
-  // do not place any commands before the arg decleration
-  arg u16 number
-  return number + 1
-```
-
 + **const** [type] [name] <expression\>
 
 Declare a global constant of the specified type with the specified name. e.g.
@@ -105,7 +95,7 @@ include sys.vram.glyphs
 
 End execution of a function and pass control back to the caller of the function. If the function has a return type that is not 'none', then this command can also pass a value back to the caller.
 ```javascript
-def my_func u16
+def my_func() -> u16
   // ends the execution of the function and returns 42 to the caller
   return 42
 ```
@@ -357,15 +347,13 @@ for var u16 i; i < 5; i++
   sys.print_u16(i)
 ```
 
-+ **def** [name] <type\>
++ **def** [name]\( <args\> \) < -> type\>
 
 Defines a new function. If the return data type is not specified, it defaults to 'none'. This means the function cannot return a value.
 
 ```javascript
 // the standard library function used to multiply ints
-def sys.u16_multiply u16
-  arg u16 a
-  arg u16 b
+def sys.u16_multiply(u16 a, u16 b) -> u16
   var u16 ans
   while b > 0
     if b sys.odd
@@ -380,10 +368,8 @@ def sys.u16_multiply u16
 **NOTE this is not for general use, only for unrolling performance-critical loops.** Repeat a block of code the specified number of times. This causes the compiler to emit the contained commands *number* times. Therefore large numbers will result in very large program sizes. Also, *number* must be static and known at compile time.
 
 ```javascript
-def shift_right
+def shift_right(u16 start = 6144, u16 end = 7167)
   // shift a portion of the screen right one pixel
-  arg u16 start 6144
-  arg u16 end 7167
   while end > start
     // the following code only needs to be written out once
     // but will be present 8 times in the assembly output
