@@ -438,7 +438,7 @@ function load_lib(name) {
   if (!(name in libs)) {
     throw new CompError(`Library '${name}' not found`)
   }
-  if (name in state.required) {
+  if (name in state.required || name in state.function_table) {
     log.debug("↳ already loaded")
   } else {
     state.required[name] = ""
