@@ -195,6 +195,15 @@ Decrement *name* by 1.
 my_num--
 ```
 
++ **sig** [name]( <args> ) < -> type>
+
+Defines the signature of function *name*. This gives the compiler all the information it needs to compile calls to the function. The function can then either be defined later in the program or it can be linked at assembly time.
+
+```javascript
+// the function signature of the u16_multiply standard library function
+sig sys.u16_multiply(u16 a, u16 b) -> u16
+```
+
 #### Array-Only Commands
 + [array name]**.append(**[expression]**)**
 
