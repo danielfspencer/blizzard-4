@@ -6,4 +6,5 @@ Blizzard 4 is a 16-bit computer. It has a small (RISC) instruction set that is d
 - [microcode](/manual/docs/microcode.md)
 - [instruction set](/manual/docs/instruction_set.md)
 - [compiled language](/manual/docs/compiled_language.md)
+- [standard library](/manual/docs/standard_library.md)
 - [readme](/README.md)
