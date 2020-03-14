@@ -554,7 +554,7 @@ const libs = {
     "    mask = 0x00ff",
     "    inv_mask = 0xff00",
     "",
-    "  for var u16 i; i < 6; i++",
+    "  repeat 6",
     "    {copy $char_pointer alu.1}",
     "    {copy &mask alu.2}",
     "    {copy alu.& ram.12}",
