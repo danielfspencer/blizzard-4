@@ -4,14 +4,6 @@
   width: 1500px;
 }
 
-/* progress::progress-value {
-  transition: width 0.4s linear;
-}
-
-progress::-webkit-progress-value {
-  transition: width 0.4s linear;
-} */
-
 .ram-bar {
   height: 11px;
   width: 95%;

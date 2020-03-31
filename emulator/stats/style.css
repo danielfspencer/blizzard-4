@@ -1,0 +1,17 @@
+#main {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+#stats {
+  width: 340px;
+  text-align: right;
+}
+
+code {
+  display: inline-block;
+  text-align: left;
+  width: 150px;
+  margin-left: 10px;
+}

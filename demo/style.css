@@ -3,10 +3,6 @@
   margin: 0 auto;
 }
 
-body, html {
-  overflow-y: auto;
-}
-
 .entry {
   width: 100%;
   clear: both;

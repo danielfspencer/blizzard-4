@@ -1,21 +1,21 @@
-var sint ball_x 63
-var sint ball_y 63
-var sint ball_dx 0
-var sint ball_dy 2
-var sint old_ball_x
-var sint old_ball_y
+var s16 ball_x 63
+var s16 ball_y 63
+var s16 ball_dx 0
+var s16 ball_dy 2
+var s16 old_ball_x
+var s16 old_ball_y
 
-var int top_paddle_x 7
-var int bottom_paddle_x 7
+var u16 top_paddle_x 7
+var u16 bottom_paddle_x 7
 
-var int top_low_bound 56
-var int top_high_bound 72
+var u16 top_low_bound 56
+var u16 top_high_bound 72
 
-var int bottom_low_bound 56
-var int bottom_high_bound 72
+var u16 bottom_low_bound 56
+var u16 bottom_high_bound 72
 
-var int top_score
-var int bottom_score
+var u16 top_score
+var u16 bottom_score
 
 var bool top_move_left
 var bool top_move_right
@@ -23,20 +23,18 @@ var bool top_move_right
 var bool bottom_move_left
 var bool bottom_move_right
 
-var int mode 2
-var int speed 5
-var int iter
-var int key_code
+var u16 mode 2
+var u16 speed 5
+var u16 iter
+var u16 key_code
 
-def set_word
-  arg int data
-  arg int addr
+def set_word(u16 data, u16 addr)
   addr += 6144
   {write $data $addr}
 
-def get_key int
-  var int scan_code
-  var int kbd 8192
+def get_key() -> u16
+  var u16 scan_code
+  var u16 kbd 8192
 
   scan_code = *kbd
 
@@ -50,19 +48,12 @@ def get_key int
 
     scan_code = *kbd
 
-def draw_ball
-  arg sint x
-  arg sint y
-  arg sint old_x
-  arg sint old_y
-  sys.vram.set_pixel(x:0,y:0)
-  sys.vram.set_pixel(old_x:0,old_y:0,false)
+def draw_ball(s16 x, s16 y, s16 old_x, s16 old_y)
+  sys.vram.set_pixel(x,y)
+  sys.vram.set_pixel(old_x,old_y,false)
 
-def draw_paddle
-  arg int x
-  arg int addr
-  arg bool erase false
-  var int half_x x >>
+def draw_paddle(u16 x, u16 addr, bool erase = false)
+  var u16 half_x x >>
   addr += half_x
   if erase
     if x sys.odd
@@ -109,8 +100,8 @@ sys.vram.clear()
 
 draw_paddle(top_paddle_x,40)
 draw_paddle(bottom_paddle_x,976)
-sys.print_int(0,0,6)
-sys.print_int(0,0,9)
+sys.print_u16(0,0,6)
+sys.print_u16(0,0,9)
 
 while true
   iter++
@@ -126,7 +117,7 @@ while true
 
     if ball_y > 127
       top_score++
-      sys.print_int(top_score,0,6)
+      sys.print_u16(top_score,0,6)
       ball_x = 63
       ball_y = 20
       ball_dx = 0
@@ -134,7 +125,7 @@ while true
 
     if ball_y < 1
       bottom_score++
-      sys.print_int(bottom_score,0,9)
+      sys.print_u16(bottom_score,0,9)
       ball_x = 63
       ball_y = 107
       ball_dx = 0

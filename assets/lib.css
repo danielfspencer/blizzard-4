@@ -36,22 +36,31 @@ textarea:focus {
   font-size: 0.9em;
   background: #EEEEEE;
   box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.37);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .button:active {
   transition-delay: 0s;
   box-shadow: 0px 6px 10px 0px rgba(0, 0, 0, 0.3);
 }
-body, html {
-  font-size: 16px;
-  font-family: "robotoregular";
+
+body {
   -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -moz-user-select: -moz-none;
   -ms-user-select: none;
   -webkit-user-select: none;
+  font-family: "robotoregular";
+  overflow-y: auto;
+  font-size: 12pt;
+  margin: 0;
+  padding: 8px;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  position: absolute;
 }
 
 img {

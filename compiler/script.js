@@ -4,8 +4,10 @@ let compiling = false
 $( document ).ready( () => {
   $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
 
-  $("#load_in").change( (e) => {
-    load_file(e, "in")
+  $("#load_in").change((event) => {
+    tools.files.load(event, (data) => {
+      $('#in').val(data);
+    })
   })
 
   $(document).delegate('#in', 'keydown', function(e) {
@@ -71,8 +73,8 @@ $( document ).ready( () => {
     log("error",msg)
   }
 
-  parent.input_data = set_input
-  parent.child_page_loaded()
+  parent.interface.funcs.input_data = set_input
+  parent.interface.funcs.child_page_loaded()
 })
 
 function handleMsg(data) {
@@ -122,9 +124,8 @@ function switch_asm(input) {
 }
 
 function log(level,msg) {
-  var first = "<div class='item "+level+"'><img class='img' src='../assets/icons/"+level+".svg'/><src>"
-  var second = "</src></div>"
-  $("#log").append(first+msg+second)
+  let html = `<div class='item ${level}'><img class='img' src='../assets/icons/${level}.svg'/><src>${msg}</src></div>`
+  $("#log").append(html)
   $("#log").scrollTop($("#log")[0].scrollHeight - $("#log").height())
 }
 

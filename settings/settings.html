@@ -5,7 +5,7 @@
   <link rel="stylesheet" type="text/css" href="../assets/lib.css">
   <link rel="stylesheet" type="text/css" href="../style.css">
   <link rel="stylesheet" type="text/css" href="style.css">
-  <script src="../assets/jquery.min.js"></script>
+  <script src="../assets/js/jquery.min.js"></script>
   <script src="../assets/lib.js"></script>
   <script src="script.js"></script>
   <title>Settings</title>
@@ -13,18 +13,24 @@
 <body>
   <script src="../assets/set_theme.js"></script>
 
-  <div id="statusbar" class="light-accent" >
-    <div id="drag-region"></div>
-    <img id="close" src="../assets/icons/close.svg"/>
+  <div id="frame">
+    <div id="statusbar" class="light-accent" >
+      <div id="drag-region"></div>
+      <img id="close" src="../assets/icons/close.svg"/>
+    </div>
   </div>
 
   <div id="content">
     <div class="card">
       <h3>General</h3>
       <div class="settings">
-        <div class="paper-toggle"><input id="dark-theme" class="switch" type="checkbox"/>
-          <label for="dark-theme">Dark Theme</label>
-        </div>
+        <a>Theme</a>
+        <select id="theme">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+
+        <br>
 
         <a>Starting page</a>
         <select id="starting-page">
@@ -40,7 +46,7 @@
     <div class="card">
       <h3>Emulator</h3>
       <div class="settings">
-        <a>Display colour scheme</a>
+        <a>Display theme</a>
         <select id="emulator-display-colour">
           <option value="white-black">White on black</option>
           <option value="white-grey">White on grey</option>
@@ -52,14 +58,11 @@
     </div>
 
     <div class="card">
-      <h3>Debug Info</h3>
       <a>Current platform:</a>
-      <a id="platform"></a>
+      <b id="platform"></b>
     </div>
 
-    <div class="card">
-      <div class="button" id="reset">reset to defaults</div>
-    </div>
+    <div class="button" id="reset">reset to defaults</div>
   </div>
 
 </body></html>

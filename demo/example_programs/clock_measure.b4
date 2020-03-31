@@ -1,16 +1,16 @@
-const int timer_addr 8
+const u16 timer_addr 8
 
-var int value
-var int freq
+var u16 value
+var u16 freq
 sys.print_string("kHz",6,0)
 
 while true
   // reset the timer
   *timer_addr = 0
 
-  for var int i; i < 15; i++
+  for var u16 i; i < 15; i++
     // wait a few cycles
-	
+
   value = *timer_addr
   freq = 7700 / value
-  sys.print_int(freq,0,0,true)
+  sys.print_u16(freq,0,0,true)

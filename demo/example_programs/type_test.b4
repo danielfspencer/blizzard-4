@@ -1,9 +1,9 @@
 global bool shift false
 
-def get_keypress int
-  var int kbd 8192
-  var int scancode *kbd
-  var int char_code 0
+def get_keypress() -> u16
+  var u16 kbd 8192
+  var u16 scancode *kbd
+  var u16 char_code 0
 
   while scancode > 0
     if scancode == 0xAA
@@ -23,10 +23,10 @@ def get_keypress int
 
   return char_code
 
-var int x
-var int y
-var int code
-var int temp
+var u16 x
+var u16 y
+var u16 code
+var u16 temp
 var bool draw_cursor true
 sys.vram.render_char(128,x,y)
 

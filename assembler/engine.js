@@ -1,11 +1,12 @@
 let debug = false
 
-onmessage = (msg) => {
-  switch(msg.data[0]) {
+onmessage = (event) => {
+  let message = event.data
+  switch(message[0]) {
     case "assemble":
       let result = ""
       try {
-        let as_array = msg.data[1].split("\n")
+        let as_array = message[1].split("\n")
         result = assemble(as_array)
       } catch (error) {
         if (error instanceof AsmError) {
@@ -18,18 +19,18 @@ onmessage = (msg) => {
       }
       break
     case "debug":
-      debug = msg.data[1]
+      debug = message[1]
       break
   }
 }
 
-function AsmError(message, line) {
+function AsmError(message, location) {
   this.message = message
-  this.line = line
+  this.location = location
 }
 
 AsmError.prototype.toString = function() {
-  return "word " + this.line + ": \n'" + this.message + "' is not defined"
+  return `${this.location}:\n${this.message}`
 }
 
 const log = {
@@ -40,12 +41,12 @@ const log = {
 }
 
 function send_log(message, level) {
-  if (level == "debug" && !debug) {
+  if (level === "debug" && !debug) {
     return
   }
 
   let text
-  if (typeof message == "object") {
+  if (typeof message === "object") {
     text = JSON.stringify(message)
   } else {
     text = message
@@ -83,7 +84,6 @@ const defs = {
   "usrio.out2" : 4100,
   "usrio.out3" : 4101,
   "kbd.pop": 8192,
-  "kbd.len": 8193,
   "ctl.cnd" : 1,
   "ctl.addrmode" : 2,
   "ctl.framenum" : 4,
@@ -190,15 +190,18 @@ function assemble(lines) {
 
   log.info("1st Pass...")
   for (var i = 0; i < lines.length; i++) {
-    if (lines[i] == "" ) {continue} // skip empty lines
+    if (lines[i] === "" ) {continue} // skip empty lines
     if (/\s*\/\//.test(lines[i])) {continue} // skip comments
     var line = lines[i].trim()
     line = line.split(" ") // turns "copy ram1" into ["copy", "ram1"]
     line.map(function(str){str.replace(/(\r|\n)/g,"")}) // strips trailing whitespace
 
-    if (line.length == 1 && !(line[0] in opDefs)) { // if it's one string
+    if (line.length === 1 && !(line[0] in opDefs)) { // if it's one string
       if (line[0].endsWith(":")) { // ends with : means it is a label
         let label = line[0].substr(0, line[0].length - 1)
+        if (label in labels) {
+          throw new AsmError(`Label '${label}' has already been defined`,`line ${i}`)
+        }
         labels[label] = adr + 32768
         log.debug("addr 0x" +  adr.toString(16) + " new label '" + label + "'")
         continue
@@ -275,7 +278,7 @@ function assemble(lines) {
   for (let i = 0; i < as_list.length; i++) {
     let line = as_list[i]
     if (!   /^[0-1]{16}\n?$/.test(line) && line != "") {
-      throw new AsmError(line, i)
+      throw new AsmError(`'${line}' is not defined`,`word ${i}`)
     }
   }
   log.info("↳ success, " + (as_list.length - 1) + " word(s) checked")
