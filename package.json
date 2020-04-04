@@ -1,6 +1,6 @@
 {
   "name": "blizzard-4",
-  "version": "0.46.1",
+  "version": "0.47.0-beta.1",
   "license": "GPL-3.0",
   "description": "Emulator & toolchain for the Blizzard 4 16-bit computer.",
   "author": "Daniel Spencer <danielfspencer1@gmail.com>",
