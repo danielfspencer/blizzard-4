@@ -180,13 +180,14 @@ iframe  {
   background: #FFF;
   position: absolute;
   z-index: 2;
-  left: -300px;
-  transition: left 0.2s ease-in;
+  will-change: transform;
+  transform: translate3d(calc(-100%),0 , 0);
+  transition: transform 0.2s ease-in;
 }
 
 #menu.active {
-  left: 0;
-  transition: 0.2s ease-out;
+  transition: transform 0.2s ease-out;
+  transform: translate3d(0, 0, 0);
 }
 
 #dim {
