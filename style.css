@@ -197,7 +197,8 @@ iframe  {
   background: #000;
   position: absolute;
   opacity: 0;
-  transition: 0.2s;
+  will-change: opacity;
+  transition: opacity 0.2s;
   pointer-events: none;
 }
 
