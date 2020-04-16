@@ -655,12 +655,7 @@ const libs = {
     "    sys.vram.set_pixel(x + x1, y - y1, data)"
   ],
   "sys.vram.draw_line": [
-    "def sys.vram.draw_line(u16 x0_i, u16 y0_i, u16 x1_i, u16 y1_i, bool data = true)",
-    "  var s16 x0 x0_i:0",
-    "  var s16 y0 y0_i:0",
-    "  var s16 x1 x1_i:0",
-    "  var s16 y1 y1_i:0",
-    "  ",
+    "def sys.vram.draw_line(u16 x0, u16 y0, u16 x1, u16 y1, bool data = true)",
     "  var s16 dx",
     "  var s16 dy",
     "  var s16 sx",
@@ -1690,7 +1685,7 @@ const libs = {
     "sig sys.vram.clear()",
     "sig sys.vram.draw_square(u16 x, u16 y, u16 length, bool data = true)",
     "sig sys.vram.draw_circle(u16 x, u16 y, u16 radius, bool data = true)",
-    "sig sys.vram.draw_line(u16 x0_i, u16 y0_i, u16 x1_i, u16 y1_i, bool data = true)",
+    "sig sys.vram.draw_line(u16 x0, u16 y0, u16 x1, u16 y1, bool data = true)",
     "sig sys.print_string(str string, u16 x = 0, u16 y = 0)",
     "sig sys.print_u16(u16 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
     "sig sys.print_u16_as_hex(u16 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
