@@ -15,6 +15,7 @@ let updates_running = false
 let vram_changes_buffer = []
 
 $(document).ready(() => {
+  parent.interface.funcs.clear_buttons()
   parent.interface.funcs.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
   parent.interface.funcs.add_button(gen_button("stats.svg", "statistics"), open_stats)
 

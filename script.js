@@ -16,7 +16,8 @@ var interface = {
       let id = `button-${$("#button-container").children().length}`
       $("#button-container").append(`<div class="button" id="${id}">${html}</div>`)
       $(`#${id}`).click(func)
-    }
+    },
+    clear_buttons: () => $("#button-container").empty()
   },
   window_ref_store: {}
 }

@@ -7,6 +7,7 @@ let forward_history = []
 $( document ).ready( () => {
   render_page("docs/introduction.md")
 
+  parent.interface.funcs.clear_buttons()
   parent.interface.funcs.add_button(gen_button("left-arrow.svg"), navigate_back)
   parent.interface.funcs.add_button(gen_button("right-arrow.svg"), navigate_forward)
 })
