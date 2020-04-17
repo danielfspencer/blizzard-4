@@ -557,20 +557,13 @@ function simulate_effect_of_read_bus_change() {
         data_bus = data_bus & 0xffff
         break
       case 2:                                                             //user io
-        if (address < 3) {
-          data_bus = user_input[address]
-        }
-        break
-      case 3:                                                             //video adapter
-        if (address < 1024) {
-          data_bus = vram[address]
-          activity_indicators.vram_read = 1
-        }
-        break
-      case 4:                                                             //keyboard interface
-
         switch (address) {
-          case 0:
+          case 0: // input switches
+          case 1:
+          case 2:
+            data_bus = user_input[address]
+            break
+          case 6: // keyboard fifo
             if (key_fifo.length > 0) {
               data_bus = key_fifo.shift()
             } else {
@@ -579,6 +572,15 @@ function simulate_effect_of_read_bus_change() {
             break
           default:
             break
+        }
+        if (address < 3) {
+          data_bus = user_input[address]
+        }
+        break
+      case 3:                                                             //video adapter
+        if (address < 1024) {
+          data_bus = vram[address]
+          activity_indicators.vram_read = 1
         }
         break
       default:
