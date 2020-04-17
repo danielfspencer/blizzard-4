@@ -64,66 +64,44 @@ const opDefs = {
 }
 
 const defs = {
-  "alu.1" : 2048,
-  "alu.2" : 2049,
-  "alu.+" : 2050,
-  "alu.-" : 2051,
-  "alu.>>" : 2052,
-  "alu.<<" : 2053,
-  "alu.&" : 2054,
-  "alu.|" : 2055,
-  "alu.!" : 2056,
-  "alu.>" : 2057,
-  "alu.<" : 2058,
-  "alu.=" : 2059,
-  "alu.ov" : 2060,
+  "ctl.cnd" : 1,
+  "ctl.sp" : 2,
+  "timer.low" : 3,
+  "timer.high" : 4,
+  "alu.1" : 8,
+  "alu.2" : 9,
+  "alu.+" : 10,
+  "alu.-" : 11,
+  "alu.>>" : 12,
+  "alu.<<" : 13,
+  "alu.&" : 14,
+  "alu.|" : 15,
+  "alu.!" : 16,
+  "alu.>" : 17,
+  "alu.<" : 18,
+  "alu.=" : 19,
+  "alu.ov" : 20,
   "io.inp1" : 4096,
   "io.inp2" : 4097,
   "io.inp3" : 4098,
   "io.out1" : 4099,
   "io.out2" : 4100,
   "io.out3" : 4101,
-  "io.kbd": 4102,
-  "ctl.cnd" : 1,
-  "ctl.addrmode" : 2,
-  "ctl.framenum" : 4,
-  "ctl.lowtimer" : 8,
-  "ctl.hightimer" : 16
+  "io.kbd": 4102
 }
 
 function regToCode(id) {
-  if (id.toLowerCase().startsWith("ram-.")) { //it's a ram address (lower)
-    var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
-    if ( number >= 0 && number <= 1023) {
-      return number+16384//it's valid
-    } else {
-      return false
-    }
-  } else if (id.toLowerCase().startsWith("ram.")) { //it's a ram address (current)
-    var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
-    if ( number >= 0 && number <= 1023) {
-      return number+20480//it's valid
-    } else {
-      return false
-    }
-  } else if (id.toLowerCase().startsWith("ram+.")) { //it's a ram address (upper)
-    var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
-    if ( number >= 0 && number <= 1023) {
-      return number+24576//it's valid
-    } else {
-      return false
-    }
-  } else if (id.toLowerCase().startsWith("ram#.")) { //it's a direct ram address
+  if (id.toLowerCase().startsWith("ram.")) { //it's a direct ram address
     var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
     if ( number >= 0 && number < 16384) {
       return number+16384//it's valid
     } else {
       return false
     }
-  } else if (id.toLowerCase().startsWith("ram^.")) { //it's a direct ram (top frame)
+  } else if (id.toLowerCase().startsWith("stack.")) { //it's a stack address
     var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
-    if ( number >= 0 && number < 16384) {
-      return number+28672//it's valid
+    if ( number >= 0 && number < 2048) {
+      return number+2048//it's valid
     } else {
       return false
     }
