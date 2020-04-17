@@ -22,12 +22,12 @@ function init_memory() {
 
   //control unit registers
   program_counter = 32768  // 1st word of ROM
+  stack_pointer = 0 // 1st word of RAM
   command_word = 0
   control_mode = 0
   args_remaining = 0
   arg_regs = [0,0,0]
   conditional_bit = 0
-  frame_number = 0
 
   //memory spaces
   ram  = create_zeroed_array(1024 * 16) //16k x 16 bit (32KB)
@@ -41,9 +41,6 @@ function init_memory() {
   alu_operands = [0,0]
   user_input = [0,0]
   user_output = [0,0,0]
-
-  //misc controls
-  direct_ram_addressing = false
 }
 
 function init_rom() {
@@ -256,19 +253,20 @@ function send_front_panel_info() {
   var data = {
     clock_speed: actual_cycles_per_second,
     program_counter:  program_counter,
+    stack_pointer: stack_pointer,
     command_word: command_word,
     control_mode: control_mode,
     args_remaining: args_remaining,
     arg_regs: arg_regs,
     conditional_bit: conditional_bit,
-    frame_number: frame_number,
+    frame_number: 0xfff,
     user_output: user_output,
     write_bus: write_bus,
     data_bus: data_bus,
     read_bus: read_bus,
     alu_operands: alu_operands,
     activity_indicators: activity_indicators,
-    ram_addr_mode: direct_ram_addressing
+    ram_addr_mode: 1
   }
   postMessage(["front_panel_info",data])
 }
@@ -451,110 +449,82 @@ function simulate_effect_of_read_bus_change() {
   } else if (read_bus > 16383) {                                          // RAM
     activity_indicators.ram_read = 1
 
-    if (direct_ram_addressing) {
-      var address = read_bus - 16384
-      data_bus = ram[address]
-    } else {
-      var frame_offset_selector = (read_bus & 0b0011000000000000) >> 12
-      var address = read_bus & 0b0000001111111111
-
-      switch (frame_offset_selector) {
-        case 0:   //frame below
-          address += (frame_number - 1) * 1024
-          activity_indicators.ram_frame_offset = 2
-          break
-        case 1:   //current frame
-          address += frame_number * 1024
-          activity_indicators.ram_frame_offset = 4
-          break
-        case 2:   //frame above
-          address += (frame_number + 1) * 1024
-          activity_indicators.ram_frame_offset = 8
-          break
-        case 3:  //top frame
-          address += 15 * 1024
-          activity_indicators.ram_frame_offset = 1
-          break
-      }
-
-      if (address < 0) {
-        halt_error("invalid address for ram")
-      } else {
-        data_bus = ram[address]
-      }
-    }
+    var address = read_bus - 16384
+    data_bus = ram[address]
     activity_indicators.ram_address = address
 
   } else if (read_bus < 16384) {                                          //everywhere else (card addressing)
     var card_address = (read_bus & 0b0011100000000000) >> 11
     var address = read_bus & 0b0000011111111111
 
-    switch (card_address) {                                               //control unit
+    switch (card_address) {                                               //control unit + timer + alu
       case 0:
         switch (address) {
-          case 4:
-            data_bus = frame_number
+          case 1:
+            // cnd bit not readable
             break
-          case 8:
-            data_bus = get_timer_value()[0]
-            break
-          case 16:
-            data_bus = get_timer_value()[1]
-          default:
-            break
-        }
-        break
-      case 1:                                                             //alu
-        switch (address) {
           case 2:
-            data_bus = alu_operands[0] + alu_operands[1]
-            activity_indicators.alu_read = 2 ** 10
+            data_bus = stack_pointer
             break
           case 3:
-            data_bus = alu_operands[0] - alu_operands[1]
-            activity_indicators.alu_read = 2 ** 9
+            data_bus = get_timer_value()[0]
             break
           case 4:
-            data_bus = alu_operands[0] >> 1
-            activity_indicators.alu_read = 2 ** 8
-            break
-          case 5:
-            data_bus = alu_operands[0] << 1
-            activity_indicators.alu_read = 2 ** 7
-            break
-          case 6:
-            data_bus = alu_operands[0] & alu_operands[1]
-            activity_indicators.alu_read = 2 ** 6
-            break
-          case 7:
-            data_bus = alu_operands[0] | alu_operands[1]
-            activity_indicators.alu_read = 2 ** 5
-            break
-          case 8:
-            data_bus = alu_operands[0] ^ 0xffff
-            activity_indicators.alu_read = 2 ** 4
-            break
-          case 9:
-            data_bus = alu_operands[0] > alu_operands[1] ? 1 : 0
-            activity_indicators.alu_read = 2 ** 3
-            break
-          case 10:
-            data_bus = alu_operands[0] < alu_operands[1] ? 1 : 0
-            activity_indicators.alu_read = 2 ** 2
-            break
-          case 11:
-            data_bus = alu_operands[0] === alu_operands[1] ? 1 : 0
-            activity_indicators.alu_read = 2
-            break
-          case 12:
-            data_bus = (alu_operands[0] + alu_operands[1]) > 0xffff ? 1 : 0
-            activity_indicators.alu_read = 1
-            break
+            data_bus = get_timer_value()[1]
           default:
-            break
+            switch (address - 8) {
+              case 2:
+                data_bus = alu_operands[0] + alu_operands[1]
+                activity_indicators.alu_read = 2 ** 10
+                break
+              case 3:
+                data_bus = alu_operands[0] - alu_operands[1]
+                activity_indicators.alu_read = 2 ** 9
+                break
+              case 4:
+                data_bus = alu_operands[0] >> 1
+                activity_indicators.alu_read = 2 ** 8
+                break
+              case 5:
+                data_bus = alu_operands[0] << 1
+                activity_indicators.alu_read = 2 ** 7
+                break
+              case 6:
+                data_bus = alu_operands[0] & alu_operands[1]
+                activity_indicators.alu_read = 2 ** 6
+                break
+              case 7:
+                data_bus = alu_operands[0] | alu_operands[1]
+                activity_indicators.alu_read = 2 ** 5
+                break
+              case 8:
+                data_bus = alu_operands[0] ^ 0xffff
+                activity_indicators.alu_read = 2 ** 4
+                break
+              case 9:
+                data_bus = alu_operands[0] > alu_operands[1] ? 1 : 0
+                activity_indicators.alu_read = 2 ** 3
+                break
+              case 10:
+                data_bus = alu_operands[0] < alu_operands[1] ? 1 : 0
+                activity_indicators.alu_read = 2 ** 2
+                break
+              case 11:
+                data_bus = alu_operands[0] === alu_operands[1] ? 1 : 0
+                activity_indicators.alu_read = 2
+                break
+              case 12:
+                data_bus = (alu_operands[0] + alu_operands[1]) > 0xffff ? 1 : 0
+                activity_indicators.alu_read = 1
+                break
+              default:
+                break
+            }
+            data_bus = data_bus & 0xffff
         }
-
-        data_bus = data_bus & 0xffff
+        break
+      case 1:                                                             //stack
+        data_bus = ram[stack_pointer + address]
         break
       case 2:                                                             //user io
         switch (address) {
@@ -607,33 +577,8 @@ function simulate_effect_of_write_bus_change() {
     }
 
   } else if (write_bus > 16383) {                                          // RAM
-    let address = 0
-    if (direct_ram_addressing) {
-      address = write_bus - 16384
-    } else {
-      var frame_offset_selector = (write_bus & 0b0011000000000000) >> 12
-      address = write_bus & 0b0000001111111111
+    let address = write_bus - 16384
 
-      switch (frame_offset_selector) {
-        case 0:   //frame below
-          address += (frame_number - 1) * 1024
-          activity_indicators.ram_frame_offset = 2
-          break
-        case 1:   //current frame
-          address += frame_number * 1024
-          activity_indicators.ram_frame_offset = 4
-          break
-        case 2:   //frame above
-          address += (frame_number + 1) * 1024
-          activity_indicators.ram_frame_offset = 8
-          break
-        case 3:  //top frame
-          address += 15 * 1024
-          activity_indicators.ram_frame_offset = 1
-          break
-      }
-
-    }
     if (address < 0 || address > 16383) {
       halt_error("invalid address for ram")
     }
@@ -652,26 +597,22 @@ function simulate_effect_of_write_bus_change() {
             conditional_bit = data_bus & 0b0000000000000001
             break
           case 2:
-            direct_ram_addressing = (data_bus & 0b0000000000000001) == 1
-            break
-          case 4:
-            frame_number = data_bus & 0b0000000000001111
+            stack_pointer = data_bus
             break
           case 8:
-            reset_timer()
+            alu_operands[0] = data_bus
+            activity_indicators.alu1_write = 1
+            break
+          case 9:
+            alu_operands[1] = data_bus
+            activity_indicators.alu2_write = 1
             break
           default:
             break
         }
         break
-      case 1:                                                             //alu
-        if (address == 0) {
-          alu_operands[0] = data_bus
-          activity_indicators.alu1_write = 1
-        } else if (address == 1) {
-          alu_operands[1] = data_bus
-          activity_indicators.alu2_write = 1
-        }
+      case 1:                                                             //stack
+        ram[stack_pointer + address] = data_bus
         break
       case 2:                                                             //user io
         if (address < 6 && address > 2) {
@@ -682,8 +623,6 @@ function simulate_effect_of_write_bus_change() {
         if (address < 1024) {
           vram_change(address, data_bus)
         }
-        break
-      case 4:                                                             //keyboard interface
         break
       default:
         break
@@ -893,24 +832,6 @@ function ram_caller_pointer_to_write_bus() {
   debug && console.debug("ram_caller_pointer_to_write_bus")
   //this address is ram+.1023
   write_bus = 0b0110001111111111
-}
-
-function decrement_frame_no() {
-  debug && console.debug("decrement_frame_no")
-  if (frame_number > 0) {
-    frame_number--
-  } else {
-    frame_number = 15
-  }
-}
-
-function increment_frame_no() {
-  debug && console.debug("increment_frame_no")
-  if (frame_number < 15) {
-    frame_number++
-  } else {
-    frame_number = 0
-  }
 }
 
 function data_bus_to_pc() {
