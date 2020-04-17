@@ -33,20 +33,20 @@ def set_word(u16 data, u16 addr)
   {write $data $addr}
 
 def get_key() -> u16
+  include sys.consts
   var u16 scan_code
-  var u16 kbd 8192
 
-  scan_code = *kbd
+  scan_code = *SYS_KEYBOARD_ADDR
 
   while scan_code > 0
     if scan_code == 0xf0
-      scan_code = *kbd
+      scan_code = *SYS_KEYBOARD_ADDR
     else if scan_code == 0xe0
       //pass
     else
       return scan_code
 
-    scan_code = *kbd
+    scan_code = *SYS_KEYBOARD_ADDR
 
 def draw_ball(s16 x, s16 y, s16 old_x, s16 old_y)
   sys.vram.set_pixel(x,y)

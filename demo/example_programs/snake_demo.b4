@@ -11,21 +11,21 @@ var u16 temp_y
 var u16 key_code
 
 def get_keypress() -> u16
-  var u16 kbd 8192
-  var u16 scancode *kbd
+  include sys.consts
+  var u16 scancode *SYS_KEYBOARD_ADDR
   var u16 char_code 0
 
   while scancode > 0
     if scancode == 0xAA
       //pass
     else if scancode == 0xF0
-      scancode = *kbd
+      scancode = *SYS_KEYBOARD_ADDR
     else if scancode == 0xE0
       //pass
     else
       char_code = sys.kbd.scancode_to_charcode(scancode)
       return char_code
-    scancode = *kbd
+    scancode = *SYS_KEYBOARD_ADDR
 
   return char_code
 

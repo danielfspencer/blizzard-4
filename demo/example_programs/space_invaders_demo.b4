@@ -207,18 +207,18 @@ def wait_time(u16 iterations)
     iterations--
 
 def read_inputs()
+  include sys.consts
   // detect which keys are being pressed
-  var u16 kbd 8192
-  var u16 scancode *kbd
+  var u16 scancode *SYS_KEYBOARD_ADDR
   var u16 char_code 0
 
   while scancode > 0
     if scancode == 0xAA
       // pass
     else if scancode == 0xF0
-      scancode = *kbd
+      scancode = *SYS_KEYBOARD_ADDR
     else if scancode == 0xE0
-      scancode = *kbd
+      scancode = *SYS_KEYBOARD_ADDR
       if scancode == 0x6b
         button_left = true
         return
@@ -229,7 +229,7 @@ def read_inputs()
         button_fire = true
         return
       else if scancode == 0xf0
-        scancode = *kbd
+        scancode = *SYS_KEYBOARD_ADDR
         if scancode == 0x6b
           button_left = false
         else if scancode == 0x74
@@ -237,7 +237,7 @@ def read_inputs()
         else if scancode == 0x75
           button_fire = false
 
-    scancode = *kbd
+    scancode = *SYS_KEYBOARD_ADDR
 
 def update_cannon()
   read_inputs()

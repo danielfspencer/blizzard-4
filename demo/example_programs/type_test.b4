@@ -1,15 +1,15 @@
 global bool shift false
 
 def get_keypress() -> u16
-  var u16 kbd 8192
-  var u16 scancode *kbd
+  include sys.consts
+  var u16 scancode *SYS_KEYBOARD_ADDR
   var u16 char_code 0
 
   while scancode > 0
     if scancode == 0xAA
       //pass
     else if scancode == 0xF0
-      scancode = *kbd
+      scancode = *SYS_KEYBOARD_ADDR
       if scancode == 0x12
         shift = false
     else if scancode == 0xE0
@@ -19,7 +19,7 @@ def get_keypress() -> u16
     else
       char_code = sys.kbd.scancode_to_charcode(scancode,shift)
       return char_code
-    scancode = *kbd
+    scancode = *SYS_KEYBOARD_ADDR
 
   return char_code
 
