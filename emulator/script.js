@@ -2,9 +2,8 @@ const strip_names = [
   "alu1_leds", "alu2_leds", "alu_write_leds", "alu_read_leds", "read_bus_leds", "write_bus_leds",
   "data_bus_leds", "out1_leds", "out2_leds", "out3_leds", "arg1_leds", "arg2_leds", "arg3_leds",
   "pc_leds", "ram_addr_leds", "rom_addr_leds", "opcode_leds", "cmd_word_1st_part_leds",
-  "cmd_word_2nd_part_leds", "proc_mode_leds", "arg_num_leds", "frame_num_leds", "cnd_reg_leds",
-  "ram_read_leds", "ram_offset_leds", "ram_write_leds", "ram_addr_mode_leds", "rom_read_leds",
-  "rom_write_leds", "inp1_leds", "inp2_leds", "inp3_leds"
+  "proc_mode_leds", "micro_program_counter", "ram_read_leds", "ram_write_leds", "stack_pointer_leds",
+  "rom_read_leds", "rom_write_leds", "inp1_leds", "inp2_leds", "inp3_leds"
 ]
 
 let worker
@@ -201,7 +200,9 @@ function start_slow_step(delay) {
 }
 
 function stop_slow_step() {
-  clearInterval(step_timer)
+  if (updates_running) {
+    clearInterval(step_timer)
+  }
   stop_updates()
 }
 
@@ -327,29 +328,15 @@ function draw_front_panel() {
   display_number_on_leds("read_bus_leds", front_panel_info.read_bus)
   display_number_on_leds("data_bus_leds", front_panel_info.data_bus)
   display_number_on_leds("write_bus_leds", front_panel_info.write_bus)
-  display_number_on_leds("cnd_reg_leds", front_panel_info.conditional_bit)
 
   display_number_on_leds("pc_leds", front_panel_info["program_counter"])
-  display_number_on_leds("frame_num_leds", front_panel_info["frame_number"])
 
   let command_string = get_padded_num(front_panel_info.command_word,16,2)
   let first_part = parseInt(command_string.slice(0,5),2)
-  let second_part = parseInt(command_string.slice(15,16),2)
   display_number_on_leds("cmd_word_1st_part_leds", first_part)
-  display_number_on_leds("cmd_word_2nd_part_leds", second_part)
-  display_number_on_leds("arg_num_leds", front_panel_info.args_remaining)
+  display_number_on_leds("micro_program_counter", front_panel_info.micro_program_counter)
 
-  switch (front_panel_info.control_mode) {
-    case 0:
-      display_number_on_leds("proc_mode_leds", 0b100)
-      break
-    case 1:
-      display_number_on_leds("proc_mode_leds", 0b010)
-      break
-    case 2:
-      display_number_on_leds("proc_mode_leds", 0b001)
-      break
-  }
+  display_number_on_leds("proc_mode_leds", 2 - front_panel_info.control_mode)
 
   switch (command_string.slice(0,3)) {
     case "000":
@@ -389,11 +376,10 @@ function draw_front_panel() {
 
   display_number_on_leds("alu_read_leds",front_panel_info.activity_indicators.alu_read)
 
-  display_number_on_leds("ram_addr_leds", front_panel_info.activity_indicators.ram_address)
   display_number_on_leds("ram_write_leds", front_panel_info.activity_indicators.ram_write)
   display_number_on_leds("ram_read_leds", front_panel_info.activity_indicators.ram_read)
-  display_number_on_leds("ram_offset_leds", front_panel_info.activity_indicators.ram_frame_offset)
-  display_number_on_leds("ram_addr_mode_leds", front_panel_info.ram_addr_mode)
+  display_number_on_leds("ram_addr_leds", front_panel_info.activity_indicators.ram_address)
+  display_number_on_leds("stack_pointer_leds", front_panel_info.stack_pointer)
 
   display_number_on_leds("rom_addr_leds", front_panel_info.activity_indicators.rom_address)
   display_number_on_leds("rom_read_leds", front_panel_info.activity_indicators.rom_read)
