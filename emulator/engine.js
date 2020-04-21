@@ -584,6 +584,9 @@ function simulate_effect_of_write_bus_change() {
           case 2:
             stack_pointer = data_bus & 0b11111111111111
             break
+          case 3:
+            reset_timer()
+            break
           case 8:
             alu_operands[0] = data_bus
             activity_indicators.alu1_write = 1
