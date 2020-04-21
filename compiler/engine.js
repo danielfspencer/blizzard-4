@@ -9,12 +9,17 @@ let token_dump = []
 let timer = () => performance.now()
 importScripts('libraries.js')
 
+const min_frame_size = 2
+const max_frame_size = 2048
+const max_ram_size = 16384
 const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,none:0}
 const data_type_default_value = {u16:"0",s16:"0",u32:"0",s32:"0",float:"0",bool:"false",str:"\"\""}
 const mixable_numeric_types = [["u16","s16"],["u32","s32"]]
 const reserved_keywords = [
   "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include","__root","__global", "__return"
 ]
+
+const return_instruction = "return [stack.0] [stack.1]"
 
 onmessage = (event) => {
   let message = event.data
@@ -88,12 +93,11 @@ function init_vars() {
     include_only_signatures_mode: false,
     symbol_table: {__root:{}, __global:{}},
     struct_definitions: {},
-    free_ram: {__root:gen_free_ram_map(), __global:gen_free_ram_map()},
+    frame_usage: {__root:[], __global:[]},
     function_table: {},
     consts: [],
     funcs: {},
     required: {},
-    max_allocated_ram_slots: 0,
     inner_structure_label: null,
     labels: {__root: {if:0, for:0, while:0, str:0, expr_array:0}}
   }
@@ -222,14 +226,6 @@ function set_token(name, operation, exprs, line) {
   return set_var
 }
 
-function gen_free_ram_map() {
-  let map = []
-  for (let x = 0; x < 1023; x++) { //last word of RAM is function return address
-    map.push(x)
-  }
-  return map
-}
-
 function assert_local_name_available(name) {
   const places = [
     Object.keys(state.symbol_table[state.scope]),
@@ -323,39 +319,65 @@ function function_call(name, args) {
   return translate(token)
 }
 
-function alloc_block(size) {
-  log.debug(`Request for ${size} words(s) of RAM`)
+function alloc_stack(size) {
+  // TODO find first contiguous slot for allocation instead of assuming the end
+  log.debug(`Request for ${size} words(s) of stack`)
   let addrs = []
-  if (size > state.free_ram[state.scope].length) {
-    throw new CompError(`Out of memory, ${size} word(s) requested (only ${state.free_ram[state.scope].length} free)`)
-  }
+  let base_addr = frame_size(state.scope)
+
   for (let i = 0; i < size; i++) {
-    addrs.push(state.free_ram[state.scope].shift())
-  }
-
-  if (!state.scope.startsWith("sys.")) {
-    let allocated_slots = 1023 - state.free_ram[state.scope].length
-    if (allocated_slots > state.max_allocated_ram_slots) {
-      state.max_allocated_ram_slots = allocated_slots
+    let addr = base_addr + i
+    if (addr >= max_frame_size) {
+      throw new CompError(`Stack frame is out of memory, ${size} word(s) requested (only ${max_frame_size - base_addr} free)`)
     }
+    addrs.push(addr)
+    state.frame_usage[state.scope].push(addr)
   }
-  return addrs
-}
-
-function alloc_global_block(size) {
-  let old_state = state.scope
-  state.scope = "__global"
-  let addrs = alloc_block(size)
-  state.scope = old_state
 
   return addrs
 }
 
-function free_global_block(addrs) {
-  let old_state = state.scope
-  state.scope = "__global"
-  free_block(addrs)
-  state.scope = old_state
+function free_stack(addrs) {
+  let filter = item => !addrs.includes(item)
+  state.frame_usage[state.scope] = state.frame_usage[state.scope].filter(filter)
+}
+
+function alloc_global(size) {
+  // TODO find first contiguous slot for allocation instead of assuming the end
+  log.debug(`Request for ${size} words(s) of global RAM`)
+  let addrs = []
+  let base_addr = frame_size("__global")
+
+  for (let i = 0; i < size; i++) {
+    let addr = base_addr + i
+    if (addr >= max_ram_size) {
+      throw new CompError(`Out of memory, ${size} word(s) requested (only ${max_ram_size - base_addr} free)`)
+    }
+    addrs.push(addr)
+    state.frame_usage.__global.push(addr)
+  }
+
+  return addrs
+}
+
+
+function free_global(addrs) {
+  let filter = item => !addrs.includes(item)
+  state.frame_usage.__global = state.frame_usage.__global.filter(filter)
+}
+
+function frame_size(scope) {
+  let frame_usage = state.frame_usage[scope]
+
+  if (frame_usage.length == 0) {
+    if (scope === "__global") {
+      return 0
+    } else {
+      return min_frame_size
+    }
+  } else {
+    return frame_usage[frame_usage.length - 1] + 1
+  }
 }
 
 function assert_valid_datatype(type) {
@@ -394,17 +416,12 @@ function get_data_type_default(type) {
   }
 }
 
-function free_block(addrs) {
-  state.free_ram[state.scope].push(...addrs)
-  state.free_ram[state.scope].sort((a,b) => (a - b))
-}
-
 function get_temp_word() {
-  let addr = alloc_block(1)
+  let addr = alloc_stack(1)
   return {
     addr: addr[0],
-    label: `ram.${addr[0]}`,
-    free: () => free_block(addr)
+    label: `stack.${addr[0]}`,
+    free: () => free_stack([addr])
   }
 }
 
@@ -954,7 +971,7 @@ function translate(token, ctx_type) {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
       })
 
-      let memory = alloc_block(expr_value.length)
+      let memory = alloc_stack(expr_value.length)
 
       // add entry to symbol table
       state.symbol_table[state.scope][args.name] = {
@@ -969,7 +986,7 @@ function translate(token, ctx_type) {
       result = expr_prefix
 
       for (let expr_word of expr_value) {
-        result.push(`write ${expr_word} ram.${memory.shift()}`)
+        result.push(`write ${expr_word} stack.${memory.shift()}`)
       }
     } break
 
@@ -1038,7 +1055,7 @@ function translate(token, ctx_type) {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
       })
 
-      let memory = alloc_global_block(expr_value.length)
+      let memory = alloc_global(expr_value.length)
 
       // add entry to symbol table
       state.symbol_table.__global[args.name] = {
@@ -1053,7 +1070,7 @@ function translate(token, ctx_type) {
       result = expr_prefix
 
       for (let expr_word of expr_value) {
-        result.push(`write ${expr_word} ram^.${memory.shift()}`)
+        result.push(`write ${expr_word} ram.${memory.shift()}`)
       }
     } break
 
@@ -1071,8 +1088,8 @@ function translate(token, ctx_type) {
       assert_valid_datatype(data_type)
       let element_size = get_data_type_size(data_type)
 
-      let header_memory = alloc_block(3)
-      let array_memory = alloc_block(max_len * element_size)
+      let header_memory = alloc_stack(3)
+      let array_memory = alloc_stack(max_len * element_size)
 
       // add to symbol table
       state.symbol_table[state.scope][args.name] = {
@@ -1087,9 +1104,9 @@ function translate(token, ctx_type) {
         }
       }
 
-      result.push(`write ram.${array_memory[0]} ram.${header_memory[0]}`)
-      result.push(`write ${current_len} ram.${header_memory[1]}`)
-      result.push(`write ${max_len} ram.${header_memory[2]}`)
+      result.push(`write stack.${array_memory[0]} stack.${header_memory[0]}`)
+      result.push(`write ${current_len} stack.${header_memory[1]}`)
+      result.push(`write ${max_len} stack.${header_memory[2]}`)
 
       // call function to copy inital values to array
       load_lib("sys.rom_to_ram_copy")
@@ -1113,8 +1130,8 @@ function translate(token, ctx_type) {
       assert_valid_datatype(data_type)
       let element_size = get_data_type_size(data_type)
 
-      let header_memory = alloc_global_block(3)
-      let array_memory = alloc_global_block(max_len * element_size)
+      let header_memory = alloc_global(3)
+      let array_memory = alloc_global(max_len * element_size)
 
       // add to symbol table
       state.symbol_table.__global[args.name] = {
@@ -1178,9 +1195,9 @@ function translate(token, ctx_type) {
 
       let ram_prefix
       if (is_global) {
-        ram_prefix = "ram^"
-      } else {
         ram_prefix = "ram"
+      } else {
+        ram_prefix = "stack"
       }
 
       // copy the new value into the variable's memory
@@ -1268,7 +1285,7 @@ function translate(token, ctx_type) {
 
       result.push(...expr_prefix)
 
-      let memory = alloc_block(item_size)
+      let memory = alloc_stack(item_size)
       let buffer = memory.slice()
 
       for (let word of expr_values) {
@@ -1292,7 +1309,7 @@ function translate(token, ctx_type) {
       }
 
       temp_var.free()
-      free_block(memory)
+      free_stack(memory)
     } break
 
     case "struct_member_set": {
@@ -1329,7 +1346,7 @@ function translate(token, ctx_type) {
       })
 
       for (let i = 0; i < expr_value.length; i++) {
-        result.push(`write ${expr_value[i]} ram.${target_addrs[i]}`)
+        result.push(`write ${expr_value[i]} stack.${target_addrs[i]}`)
       }
     } break
 
@@ -1478,9 +1495,9 @@ function translate(token, ctx_type) {
       }
 
       if (is_global) {
-        free_global_block(addrs)
+        free_global(addrs)
       } else {
-        free_block(addrs)
+        free_stack(addrs)
       }
 
       delete state.symbol_table[state.scope][args.name]
@@ -1541,7 +1558,7 @@ function translate(token, ctx_type) {
 
         if (args.expr.name === "var_or_const" && args.expr.arguments.name == "__return") {
           // the __return special variable already points to the return_buffer so we don't need to copy
-          result.push("return")
+          result.push(return_instruction)
           break;
         }
 
@@ -1562,12 +1579,12 @@ function translate(token, ctx_type) {
         // copy result into return buffer
         let return_buffer = table_entry.return_value
         for (let i = 0; i < value.length; i++) {
-          result.push(`write ${value[i]} ram.${return_buffer[i]}`)
+          result.push(`write ${value[i]} stack.${return_buffer[i]}`)
         }
       }
 
       // add the actual return instruction
-      result.push("return")
+      result.push(return_instruction)
     } break
 
     case "include": {
@@ -1584,14 +1601,14 @@ function translate(token, ctx_type) {
       if (state.inner_structure_label === null) {
         throw new CompError("'break' can only be used in for/while loops")
       }
-      result.push(`goto ${state.inner_structure_label}_end`)
+      result.push(`goto ${state.inner_structure_label}_end 0`)
     } break
 
     case "continue": {
       if (state.inner_structure_label === null) {
         throw new CompError("'continue' can only be used in for/while loops")
       }
-      result.push(`goto ${state.inner_structure_label}_cond`)
+      result.push(`goto ${state.inner_structure_label}_cond 0`)
     } break
 
     case "signature_def": {
@@ -2292,9 +2309,9 @@ function translate(token, ctx_type) {
         // it's a regular variable/argument
         for (let addr of table_entry.specific.ram_addresses) {
           if (is_global) {
-            registers.push(`[ram^.${addr}]`)
-          } else {
             registers.push(`[ram.${addr}]`)
+          } else {
+            registers.push(`[stack.${addr}]`)
           }
         }
       } else if (table_entry.type === "constant") {
@@ -2375,7 +2392,7 @@ function translate(token, ctx_type) {
         prefix.push(`write ${base_addr} ram+.2`)
         prefix.push("call func_sys.array_pointer_3") //output is in ram+.3
 
-        let memory = alloc_block(item_size)
+        let memory = alloc_stack(item_size)
 
         //copy item from calculated address to allocated result registers
         prefix.push("write [ram+.3] ram+.0")
@@ -2418,7 +2435,7 @@ function translate(token, ctx_type) {
         prefix.push(`write ${base_addr} ram+.2`)
         prefix.push("call func_sys.array_pointer_3") //output is in ram+.3
 
-        let memory = alloc_block(item_size)
+        let memory = alloc_stack(item_size)
 
         //copy item from calculated address to allocated result registers
         load_lib("sys.ram_to_ram_copy")
@@ -2485,7 +2502,7 @@ function translate(token, ctx_type) {
 
         // copy each word into argument memory
         for (let i = 0; i < details.ram_addresses.length; i++) {
-          prefix.push(`write ${expr_value[i]} ram+.${details.ram_addresses[i]}`)
+          prefix.push(`write ${expr_value[i]} stack.${details.ram_addresses[i] + frame_size(state.scope)}`)
         }
 
         args_processed++
@@ -2498,11 +2515,11 @@ function translate(token, ctx_type) {
       }
 
       // actually call the function
-      prefix.push(`call ${entry_point}`)
+      prefix.push(`call ${entry_point} ${frame_size(state.scope)}`)
 
       registers = []
       for (let addr of table_entry.return_value) {
-        registers.push(`[ram+.${addr}]`)
+        registers.push(`[stack.${addr + frame_size(state.scope)}]`)
       }
 
       if (args.ignore_type_mismatch) {
@@ -2529,7 +2546,7 @@ function translate(token, ctx_type) {
       }
 
       let size = get_data_type_size(type)
-      let temp_buffer = alloc_block(size)
+      let temp_buffer = alloc_stack(size)
 
       // make pointer value available
       prefix.push(...addr_prefix)
@@ -2539,7 +2556,7 @@ function translate(token, ctx_type) {
       prefix.push(...buffer_prefix)
 
       // lookup pointer value and copy into temp buffer
-      prefix.push(`copy ${buffer_addr} ram.${temp_buffer[0]}`)
+      prefix.push(`copy ${buffer_addr} stack.${temp_buffer[0]}`)
 
       // if the target type is more than one word, copy more words
       if (size > 1) {
@@ -2547,14 +2564,14 @@ function translate(token, ctx_type) {
 
         for (let i = 1; i < size; i++) {
           prefix.push(`write ${i} alu.2`)
-          prefix.push(`copy [alu.+] ram.${temp_buffer[i]}`)
+          prefix.push(`copy [alu.+] stack.${temp_buffer[i]}`)
         }
       }
 
       // output registers are the values of the temp buffer
       registers = []
       for (let addr of temp_buffer) {
-        registers.push(`[ram.${addr}]`)
+        registers.push(`[stack.${addr}]`)
       }
     } break
 
@@ -2615,13 +2632,12 @@ function translate(token, ctx_type) {
           throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
         }
         result.push(...prefix)
-        result.push(`write ${value[0]} ctl.cnd`)
-        result.push(`goto? ${next_case_label}`)
+        result.push(`goto ${next_case_label} ${value[0]}`)
 
         result.push(...translate_body(main_tokens[i]))
 
         if ((else_present || else_if_present) && i !==  exprs.length) {
-          result.push(`goto ${label}_end`)
+          result.push(`goto ${label}_end 0`)
         }
       }
 
@@ -2652,8 +2668,7 @@ function translate(token, ctx_type) {
         throw new CompError(`Conditional expression expected type 'bool', got '${expr_prefix_and_value[2]}'`)
       }
       result.push(...expr_prefix)
-      result.push(`write ${expr_value} ctl.cnd`)
-      result.push(`goto? ${label}_end`)
+      result.push(`goto ${label}_end ${expr_value}`)
       result.push([(`${label}_start:`)])
 
       let prev_state = state.inner_structure_label
@@ -2666,9 +2681,8 @@ function translate(token, ctx_type) {
       result.push(...cmd_result)
 
       result.push(...expr_prefix)
-      result.push(`write ${expr_value} ctl.cnd`)
-      result.push(`goto? ${label}_end`)
-      result.push(`goto ${label}_start`)
+      result.push(`goto ${label}_end ${expr_value}`)
+      result.push(`goto ${label}_start 0`)
       result.push(`${label}_end:`)
     } break
 
@@ -2682,8 +2696,7 @@ function translate(token, ctx_type) {
         throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
       }
       result.push(...prefix)
-      result.push(`write ${value} ctl.cnd`)
-      result.push(`goto? ${label}_end`)
+      result.push(`goto ${label}_end ${value}`)
       result.push([(`${label}_start:`)])
 
       let prev_state = state.inner_structure_label
@@ -2693,9 +2706,8 @@ function translate(token, ctx_type) {
       state.inner_structure_label = prev_state
 
       result.push(...prefix)
-      result.push(`write ${value} ctl.cnd`)
-      result.push(`goto? ${label}_end`)
-      result.push(`goto ${label}_start`)
+      result.push(`goto ${label}_end ${value}`)
+      result.push(`goto ${label}_start 0`)
       result.push(`${label}_end:`)
     } break
 
@@ -2754,7 +2766,7 @@ function translate(token, ctx_type) {
       state.scope = args.name
 
       // generate free ram and symbol table for this scope
-      state.free_ram[state.scope] = gen_free_ram_map()
+      state.frame_usage[state.scope] = []
       state.symbol_table[state.scope] = {}
       state.labels[state.scope] = {if:0,for:0,while:0,str:0,expr_array:0}
 
@@ -2783,7 +2795,7 @@ function translate(token, ctx_type) {
         let is_optional_arg = entry.arguments.expr !== undefined
         let size = get_data_type_size(type)
 
-        let memory = alloc_block(size)
+        let memory = alloc_stack(size)
 
         // put argument into symbol table
         state.symbol_table[args.name][name] = {
@@ -2814,7 +2826,7 @@ function translate(token, ctx_type) {
             target.push(...expr_prefix)
 
             for (let word of expr_value) {
-              target.push(`write ${word} ram.${memory.shift()}`)
+              target.push(`write ${word} stack.${memory.shift()}`)
             }
           }
         } else {
@@ -2828,7 +2840,7 @@ function translate(token, ctx_type) {
       }
 
       // allocate space for return value (or 0 words if type is "none")
-      let return_buffer = alloc_block(get_data_type_size(args.type))
+      let return_buffer = alloc_stack(get_data_type_size(args.type))
       state.function_table[args.name].return_value = return_buffer
 
       // add __return variable to symbol table
@@ -2857,8 +2869,8 @@ function translate(token, ctx_type) {
       log.debug(`namespace -> ${state.scope}`)
 
       // add return instruction unless it is already there
-      if (target[target.length -1] !== "  return") {
-        target.push("return")
+      if (target[target.length -1] !== ` ${return_instruction}`) {
+        target.push(` ${return_instruction}`)
       }
     } break
 
@@ -3046,7 +3058,9 @@ function compile(input, nested) {
         postMessage(["update",(((i+1)/tokens.length)*100)+50])
       }
     }
-    output += "stop"
+    output += "stop 0 0"
+
+    output = `write ${frame_size("__global")} ctl.sp\n${output}`
 
     t1 = timer()
     log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
@@ -3085,14 +3099,6 @@ function compile(input, nested) {
     if (non_deallocated_vars > 0) {
       log.warn(`${non_deallocated_vars} variable(s) are never deallocated`)
     }
-
-    let ram_percent = Math.round((state.max_allocated_ram_slots / 1023) * 100)
-
-    let ram_message = `RAM use: ${ram_percent}% (${state.max_allocated_ram_slots}/1023 words)`
-    if (typeof process === 'undefined') { // if we are running in a browser not nodejs
-      ram_message += `<progress value="${state.max_allocated_ram_slots}" max="1023" class="ram-bar"></progress>`
-    }
-    log.info(ram_message)
 
     log.info(`Standard library functions used: ${Object.keys(state.required).length}`)
   }
