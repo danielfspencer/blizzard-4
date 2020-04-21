@@ -1,6 +1,7 @@
 const libs = {
   "sys.consts": [
-    "const u16 SYS_KEYBOARD_ADDR 4102"
+    "const u16 SYS_KEYBOARD_ADDR 4102",
+    "const u16 SYS_TIMER_ADDR 3"
   ],
   "sys.u16_multiply": [
     "def sys.u16_multiply(u16 a, u16 b) -> u16",
