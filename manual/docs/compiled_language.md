@@ -416,9 +416,9 @@ def shift_right(u16 start = 6144, u16 end = 7167)
 ## Inline assembly
 
 #### Single line mode
-Single lines of assembly language can be included as if they were any other command. Simply enclose the assembly in braces:
+Single lines of assembly language can be included as if they were any other command. Simply enclose the assembly in a pair of hash characters:
 ```javascript
-{copy [alu.+] [ram.0]}
+#copy [alu.+] [ram.0]#
 ```
 In this mode there are special symbols that can be used to refer to variables that exist in the compiled program:
 
@@ -427,7 +427,7 @@ In this mode there are special symbols that can be used to refer to variables th
 
 | ```.b4``` becomes -> | assembly |
 | :------------------- | :------- |
-| `var u16 test 0xffff`<br>`{write &test vram.0}`<br>`{write $test vram.0}` | `write 0xffff ram.0`<br>`write ram.0 vram.0`<br>`write [ram.0] vram.0` |
+| `var u16 test 0xffff`<br>`#write &test vram.0#`<br>`#write $test vram.0#` | `write 0xffff stack.0`<br>`write stack.0 vram.0`<br>`write [stack.0] vram.0` |
 
 If the variable's data type is more than one word long, a (zero-based) index in square brackets can be added to specify which word in should be referred to:
 
@@ -436,7 +436,7 @@ If the variable's data type is more than one word long, a (zero-based) index in 
 
 | ```.b4``` becomes -> | assembly |
 | :------------------- | :------- |
-| `var u16 u32 0xffffffff`<br>`{write &test[1] vram.0}`<br>`{write $test[1] vram.0}` | `write 0xffff ram.0`<br>`write 0xffff ram.1`<br>`write ram.1 vram.0`<br>`write [ram.1] vram.0` |
+| `var u16 u32 0xffffffff`<br>`#write &test[1] vram.0#`<br>`#write $test[1] vram.0#` | `write 0xffff stack.0`<br>`write 0xffff stack.1`<br>`write stack.1 vram.0`<br>`write [stack.1] vram.0` |
 
 
 

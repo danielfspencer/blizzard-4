@@ -53,12 +53,12 @@ img {
 
 table {
   border-collapse: collapse;
-  margin-bottom: 8px;
+  margin: 0 auto 8px;
 }
 
 th, td {
   border: 1px solid #ddd;
-  padding: 8px;
+  padding: 6px;
 }
 
 code {
