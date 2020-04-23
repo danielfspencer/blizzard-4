@@ -504,7 +504,10 @@ function tokenise(input, line) {
     token = {name:"comment",type:"command",arguments:{"comment":input}}
 
   } else if (/^{(.+)}$/.test(input)) {
-    token = {name:"asm",type:"command",arguments:{value:/{(.+)}/.exec(input)[1]}}
+    token = {name:"inline_asm",type:"expression",arguments:{value:/{(.+)}/.exec(input)[1]}}
+
+  } else if (/^#([^#]+)#$/.test(input)) {
+    token = {name:"asm",type:"command",arguments:{value:/^#([^#]+)#$/.exec(input)[1]}}
 
   } else if (/^<(.+)>$/.test(input)) {
     let content = /^<(.+)>$/.exec(input)[1]
@@ -1001,7 +1004,7 @@ function translate(token, ctx_type) {
         value = args.expr
       }
 
-      if (!(["str", "number"].includes(value.name))) {
+      if (!(["str", "number", "inline_asm"].includes(value.name))) {
         log.info(value)
         throw new CompError("Constant must be static values")
       }
@@ -1631,6 +1634,10 @@ function translate(token, ctx_type) {
     let registers = [""]
     let type = ctx_type
     switch (token.name) {
+
+    case "inline_asm": {
+      registers = args.value.split(",")
+    } break
 
     // number types
     case "number":  { // a generic number that can be turned into the type state.required by the context
