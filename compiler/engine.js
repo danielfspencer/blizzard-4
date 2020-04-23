@@ -1252,20 +1252,27 @@ function translate(token, ctx_type) {
       assert_compatable_types(array_type, expr_type, token.line, () => {
         throw new CompError(`Array expected type '${array_type}', got '${expr_type}'`)
       })
-
       result.push(...expr_prefix)
 
       let memory = alloc_global(item_size)
       let buffer = memory.slice()
+      let source_addr = `ram.${memory[0]}`
 
+      // copy expression into buffer area
       for (let word of expr_values) {
         result.push(`write ${word} ram.${buffer.shift()}`)
       }
 
-      let source_addr = `ram.${memory[0]}`
-
-      let [call_prefix,,] = function_call("sys.array_set", [`{${base_addr}}`, `{${item_size}}`, `{${index_value}}`, `{${source_addr}}`], true)
-      result.push(...call_prefix)
+      if (item_size === 1) {
+        // fast path for single word items
+        result.push(`write ${base_addr} alu.1`)
+        result.push(`write ${index_value} alu.2`)
+        result.push(`write [${source_addr}] [alu.+]`)
+      } else {
+        // slower path using mem_copy for >1 word data types
+        let [call_prefix,,] = function_call("sys.array_set", [`{${base_addr}}`, `{${item_size}}`, `{${index_value}}`, `{${source_addr}}`], true)
+        result.push(...call_prefix)
+      }
 
       // free_global(memory) might corrupt 1st stack frame
     } break
@@ -2308,15 +2315,25 @@ function translate(token, ctx_type) {
         }
         prefix.push(...index_prefix)
 
-        let dest_memory = alloc_global(item_size)
-        let abs_dest = `ram.${dest_memory[0]}`
 
-        let [call_prefix,,] = function_call("sys.array_read", [`{${base_addr}}`, `{${item_size}}`, `{${index_value}}`, `{${abs_dest}}`], true)
-        prefix.push(...call_prefix)
-
-        registers = []
-        for (let addr of dest_memory) {
-          registers.push(`[ram.${addr}]`)
+        if (item_size === 1) {
+          // fast path for single word items
+          let result = alloc_global(1)
+          // TODO leaks global memory
+          prefix.push(`write ${base_addr} alu.1`)
+          prefix.push(`write ${index_value} alu.2`)
+          prefix.push(`copy [alu.+] ram.${result}`)
+          registers = [`[ram.${result}]`]
+        } else {
+          // slower path using mem_copy for >1 word data types
+          let dest_memory = alloc_global(item_size)
+          let abs_dest = `ram.${dest_memory[0]}`
+          let [call_prefix,,] = function_call("sys.array_read", [`{${base_addr}}`, `{${item_size}}`, `{${index_value}}`, `{${abs_dest}}`], true)
+          prefix.push(...call_prefix)
+          registers = []
+          for (let addr of dest_memory) {
+            registers.push(`[ram.${addr}]`)
+          }
         }
         type = array_type
 
