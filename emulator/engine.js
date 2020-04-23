@@ -445,9 +445,6 @@ function simulate_effect_of_read_bus_change() {
     switch (card_address) {                                               //control unit + timer + alu
       case 0:
         switch (address) {
-          case 1:
-            // cnd bit not readable
-            break
           case 2:
             data_bus = stack_pointer
             break
