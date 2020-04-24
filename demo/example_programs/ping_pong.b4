@@ -34,9 +34,7 @@ def set_word(u16 data, u16 addr)
 
 def get_key() -> u16
   include sys.consts
-  let u16 scan_code
-
-  scan_code = *SYS_KEYBOARD_ADDR
+  let u16 scan_code = *SYS_KEYBOARD_ADDR
 
   while scan_code > 0
     if scan_code == 0xf0
@@ -47,6 +45,8 @@ def get_key() -> u16
       return scan_code
 
     scan_code = *SYS_KEYBOARD_ADDR
+
+  return 0
 
 def draw_ball(s16 x, s16 y, s16 old_x, s16 old_y)
   sys.vram.set_pixel(x,y)
