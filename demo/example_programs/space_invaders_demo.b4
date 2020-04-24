@@ -11,15 +11,15 @@ def draw_8x8(u16 rom_addr, u16 x, u16 y)
   vram_addr += x
   vram_addr += offset
   repeat 8
-    #copy $vram_addr alu.1#
-    #copy &inv_mask alu.2#
-    #copy alu.& ram.7#
-    #copy $rom_addr alu.1#
-    #copy &mask alu.2#
-    #copy alu.& ram.8#
-    #copy ram.8 alu.1#
-    #copy ram.7 alu.2#
-    #copy alu.| $vram_addr#
+    {copy $vram_addr alu.1}
+    {copy &inv_mask alu.2}
+    {copy alu.& ram.7}
+    {copy $rom_addr alu.1}
+    {copy &mask alu.2}
+    {copy alu.& ram.8}
+    {copy ram.8 alu.1}
+    {copy ram.7 alu.2}
+    {copy alu.| $vram_addr}
     rom_addr++
     vram_addr += 8
 
@@ -27,87 +27,87 @@ def shift_right(u16 start, u16 end)
   // shift a portion of the screen right one pixel
   while end > start
     repeat 8
-      #write 1 alu.2#
-      #copy $end alu.1#
-      #copy alu.>> $end#
-      #write $end alu.1#
-      #write [alu.-] &end#
+      {write 1 alu.2}
+      {copy $end alu.1}
+      {copy alu.>> $end}
+      {write $end alu.1}
+      {write [alu.-] &end}
 
 def shift_left(u16 start, u16 end)
   // shift a portion of the screen left one pixel
   while start < end
-    #write 1 alu.2#
+    {write 1 alu.2}
     repeat 8
-      #copy $start alu.1#
-      #copy alu.<< $start#
-      #write $start alu.1#
-      #write [alu.+] &start#
+      {copy $start alu.1}
+      {copy alu.<< $start}
+      {write $start alu.1}
+      {write [alu.+] &start}
 
 def shift_down(u16 start, u16 end)
   // shift a portion of the screen down 3 pixels
   while end > start
-    #copy &end alu.1#
+    {copy &end alu.1}
     repeat 8
-      #write 32 alu.2#
-      #copy $end [alu.+]#
-      #write 1 alu.2#
-      #write [alu.-] &end#
-      #copy &end alu.1#
+      {write 32 alu.2}
+      {copy $end [alu.+]}
+      {write 1 alu.2}
+      {write [alu.-] &end}
+      {copy &end alu.1}
 
 def shift_sprite_right(u16 start)
   let u16 end = start + 64
   let bool carry
   while end > start
-    #copy $end alu.1#
-    #copy alu.>> $end#
+    {copy $end alu.1}
+    {copy alu.>> $end}
     end--
-    #copy $end ram.2#
+    {copy $end ram.2}
     if carry
       end++
-      #copy $end alu.1#
-      #write 0b1000000000000000 alu.2#
-      #copy alu.| $end#
+      {copy $end alu.1}
+      {write 0b1000000000000000 alu.2}
+      {copy alu.| $end}
       end--
 
-    #copy $end alu.1#
-    #copy alu.>> $end#
+    {copy $end alu.1}
+    {copy alu.>> $end}
     end -= 7
-    #copy $end ram.2#
+    {copy $end ram.2}
     if carry
       end += 7
-      #copy $end alu.1#
-      #write 0b1000000000000000 alu.2#
-      #copy alu.| $end#
+      {copy $end alu.1}
+      {write 0b1000000000000000 alu.2}
+      {copy alu.| $end}
       end -= 7
 
 def shift_sprite_left(u16 start)
   let u16 end = start + 65
   let bool carry
   while start < end
-    #copy $start alu.1#
-    #copy alu.<< $start#
+    {copy $start alu.1}
+    {copy alu.<< $start}
     start++
-    #copy $start alu.1#
-    #write 0b1000000000000000 alu.2#
-    #copy alu.ov ram.2#
+    {copy $start alu.1}
+    {write 0b1000000000000000 alu.2}
+    {copy alu.ov ram.2}
     if carry
       start--
-      #copy $start alu.1#
-      #write 0b0000000000000001 alu.2#
-      #copy alu.| $start#
+      {copy $start alu.1}
+      {write 0b0000000000000001 alu.2}
+      {copy alu.| $start}
       start++
 
-    #copy $start alu.1#
-    #copy alu.<< $start#
+    {copy $start alu.1}
+    {copy alu.<< $start}
     start += 7
-    #copy $start alu.1#
-    #write 0b1000000000000000 alu.2#
-    #copy alu.ov ram.2#
+    {copy $start alu.1}
+    {write 0b1000000000000000 alu.2}
+    {copy alu.ov ram.2}
     if carry
       start -= 7
-      #copy $start alu.1#
-      #write 0b0000000000000001 alu.2#
-      #copy alu.| $start#
+      {copy $start alu.1}
+      {write 0b0000000000000001 alu.2}
+      {copy alu.| $start}
       start += 7
 
 def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
@@ -119,21 +119,21 @@ def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
   y += word_x
   y += 6144
 
-  #write sys.vram.shifted_pixels ram.4#
-  #write [ram.4] alu.1#
-  #write $sub_x alu.2#
-  #write [alu.+] ram.4#
+  {write sys.vram.shifted_pixels ram.4}
+  {write [ram.4] alu.1}
+  {write $sub_x alu.2}
+  {write [alu.+] ram.4}
 
   if data
-    #copy [ram.4] alu.1#
-    #copy $y alu.2#
-    #write [alu.|] $y#
+    {copy [ram.4] alu.1}
+    {copy $y alu.2}
+    {write [alu.|] $y}
   else
-    #copy [ram.4] alu.1#
-    #copy alu.! ram.5#
-    #copy ram.5 alu.1#
-    #copy $y alu.2#
-    #write [alu.&] $y#
+    {copy [ram.4] alu.1}
+    {copy alu.! ram.5}
+    {copy ram.5 alu.1}
+    {copy $y alu.2}
+    {write [alu.&] $y}
 
 // lower numbers = faster
 const u16 alien_speed = 8
@@ -141,7 +141,7 @@ const u16 shot_speed = 1
 
 // addresses for sprites
 global u16 cannon_sprite
-#write sprites &cannon_sprite#
+{write sprites &cannon_sprite}
 global u16 invader_sprite = cannon_sprite + 8
 
 // status of the input buttons
