@@ -510,10 +510,10 @@ function tokenise(input, line) {
     token = {name:"comment",type:"command",arguments:{"comment":input}}
 
   } else if (/^{(.+)}$/.test(input)) {
-    token = {name:"inline_asm",type:"expression",arguments:{value:/{(.+)}/.exec(input)[1]}}
+    token = {name:"asm",type:"command",arguments:{value:/{(.+)}/.exec(input)[1]}}
 
   } else if (/^#([^#]+)#$/.test(input)) {
-    token = {name:"asm",type:"command",arguments:{value:/^#([^#]+)#$/.exec(input)[1]}}
+    token = {name:"inline_asm",type:"expression",arguments:{value:/^#([^#]+)#$/.exec(input)[1]}}
 
   } else if (/^<(.+)>$/.test(input)) {
     let content = /^<(.+)>$/.exec(input)[1]
@@ -1114,7 +1114,7 @@ function translate(token, ctx_type) {
       let base_addr = `[${prefix}${header_memory[0]}]`
 
       // call function to copy inital values to array
-      let [call_prefix, call_value, call_type] = function_call("sys.mem_copy", [`{${source_base_addr}}`, `{${base_addr}}`, `{${current_len * element_size}}`], true)
+      let [call_prefix, call_value, call_type] = function_call("sys.mem_copy", [`#${source_base_addr}#`, `#${base_addr}#`, `#${current_len * element_size}#`], true)
       result.push(...call_prefix)
 
     } break
@@ -1244,7 +1244,7 @@ function translate(token, ctx_type) {
         result.push(`write [${source_addr}] [alu.+]`)
       } else {
         // slower path using mem_copy for >1 word data types
-        let [call_prefix,,] = function_call("sys.array_set", [`{${base_addr}}`, `{${item_size}}`, `{${index_value}}`, `{${source_addr}}`], true)
+        let [call_prefix,,] = function_call("sys.array_set", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${source_addr}#`], true)
         result.push(...call_prefix)
       }
 
@@ -1347,7 +1347,7 @@ function translate(token, ctx_type) {
         }
         result.push(...index_prefix)
 
-        let [call_prefix,,] = function_call("sys.array_shift", [`{${base_addr}}`, `{${item_size}}`, `{${index_value}}`, `{${current_len}}`], true)
+        let [call_prefix,,] = function_call("sys.array_shift", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${current_len}#`], true)
         result.push(...call_prefix)
 
         // put item at the specified index
@@ -2302,7 +2302,7 @@ function translate(token, ctx_type) {
           // slower path using mem_copy for >1 word data types
           let dest_memory = alloc_global(item_size)
           let abs_dest = `ram.${dest_memory[0]}`
-          let [call_prefix,,] = function_call("sys.array_read", [`{${base_addr}}`, `{${item_size}}`, `{${index_value}}`, `{${abs_dest}}`], true)
+          let [call_prefix,,] = function_call("sys.array_read", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${abs_dest}#`], true)
           prefix.push(...call_prefix)
           registers = []
           for (let addr of dest_memory) {
