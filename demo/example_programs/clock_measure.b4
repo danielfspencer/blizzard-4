@@ -1,14 +1,14 @@
 include sys.consts
 
-var u16 value
-var u16 freq
+let u16 value
+let u16 freq
 sys.print_string("kHz", 6, 0)
 
 while true
   // reset the timer
   *SYS_TIMER_ADDR = 0
 
-  for var u16 i; i < 20; i++
+  for let u16 i = 0; i < 20; i++
     // wait a few cycles
 
   value = *SYS_TIMER_ADDR

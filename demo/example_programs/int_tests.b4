@@ -4,10 +4,10 @@ global u16 tests_passed
 global u16 total_tests
 global u16 sub_test_num
 
-var u16 u16_tmp
-var s16 s16_tmp
-var u32 u32_tmp
-var s32 s32_tmp
+let u16 u16_tmp
+let s16 s16_tmp
+let u32 u32_tmp
+let s32 s32_tmp
 
 def assert(bool condition)
   if condition
@@ -148,9 +148,9 @@ assert(s16_tmp == 4)
 s16_tmp = -2 / -2
 assert(s16_tmp == 1)
 
-const s16 minus10 -10
-const s16 minus50 -50
-const s16 minus5 -5
+const s16 minus10 = -10
+const s16 minus50 = -50
+const s16 minus5 = -5
 
 s16_tmp = minus50 / minus10
 assert(s16_tmp == 5)
@@ -167,8 +167,8 @@ assert(s16_tmp == 21609)
 s16_tmp = 9 ^ 4
 assert(s16_tmp == 6561)
 
-const s16 minus9 -9
-const s16 minus729 -729
+const s16 minus9 = -9
+const s16 minus729 = -729
 
 s16_tmp = minus9  ^ 4
 assert(s16_tmp == 6561)
@@ -297,9 +297,9 @@ assert(s32_tmp == 4)
 s32_tmp = -2 / -2
 assert(s32_tmp == 1)
 
-const s32 s32_minus10 -10
-const s32 s32_minus50 -50
-const s32 s32_minus5 -5
+const s32 s32_minus10 =  -10
+const s32 s32_minus50 = -50
+const s32 s32_minus5 = -5
 
 s32_tmp = s32_minus50 / s32_minus10
 assert(s32_tmp == 5)
@@ -316,8 +316,8 @@ assert(s32_tmp == 21609)
 s32_tmp = 9 ^ 4
 assert(s32_tmp == 6561)
 
-const s32 s32_minus9 -9
-const s32 s32_minus729 -729
+const s32 s32_minus9 = -9
+const s32 s32_minus729 = -729
 s32_tmp = s32_minus9 ^ 4
 assert(s32_tmp == 6561)
 
