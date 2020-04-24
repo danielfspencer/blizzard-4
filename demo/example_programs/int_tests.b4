@@ -1,7 +1,7 @@
-global u16 line
+global u16 line = 0
+global u16 tests_passed = 0
+global u16 total_tests = 0
 global str current_type
-global u16 tests_passed
-global u16 total_tests
 global u16 sub_test_num
 
 let u16 u16_tmp
