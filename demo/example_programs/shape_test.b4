@@ -1,5 +1,5 @@
-var u16 counter
-var u16 base
+let u16 counter
+let u16 base
 while true
   counter = 8
   base = 4

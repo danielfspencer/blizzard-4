@@ -13,7 +13,6 @@ const min_frame_size = 2
 const max_frame_size = 2048
 const max_ram_size = 16384
 const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,none:0}
-const data_type_default_value = {u16:"0",s16:"0",u32:"0",s32:"0",float:"0",bool:"false",str:"\"\""}
 const mixable_numeric_types = [["u16","s16"],["u32","s32"]]
 const reserved_keywords = [
   "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include","__root","__global", "__return"
@@ -423,14 +422,6 @@ function get_data_type_size(type) {
   }
 }
 
-function get_data_type_default(type) {
-  if (type in data_type_default_value) {
-    return data_type_default_value[type]
-  } else {
-    throw new CompError(`Type '${type}' has no default value and must initalised`)
-  }
-}
-
 function get_temp_word() {
   let addr = alloc_stack(1)
   return {
@@ -519,10 +510,10 @@ function tokenise(input, line) {
     token = {name:"comment",type:"command",arguments:{"comment":input}}
 
   } else if (/^{(.+)}$/.test(input)) {
-    token = {name:"inline_asm",type:"expression",arguments:{value:/{(.+)}/.exec(input)[1]}}
+    token = {name:"asm",type:"command",arguments:{value:/{(.+)}/.exec(input)[1]}}
 
   } else if (/^#([^#]+)#$/.test(input)) {
-    token = {name:"asm",type:"command",arguments:{value:/^#([^#]+)#$/.exec(input)[1]}}
+    token = {name:"inline_asm",type:"expression",arguments:{value:/^#([^#]+)#$/.exec(input)[1]}}
 
   } else if (/^<(.+)>$/.test(input)) {
     let content = /^<(.+)>$/.exec(input)[1]
@@ -538,41 +529,30 @@ function tokenise(input, line) {
   } else if (/^\"(.+)\"$|^(\"\")$/.test(input)) {     //string
     token = {name:"str",type:"expression",arguments:{value:input,type_guess:"str"}}
 
-  } else if (/^(var|global)/.test(input)) {        // (var/global) [type] [name] <expr>
-    if (list.length < 3) {
-      throw new CompError("Decleration syntax:\nvar/global [type] [name] <expr>")
-    }
+  } else if (/^(const|global|let) (\S+) (\S+)(?: = (.+))?$/.test(input)) {        // (var/global) [type] [name] <expr>
+    let matches = /^(const|global|let) (\S+) (\S+)(?: = (.+))?$/.exec(input)
 
-    let alloc_type = list[0]      // var / const / global
-    let type = list[1]
-    let name = list[2]
-    let expr
+    let alloc_type = matches[1]
+    let type =  matches[2]
+    let name = matches[3]
+    let expr_text = matches[4]
+
     assert_valid_name(name)
-
-    if (list.length >= 4) {
-      expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
-    }
-
-    let is_global = alloc_type === "global"
-
-    token = {name:"var_alloc",type:"command",arguments: { type:type, name:name, expr:expr, global:is_global }}
-
-  } else if (/^const/.test(input)) {        // const [type] [name] <expr>
-    if (list.length < 3) {
-      throw new CompError("Decleration syntax:\nconst [type] [name] <expr>")
-    }
-
-    let alloc_type = list[0]      // var / const / global
-    let type = list[1]
-    let name = list[2]
     let expr
-    assert_valid_name(name)
-
-    if (list.length >= 4) {
-      expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
+    if (expr_text !== undefined) {
+      expr = tokenise(expr_text, line)
     }
 
-    token = {name:"const_alloc",type:"command",arguments: { type:type, name:name, expr:expr, global:true }}
+    let token_name, is_global
+    if (alloc_type === "const") {
+      token_name = "const_alloc"
+      is_global = true
+    } else {
+      token_name = "var_alloc"
+      is_global = alloc_type == "global"
+    }
+
+    token = {name:token_name, type:"command", arguments: { type:type, name:name, expr:expr, global:is_global }}
 
   } else if (list[0] === "if") {               // if [bool]
     if (list.length > 1) {
@@ -995,30 +975,20 @@ function translate(token, ctx_type) {
 
       assert_valid_datatype(args.type)
 
-      let value
-      if (args.expr === undefined) {
-        value = tokenise(get_data_type_default(args.type))
-      } else {
-        value = args.expr
-      }
-
-      let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
-      assert_compatable_types(args.type, expr_type, token.line, () => {
-        throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
-      })
-
-      let memory, scope, prefix
+      let allocator, scope, prefix
       if (args.global) {
         assert_global_name_available(args.name)
-        memory = alloc_global(expr_value.length)
+        allocator = alloc_global
         scope = "__global"
         prefix = "ram."
       } else {
         assert_local_name_available(args.name)
-        memory = alloc_stack(expr_value.length)
+        allocator = alloc_stack
         scope = state.scope
         prefix = "stack."
       }
+
+      let memory = allocator(get_data_type_size(args.type))
 
       // add entry to symbol table
       state.symbol_table[scope][args.name] = {
@@ -1030,31 +1000,35 @@ function translate(token, ctx_type) {
         }
       }
 
-      // make data available
-      result = expr_prefix
+      if (args.expr !== undefined) {
+        let [expr_prefix, expr_value, expr_type] = translate(args.expr, args.type)
+        assert_compatable_types(args.type, expr_type, token.line, () => {
+          throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
+        })
 
-      for (let expr_word of expr_value) {
-        result.push(`write ${expr_word} ${prefix}${memory.shift()}`)
+        // make data available
+        result = expr_prefix
+
+        for (let expr_word of expr_value) {
+          result.push(`write ${expr_word} ${prefix}${memory.shift()}`)
+        }
       }
+
     } break
 
     case "const_alloc": {    //const [name] [type] [expr]
       assert_valid_datatype(args.type)
       assert_global_name_available(args.name)
 
-      let value
       if (args.expr === undefined) {
-        value = tokenise(get_data_type_default(args.type))
-      } else {
-        value = args.expr
+        throw new CompError("Constants must be initialised")
       }
 
-      if (!(["str", "number", "inline_asm"].includes(value.name))) {
-        log.info(value)
+      if (!(["str", "number", "inline_asm"].includes(args.expr.name))) {
         throw new CompError("Constant must be static values")
       }
 
-      let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
+      let [expr_prefix, expr_value, expr_type] = translate(args.expr, args.type)
       assert_compatable_types(args.type, expr_type, token.line, () => {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
       })
@@ -1140,7 +1114,7 @@ function translate(token, ctx_type) {
       let base_addr = `[${prefix}${header_memory[0]}]`
 
       // call function to copy inital values to array
-      let [call_prefix, call_value, call_type] = function_call("sys.mem_copy", [`{${source_base_addr}}`, `{${base_addr}}`, `{${current_len * element_size}}`], true)
+      let [call_prefix, call_value, call_type] = function_call("sys.mem_copy", [`#${source_base_addr}#`, `#${base_addr}#`, `#${current_len * element_size}#`], true)
       result.push(...call_prefix)
 
     } break
@@ -1270,7 +1244,7 @@ function translate(token, ctx_type) {
         result.push(`write [${source_addr}] [alu.+]`)
       } else {
         // slower path using mem_copy for >1 word data types
-        let [call_prefix,,] = function_call("sys.array_set", [`{${base_addr}}`, `{${item_size}}`, `{${index_value}}`, `{${source_addr}}`], true)
+        let [call_prefix,,] = function_call("sys.array_set", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${source_addr}#`], true)
         result.push(...call_prefix)
       }
 
@@ -1373,7 +1347,7 @@ function translate(token, ctx_type) {
         }
         result.push(...index_prefix)
 
-        let [call_prefix,,] = function_call("sys.array_shift", [`{${base_addr}}`, `{${item_size}}`, `{${index_value}}`, `{${current_len}}`], true)
+        let [call_prefix,,] = function_call("sys.array_shift", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${current_len}#`], true)
         result.push(...call_prefix)
 
         // put item at the specified index
@@ -2328,7 +2302,7 @@ function translate(token, ctx_type) {
           // slower path using mem_copy for >1 word data types
           let dest_memory = alloc_global(item_size)
           let abs_dest = `ram.${dest_memory[0]}`
-          let [call_prefix,,] = function_call("sys.array_read", [`{${base_addr}}`, `{${item_size}}`, `{${index_value}}`, `{${abs_dest}}`], true)
+          let [call_prefix,,] = function_call("sys.array_read", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${abs_dest}#`], true)
           prefix.push(...call_prefix)
           registers = []
           for (let addr of dest_memory) {

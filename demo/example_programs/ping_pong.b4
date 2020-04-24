@@ -1,40 +1,40 @@
-var s16 ball_x 63
-var s16 ball_y 63
-var s16 ball_dx 0
-var s16 ball_dy 2
-var s16 old_ball_x
-var s16 old_ball_y
+let s16 ball_x = 63
+let s16 ball_y = 63
+let s16 ball_dx = 0
+let s16 ball_dy = 2
+let s16 old_ball_x
+let s16 old_ball_y
 
-var u16 top_paddle_x 7
-var u16 bottom_paddle_x 7
+let u16 top_paddle_x = 7
+let u16 bottom_paddle_x = 7
 
-var u16 top_low_bound 56
-var u16 top_high_bound 72
+let u16 top_low_bound = 56
+let u16 top_high_bound = 72
 
-var u16 bottom_low_bound 56
-var u16 bottom_high_bound 72
+let u16 bottom_low_bound = 56
+let u16 bottom_high_bound = 72
 
-var u16 top_score
-var u16 bottom_score
+let u16 top_score = 0
+let u16 bottom_score = 0
 
-var bool top_move_left
-var bool top_move_right
+let bool top_move_left = false
+let bool top_move_right = false
 
-var bool bottom_move_left
-var bool bottom_move_right
+let bool bottom_move_left = false
+let bool bottom_move_right = false
 
-var u16 mode 2
-var u16 speed 5
-var u16 iter
-var u16 key_code
+let u16 mode = 2
+let u16 speed = 5
+let u16 iter = 0
+let u16 key_code
 
 def set_word(u16 data, u16 addr)
   addr += 6144
-  #write $data $addr#
+  {write $data $addr}
 
 def get_key() -> u16
   include sys.consts
-  var u16 scan_code
+  let u16 scan_code
 
   scan_code = *SYS_KEYBOARD_ADDR
 
@@ -53,7 +53,7 @@ def draw_ball(s16 x, s16 y, s16 old_x, s16 old_y)
   sys.vram.set_pixel(old_x,old_y,false)
 
 def draw_paddle(u16 x, u16 addr, bool erase = false)
-  var u16 half_x x >>
+  let u16 half_x = x >>
   addr += half_x
   if erase
     if x sys.odd
@@ -80,7 +80,7 @@ sys.print_string("player2 (bottom)",0,12)
 sys.print_string("J=left L=right",1,14)
 
 key_code = get_key()
-var bool invalid_key_code true
+let bool invalid_key_code = true
 
 while invalid_key_code
   if key_code == 0x16
@@ -147,14 +147,14 @@ while true
     ball_y += ball_dy
 
     draw_ball(ball_x,ball_y,old_ball_x,old_ball_y)
-    #write 0x000f vram.512#
-    #write 0xf00f vram.513#
-    #write 0xf00f vram.514#
-    #write 0xf00f vram.515#
-    #write 0xf00f vram.516#
-    #write 0xf00f vram.517#
-    #write 0xf00f vram.518#
-    #write 0xf000 vram.519#
+    {write 0x000f vram.512}
+    {write 0xf00f vram.513}
+    {write 0xf00f vram.514}
+    {write 0xf00f vram.515}
+    {write 0xf00f vram.516}
+    {write 0xf00f vram.517}
+    {write 0xf00f vram.518}
+    {write 0xf000 vram.519}
     iter = 0
 
 

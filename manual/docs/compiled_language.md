@@ -13,10 +13,10 @@ occupied by function names and global variables
 local variables/arguments can shadow global variables/constants, for example
 
 ```javascript
-global str my_string "global"
+global str my_string = "global"
 
 def func1()
-  var str my_string "local"
+  let str my_string = "local"
   sys.print_string(my_string)
 
 def func2()
@@ -55,25 +55,25 @@ Items in **[square brackets]** are required parameters. Items in **<triangular b
 
 ## Commands
 
-+ **var** [type] [name] <expression\>
++ **let** [type] [name] < = expression\>
 
 Declare a local variable of the specified type with the specified name. e.g.
 ```javascript
-var u32 counter 123456789
+let u32 counter = 123456789
 ```
 
-+ **const** [type] [name] <expression\>
++ **const** [type] [name] < = expression\>
 
 Declare a global constant of the specified type with the specified name. e.g.
 ```javascript
-const u16 speed 340
+const u16 speed = 340
 ```
 
-+ **global** [type] [name] <expression\>
++ **global** [type] [name] < = expression\>
 
 Declare a global variable of the specified type with the specified name. e.g.
 ```javascript
-global bool shift_key_pressed true
+global bool shift_key_pressed = true
 ```
 
 + **free** [name]
@@ -105,7 +105,7 @@ def my_func() -> u16
 Terminate the innermost loop control structure.
 ```javascript
 // some_func is called for 0, 1 and 2
-for var u16 i; i < 10; i++
+for let u16 i = 0; i < 10; i++
   if i == 3
     break
   some_func(i)
@@ -117,7 +117,7 @@ for var u16 i; i < 10; i++
 Skip the current cycle of the innermost loop and begin the next cycle (if the loop condition is still met).
 ```javascript
 // some_func is called for 0, 1, 2, and 4
-for var u16 i; i < 5; i++
+for let u16 i = 0; i < 5; i++
   if i == 3
     continue
   some_func(i)
@@ -253,19 +253,19 @@ Returns the value at the memory location pointed to by the ```u16``` type variab
 + [name]**(**[expressions]**)**
 
 ```javascript
-my_function(arg1, arg2, my_var % other_var)
+my_function(arg1, arg2, my_let % other_var)
 ```
 
 + [name] ***operator*** [name]
 
 ```javascript
-my_var * other_var
+my_let * other_var
 ```
 
 + **(**[type],<length\>**)[**[expressions]**]**
 
 ```javascript
-var array test (u16,16)[1,2,3,4]
+let array test = (u16,16)[1,2,3,4]
 ```
 
 #### Array-Only Expressions
@@ -289,7 +289,7 @@ sys.print_u16(my_array.len())
 
 Returns the maximum length of the array as type ```u16```.
 ```javascript
-for var u16 i; i < my_array.max_len(); i++
+for let u16 i = 0; i < my_array.max_len(); i++
 // fill my_array with zeroes
   my_array[i] = 0
 ```
@@ -311,8 +311,8 @@ while my_array.len() > 0
 
 If the conditional expression is true, then the commands in the block will be executed. Otherwise, the block is skipped.
 ```javascript
-// execute some_func only if my_var is 123
-if my_var == 123
+// execute some_func only if my_let is 123
+if my_let == 123
   some_func()
 ```
 
@@ -320,9 +320,9 @@ if my_var == 123
 
 Execute this block if the ```if``` statement's condition is not met but this conditional expression is.
 ```javascript
-if my_var == 123
+if my_let == 123
   // the value is 123
-else if my_var == 321
+else if my_let == 321
   // the value is 321
 ```
 
@@ -330,7 +330,7 @@ else if my_var == 321
 
 Can only be used following and ```if``` or ```else if``` structure. Executes block if the ```if``` statement's (and any subsequent ```else if``` statement's) conditions were false.
 ```javascript
-if my_var == 123
+if my_let == 123
   // the value is 123
 else
   // the value is not 123
@@ -341,7 +341,7 @@ else
 Loops until the conditional expression is false. **NOTE the condition must initially be true for the first iteration to occur. This is the case for most languages but not all.**
 ```javascript
 // print numbers 10 to 1
-var u16 counter 10
+let u16 counter = 10
 while counter > 0
   sys.print_u16(counter)
   counter--
@@ -352,7 +352,7 @@ while counter > 0
 Useful control structure for iteration. Firstly, the setup command is executed. Then, if the conditional expression is true, the body will be executed. Finally, the loop command will be executed. Looping continues until the conditional expression becomes false.
 ```javascript
 // print numbers 0, 1, 2, 3 and 4
-for var u16 i; i < 5; i++
+for let u16 i = 0; i < 5; i++
   sys.print_u16(i)
 ```
 
@@ -363,7 +363,7 @@ Defines a new function. If the return data type is not specified, it defaults to
 ```javascript
 // the standard library function used to multiply ints
 def sys.u16_multiply(u16 a, u16 b) -> u16
-  var u16 ans
+  let u16 ans = 0
   while b > 0
     if b sys.odd
       ans += a  
@@ -416,9 +416,9 @@ def shift_right(u16 start = 6144, u16 end = 7167)
 ## Inline assembly
 
 #### Single line mode
-Single lines of assembly language can be included as if they were any other command. Simply enclose the assembly in a pair of hash characters:
+Single lines of assembly language can be included as if they were any other command. Simply enclose the assembly in braces:
 ```javascript
-#copy [alu.+] [ram.0]#
+{copy [alu.+] [ram.0]}
 ```
 In this mode there are special symbols that can be used to refer to variables that exist in the compiled program:
 
@@ -427,7 +427,7 @@ In this mode there are special symbols that can be used to refer to variables th
 
 | ```.b4``` becomes -> | assembly |
 | :------------------- | :------- |
-| `var u16 test 0xffff`<br>`#write &test vram.0#`<br>`#write $test vram.0#` | `write 0xffff stack.0`<br>`write stack.0 vram.0`<br>`write [stack.0] vram.0` |
+| `let u16 test = 0xffff`<br>`{write &test vram.0}`<br>`{write $test vram.0}` | `write 0xffff stack.0`<br>`write stack.0 vram.0`<br>`write [stack.0] vram.0` |
 
 If the variable's data type is more than one word long, a (zero-based) index in square brackets can be added to specify which word in should be referred to:
 
@@ -436,7 +436,7 @@ If the variable's data type is more than one word long, a (zero-based) index in 
 
 | ```.b4``` becomes -> | assembly |
 | :------------------- | :------- |
-| `var u16 u32 0xffffffff`<br>`#write &test[1] vram.0#`<br>`#write $test[1] vram.0#` | `write 0xffff stack.0`<br>`write 0xffff stack.1`<br>`write stack.1 vram.0`<br>`write [stack.1] vram.0` |
+| `let u16 u32 = 0xffffffff`<br>`{write &test[1] vram.0}`<br>`{write $test[1] vram.0}` | `write 0xffff stack.0`<br>`write 0xffff stack.1`<br>`write stack.1 vram.0`<br>`write [stack.1] vram.0` |
 
 
 
@@ -453,18 +453,18 @@ Multi-line blocks completely bypass the compiler and are included directly in th
 
 ## Data types
 
-| Name | Description | Default Value |
-| ---- | ----------- | ------------- |
-| `bool` | Holds only true or false | `false` |
-| `str` | Holds an immutable ASCII string | `""` |
-| `array` | A collection of indexable values | `n/a` |
-| `none` | Dummy type for functions that<br> do not return a value | `n/a` |
-| `u16` | (see numerical types) | `0` |
-| `s16` | (see numerical types) | `0` |
-| `u32` | (see numerical types) | `0` |
-| `s32` | (see numerical types) | `0` |
-| `float` | *coming soon* | `0` |
-| `double` | *coming soon* | `0` |
+| Name | Description |
+| ---- | ----------- |
+| `bool` | Holds only true or false |
+| `str` | Holds an immutable ASCII string |
+| `array` | A collection of indexable values |
+| `none` | Dummy type for functions that<br> do not return a value |
+| `u16` | (see numerical types) |
+| `s16` | (see numerical types) |
+| `u32` | (see numerical types) |
+| `s32` | (see numerical types) |
+| `float` | *coming soon* |
+| `double` | *coming soon* |
 
 #### Numerical types
 
