@@ -888,8 +888,10 @@ function tokenise(input, line) {
     let elements_array = elements_string.split(",")
     let token_array = []
 
-    for (let item of elements_array) {
-      token_array.push(tokenise(item,line))
+    if (elements_string !== "") {
+      for (let item of elements_array) {
+        token_array.push(tokenise(item,line))
+      }
     }
 
     token = {name:"expr_array",type:"expression",
@@ -2120,7 +2122,7 @@ function translate(token, ctx_type) {
       // if no context given use 1st element to determine type
       // and assume current length is max length
       let contained_type
-      if (ctx_type === undefined) {
+      if (ctx_type === undefined && given_type_size === undefined) {
         contained_type = args.exprs[0].arguments.type_guess
       } else {
         contained_type = ctx_type
@@ -2793,6 +2795,10 @@ function translate(token, ctx_type) {
           offset: total_size
         }
         total_size += size
+      }
+
+      if (total_size === 0) {
+        throw new CompError("There must be at least 1 struct member")
       }
 
       state.struct_definitions[args.name] = {
