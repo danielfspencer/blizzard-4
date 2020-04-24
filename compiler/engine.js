@@ -13,7 +13,6 @@ const min_frame_size = 2
 const max_frame_size = 2048
 const max_ram_size = 16384
 const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,none:0}
-const data_type_default_value = {u16:"0",s16:"0",u32:"0",s32:"0",float:"0",bool:"false",str:"\"\""}
 const mixable_numeric_types = [["u16","s16"],["u32","s32"]]
 const reserved_keywords = [
   "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include","__root","__global", "__return"
@@ -423,14 +422,6 @@ function get_data_type_size(type) {
   }
 }
 
-function get_data_type_default(type) {
-  if (type in data_type_default_value) {
-    return data_type_default_value[type]
-  } else {
-    throw new CompError(`Type '${type}' has no default value and must initalised`)
-  }
-}
-
 function get_temp_word() {
   let addr = alloc_stack(1)
   return {
@@ -538,41 +529,30 @@ function tokenise(input, line) {
   } else if (/^\"(.+)\"$|^(\"\")$/.test(input)) {     //string
     token = {name:"str",type:"expression",arguments:{value:input,type_guess:"str"}}
 
-  } else if (/^(var|global)/.test(input)) {        // (var/global) [type] [name] <expr>
-    if (list.length < 3) {
-      throw new CompError("Decleration syntax:\nvar/global [type] [name] <expr>")
-    }
+  } else if (/^(const|global|let) (\S+) (\S+)(?: = (.+))?$/.test(input)) {        // (var/global) [type] [name] <expr>
+    let matches = /^(const|global|let) (\S+) (\S+)(?: = (.+))?$/.exec(input)
 
-    let alloc_type = list[0]      // var / const / global
-    let type = list[1]
-    let name = list[2]
-    let expr
+    let alloc_type = matches[1]
+    let type =  matches[2]
+    let name = matches[3]
+    let expr_text = matches[4]
+
     assert_valid_name(name)
-
-    if (list.length >= 4) {
-      expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
-    }
-
-    let is_global = alloc_type === "global"
-
-    token = {name:"var_alloc",type:"command",arguments: { type:type, name:name, expr:expr, global:is_global }}
-
-  } else if (/^const/.test(input)) {        // const [type] [name] <expr>
-    if (list.length < 3) {
-      throw new CompError("Decleration syntax:\nconst [type] [name] <expr>")
-    }
-
-    let alloc_type = list[0]      // var / const / global
-    let type = list[1]
-    let name = list[2]
     let expr
-    assert_valid_name(name)
-
-    if (list.length >= 4) {
-      expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
+    if (expr_text !== undefined) {
+      expr = tokenise(expr_text, line)
     }
 
-    token = {name:"const_alloc",type:"command",arguments: { type:type, name:name, expr:expr, global:true }}
+    let token_name, is_global
+    if (alloc_type === "const") {
+      token_name = "const_alloc"
+      is_global = true
+    } else {
+      token_name = "var_alloc"
+      is_global = alloc_type == "global"
+    }
+
+    token = {name:token_name, type:"command", arguments: { type:type, name:name, expr:expr, global:is_global }}
 
   } else if (list[0] === "if") {               // if [bool]
     if (list.length > 1) {
@@ -995,30 +975,20 @@ function translate(token, ctx_type) {
 
       assert_valid_datatype(args.type)
 
-      let value
-      if (args.expr === undefined) {
-        value = tokenise(get_data_type_default(args.type))
-      } else {
-        value = args.expr
-      }
-
-      let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
-      assert_compatable_types(args.type, expr_type, token.line, () => {
-        throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
-      })
-
-      let memory, scope, prefix
+      let allocator, scope, prefix
       if (args.global) {
         assert_global_name_available(args.name)
-        memory = alloc_global(expr_value.length)
+        allocator = alloc_global
         scope = "__global"
         prefix = "ram."
       } else {
         assert_local_name_available(args.name)
-        memory = alloc_stack(expr_value.length)
+        allocator = alloc_stack
         scope = state.scope
         prefix = "stack."
       }
+
+      let memory = allocator(get_data_type_size(args.type))
 
       // add entry to symbol table
       state.symbol_table[scope][args.name] = {
@@ -1030,31 +1000,35 @@ function translate(token, ctx_type) {
         }
       }
 
-      // make data available
-      result = expr_prefix
+      if (args.expr !== undefined) {
+        let [expr_prefix, expr_value, expr_type] = translate(args.expr, args.type)
+        assert_compatable_types(args.type, expr_type, token.line, () => {
+          throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
+        })
 
-      for (let expr_word of expr_value) {
-        result.push(`write ${expr_word} ${prefix}${memory.shift()}`)
+        // make data available
+        result = expr_prefix
+
+        for (let expr_word of expr_value) {
+          result.push(`write ${expr_word} ${prefix}${memory.shift()}`)
+        }
       }
+
     } break
 
     case "const_alloc": {    //const [name] [type] [expr]
       assert_valid_datatype(args.type)
       assert_global_name_available(args.name)
 
-      let value
       if (args.expr === undefined) {
-        value = tokenise(get_data_type_default(args.type))
-      } else {
-        value = args.expr
+        throw new CompError("Constants must be initialised")
       }
 
-      if (!(["str", "number", "inline_asm"].includes(value.name))) {
-        log.info(value)
+      if (!(["str", "number", "inline_asm"].includes(args.expr.name))) {
         throw new CompError("Constant must be static values")
       }
 
-      let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
+      let [expr_prefix, expr_value, expr_type] = translate(args.expr, args.type)
       assert_compatable_types(args.type, expr_type, token.line, () => {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
       })
