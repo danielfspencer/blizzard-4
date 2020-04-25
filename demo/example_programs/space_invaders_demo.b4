@@ -1,7 +1,9 @@
+include sys.consts
+
 def draw_8x8(u16 rom_addr, u16 x, u16 y)
   // draw an 8x8 pixel sprite
   let u16 offset = y
-  let u16 vram_addr = 6144
+  let u16 vram_addr = SYS_VRAM_ADDR
   let u16 mask = 0xff00
   let u16 inv_mask = 0x00ff
   if x sys.odd
@@ -120,7 +122,7 @@ def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
   y = y <<
   y = y <<
   y += word_x
-  y += 6144
+  y += SYS_VRAM_ADDR
 
   let u16 scratch
 
@@ -277,7 +279,7 @@ def update_cannon()
 def move_aliens()
   let u16 addr_offset = 88 * selected_row
   // start_addr holds the vram address of the top of the block of invaders
-  let u16 start_addr = start_row + 6144
+  let u16 start_addr = start_row + SYS_VRAM_ADDR
   start_addr += addr_offset
   // end_addr holds the vram address of the bottom of the block of invaders
   let u16 end_addr = start_addr + 68

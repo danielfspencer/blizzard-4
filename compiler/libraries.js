@@ -1,5 +1,7 @@
 const libs = {
   "sys.consts": [
+    "const u16 SYS_ROM_ADDR = 32768",
+    "const u16 SYS_VRAM_ADDR = 6144",
     "const u16 SYS_KEYBOARD_ADDR = 4102",
     "const u16 SYS_TIMER_ADDR = 3"
   ],
@@ -436,14 +438,16 @@ const libs = {
   ],
   "sys.vram.or_word": [
     "def sys.vram.or_word(u16 word, u16 addr)",
-    "  addr += 6144",
+    "  include sys.consts",
+    "  addr += SYS_VRAM_ADDR",
     "  {copy $addr alu.1}",
     "  {copy &word alu.2}",
     "  {write [alu.|] $addr}"
   ],
   "sys.vram.nand_word": [
     "def sys.vram.nand_word(u16 word, u16 addr)",
-    "  addr += 6144",
+    "  include sys.consts",
+    "  addr += SYS_VRAM_ADDR",
     "  {copy $addr alu.2}",
     "  word = !word",
     "  {copy &word alu.1}",
@@ -451,6 +455,7 @@ const libs = {
   ],
   "sys.vram.set_pixel": [
     "def sys.vram.set_pixel(u16 x, u16 y, bool data = true)",
+    "  include sys.consts",
     "  include sys.vram.shifted_pixels",
     "  let u16 large = 0",
     "  let u16 small = 0",
@@ -475,7 +480,7 @@ const libs = {
     "    small = x - small",
     "    addr += large",
     "  table_addr += small",
-    "  addr += 6144",
+    "  addr += SYS_VRAM_ADDR",
     "  if data",
     "    {copy $table_addr alu.1}",
     "    {copy $addr alu.2}",

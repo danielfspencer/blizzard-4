@@ -1,10 +1,10 @@
 include *
 
 def rom_to_vram()
-  let u16 rom_addr =  32768
-  let u16 vram_addr = 6144
+  let u16 rom_addr = SYS_ROM_ADDR
+  let u16 vram_addr = SYS_VRAM_ADDR
   for let u16 page = 0; page < 32; page++
-    vram_addr = 6144
+    vram_addr = SYS_VRAM_ADDR
     for let u16 col = 0; col < 8; col++
       for let u16 row = 0; row < 128; row++
         *vram_addr = *rom_addr

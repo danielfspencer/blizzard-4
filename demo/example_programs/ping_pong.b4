@@ -29,8 +29,9 @@ let u16 iter = 0
 let u16 key_code
 
 def set_word(u16 data, u16 addr)
-  addr += 6144
-  {write $data $addr}
+  include sys.consts
+  addr += SYS_VRAM_ADDR
+  *addr = data
 
 def get_key() -> u16
   include sys.consts
