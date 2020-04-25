@@ -57,14 +57,14 @@ def draw_paddle(u16 x, u16 addr, bool erase = false)
   let u16 half_x = x >>
   addr += half_x
   if erase
-    if x sys.odd
+    if x
       set_word(0,addr)
       addr++
       set_word(0,addr)
     else
       set_word(0,addr)
   else
-    if x sys.odd
+    if x
       set_word(0x00ff,addr)
       addr++
       set_word(0xff00,addr)
