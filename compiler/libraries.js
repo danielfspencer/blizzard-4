@@ -406,9 +406,12 @@ const libs = {
     "  target_addr += length ",
     "",
     "  while origin_addr > base_addr",
-    "    origin_addr--",
-    "    target_addr--",
-    "    {copy $origin_addr $target_addr}"
+    "    {write 1 alu.2}",
+    "    {write $origin_addr alu.1}",
+    "    {write [alu.-] &origin_addr}",
+    "    {write $target_addr alu.1}",
+    "    {write [alu.-] &target_addr}",
+    "    {copy $origin_addr $target_addr}",
   ],
   "sys.array_set": [
     "def sys.array_set(u16 base_addr, u16 item_size, u16 index, u16 item_addr)",
