@@ -259,17 +259,21 @@ function assert_valid_function_name(name) {
   }
 }
 
-function buffer_if_needed(address, calle) {
-  let prefix = []
-  let new_address = address
-
+function buffer_if_needed(address) {
   if (/(alu\.)|(ram\+\.)/.test(address)) {
     let buffer = get_temp_word()
-    prefix.push(`write ${address} ${buffer.label}`)
-    new_address = buffer.label
+    return {
+      prefix: [`write ${address} ${buffer.label}`],
+      label: `[${buffer.label}]`,
+      free: buffer.free
+    }
+  } else {
+    return {
+      prefix: [],
+      label: address,
+      free: () => {}
+    }
   }
-
-  return [prefix, new_address]
 }
 
 function gen_label(type) {
@@ -1239,11 +1243,15 @@ function translate(token, ctx_type) {
         result.push(`write ${word} ram.${buffer.shift()}`)
       }
 
+      // fast path for single word items
       if (item_size === 1) {
-        // fast path for single word items
+        // buffer the index value (in case it is still in the alu)
+        let buffer = buffer_if_needed(index_value)
+        result.push(...buffer.prefix)
         result.push(`write ${base_addr} alu.1`)
-        result.push(`write ${index_value} alu.2`)
+        result.push(`write ${buffer.label} alu.2`)
         result.push(`write [${source_addr}] [alu.+]`)
+        buffer.free()
       } else {
         // slower path using mem_copy for >1 word data types
         let [call_prefix,,] = function_call("sys.array_set", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${source_addr}#`], true)
@@ -2185,9 +2193,9 @@ function translate(token, ctx_type) {
         let size = get_data_type_size(expr_type)
 
         for (let i = 0; i < size; i++) {
-          let [buffer_prefix, buffer_addr] = buffer_if_needed(expr_values[i])
-          prefix.push(...buffer_prefix)
-          registers.push(buffer_addr)
+          let value = buffer_if_needed(expr_values[i])
+          prefix.push(...value.prefix)
+          registers.push(value.label)
         }
 
         expr_index++
@@ -2292,14 +2300,19 @@ function translate(token, ctx_type) {
         prefix.push(...index_prefix)
 
 
+        // fast path for single word items
         if (item_size === 1) {
-          // fast path for single word items
-          let result = alloc_global(1)
+          // buffer the index value (in case it is still in the alu)
+          let buffer = buffer_if_needed(index_value)
+          prefix.push(...buffer.prefix)
+
           // TODO leaks global memory
+          let result = alloc_global(1)
           prefix.push(`write ${base_addr} alu.1`)
-          prefix.push(`write ${index_value} alu.2`)
+          prefix.push(`write ${buffer.label} alu.2`)
           prefix.push(`copy [alu.+] ram.${result}`)
           registers = [`[ram.${result}]`]
+          buffer.free()
         } else {
           // slower path using mem_copy for >1 word data types
           let dest_memory = alloc_global(item_size)
@@ -2442,11 +2455,12 @@ function translate(token, ctx_type) {
       prefix.push(...addr_prefix)
 
       // copy pointer value into temp ram word
-      let [buffer_prefix, buffer_addr] = buffer_if_needed(addr_value[0])
-      prefix.push(...buffer_prefix)
+      let buffer = buffer_if_needed(addr_value[0])
+      prefix.push(...buffer.prefix)
 
       // lookup pointer value and copy into temp buffer
-      prefix.push(`copy ${buffer_addr} stack.${temp_buffer[0]}`)
+      prefix.push(`copy ${buffer.label} stack.${temp_buffer[0]}`)
+      buffer.free()
 
       // if the target type is more than one word, copy more words
       if (size > 1) {
