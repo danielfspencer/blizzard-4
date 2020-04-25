@@ -10,15 +10,18 @@ def draw_8x8(u16 rom_addr, u16 x, u16 y)
   x = x >>
   vram_addr += x
   vram_addr += offset
+
+  let u16 scratch1
+  let u16 scratch2
   repeat 8
     {copy $vram_addr alu.1}
     {copy &inv_mask alu.2}
-    {copy alu.& ram.7}
+    {copy alu.& &scratch1}
     {copy $rom_addr alu.1}
     {copy &mask alu.2}
-    {copy alu.& ram.8}
-    {copy ram.8 alu.1}
-    {copy ram.7 alu.2}
+    {copy alu.& &scratch2}
+    {write $scratch2 alu.1}
+    {write $scratch1 alu.2}
     {copy alu.| $vram_addr}
     rom_addr++
     vram_addr += 8
@@ -61,7 +64,7 @@ def shift_sprite_right(u16 start)
     {copy $end alu.1}
     {copy alu.>> $end}
     end--
-    {copy $end ram.2}
+    {copy $end &carry}
     if carry
       end++
       {copy $end alu.1}
@@ -72,7 +75,7 @@ def shift_sprite_right(u16 start)
     {copy $end alu.1}
     {copy alu.>> $end}
     end -= 7
-    {copy $end ram.2}
+    {copy $end &carry}
     if carry
       end += 7
       {copy $end alu.1}
@@ -89,7 +92,7 @@ def shift_sprite_left(u16 start)
     start++
     {copy $start alu.1}
     {write 0b1000000000000000 alu.2}
-    {copy alu.ov ram.2}
+    {copy alu.ov &carry}
     if carry
       start--
       {copy $start alu.1}
@@ -102,7 +105,7 @@ def shift_sprite_left(u16 start)
     start += 7
     {copy $start alu.1}
     {write 0b1000000000000000 alu.2}
-    {copy alu.ov ram.2}
+    {copy alu.ov &carry}
     if carry
       start -= 7
       {copy $start alu.1}
@@ -119,19 +122,21 @@ def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
   y += word_x
   y += 6144
 
-  {write sys.vram.shifted_pixels ram.4}
-  {write [ram.4] alu.1}
+  let u16 scratch
+
+  {write sys.vram.shifted_pixels &scratch}
+  {write $scratch alu.1}
   {write $sub_x alu.2}
-  {write [alu.+] ram.4}
+  {write [alu.+] &scratch}
 
   if data
-    {copy [ram.4] alu.1}
+    {copy $scratch alu.1}
     {copy $y alu.2}
     {write [alu.|] $y}
   else
-    {copy [ram.4] alu.1}
-    {copy alu.! ram.5}
-    {copy ram.5 alu.1}
+    {copy $scratch alu.1}
+    {copy alu.! &scratch}
+    {copy $scratch alu.1}
     {copy $y alu.2}
     {write [alu.&] $y}
 
@@ -178,7 +183,7 @@ global bool invader_shift_down = false
 global bool invader_has_shifted_down = true
 
 // the alive/dead status of each alien
-global array alien_status = (bool,18)[true]
+global array alien_status = (bool,18)[]
 
 // is the shot on screen?
 global bool shot_present = false
