@@ -384,9 +384,7 @@ const libs = {
     "def sys.s32_greater(s32 a, s32 b) -> bool",
     "  a = a - b",
     "  a -= 1",
-    "",
     "  let u16 a_high = a:0",
-    "  let u16 a_low = a:1",
     "",
     "  return a_high < 0b1000000000000000"
   ],
@@ -394,9 +392,7 @@ const libs = {
     "def sys.s32_less(s32 a, s32 b) -> bool",
     "  a = a - b",
     "  a -= 1",
-    "",
     "  let u16 a_high = a:0",
-    "  let u16 a_low = a:1",
     "",
     "  return a_high > 0b0111111111111111"
   ],
