@@ -840,8 +840,8 @@ function tokenise(input, line) {
     let matches = /^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.exec(input)
 
     let [, expr1_text, operator, expr2_text] = matches
-    const dual_operand = ["+", "-", "/", "*", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", "..", ":"]
-    const single_operand = [">>", "<<", "!"]
+    const dual_operand = ["+", "-", "/", "*", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", "..", ":", ">>", "<<"]
+    const single_operand = ["!"]
 
     if (dual_operand.includes(operator)) {
       let expr1 = tokenise(expr1_text, line)
@@ -2018,16 +2018,40 @@ function translate(token, ctx_type) {
     } break
 
     case ">>": {
+      if (!(["number"].includes(args.expr2.name))) {
+        throw new CompError("Number of places to shift must be static")
+      }
+      let num_places = parseInt(args.expr2.arguments.value)
+
+      if (num_places < 0) {
+        throw new CompError("Number of places to shift must be static")
+      } else if (num_places > 15) {
+        registers = ["0"]
+        break
+      }
+
       switch (ctx_type) {
         case "u16": {
-          prefix = write_operand(args.expr,ctx_type)
+          prefix = write_operand(args.expr1,ctx_type)
+
+          let temp_word = get_temp_word()
+          while (num_places > 1) {
+            prefix.push(`write [alu.>>] ${temp_word.label}`)
+            prefix.push(`write [${temp_word.label}] alu.1`)
+            num_places--
+          }
+          temp_word.free()
+
           registers = ["[alu.>>]"]
         } break
 
         case "u32":
         case "s32":
         case "s16": {
-          [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr])
+          if (num_places !== 1) {
+            throw new CompError("Not implemented")
+          }
+          [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr1])
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -2035,16 +2059,47 @@ function translate(token, ctx_type) {
     } break
 
     case "<<": {
+      if (!(["number"].includes(args.expr2.name))) {
+        throw new CompError("Number of places to shift must be static")
+      }
+      let num_places = parseInt(args.expr2.arguments.value)
+
+      if (num_places < 0) {
+        throw new CompError("Number of places to shift must be static")
+      } else if (num_places > 15) {
+        registers = ["0"]
+        break
+      }
+
       switch (ctx_type) {
         case "u16":
         case "s16": {
-          prefix = write_operand(args.expr,ctx_type)
+          prefix = write_operand(args.expr1,ctx_type)
+
+          let temp_word = get_temp_word()
+          while (num_places > 1) {
+            prefix.push(`write [alu.<<] ${temp_word.label}`)
+            prefix.push(`write [${temp_word.label}] alu.1`)
+            num_places--
+          }
+          temp_word.free()
+
           registers = ["[alu.<<]"]
         } break
 
         case "s32":
         case "u32": {
-          [prefix, registers] = function_call("sys.u32_lshift", [args.expr])
+          if (num_places !== 1) {
+            throw new CompError("Not implemented")
+          }
+          let [call_prefix, call_registers] = function_call("sys.u32_lshift", [args.expr1])
+
+          while (num_places > 0) {
+            prefix.push(...call_prefix)
+            num_places--
+          }
+
+          registers = call_registers
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
