@@ -54,7 +54,7 @@ def draw_ball(s16 x, s16 y, s16 old_x, s16 old_y)
   sys.vram.set_pixel(old_x,old_y,false)
 
 def draw_paddle(u16 x, u16 addr, bool erase = false)
-  let u16 half_x = x >>
+  let u16 half_x = x >> 1
   addr += half_x
   if erase
     if x
