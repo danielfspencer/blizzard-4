@@ -6,10 +6,10 @@ def draw_8x8(u16 rom_addr, u16 x, u16 y)
   let u16 vram_addr = SYS_VRAM_ADDR
   let u16 mask = 0xff00
   let u16 inv_mask = 0x00ff
-  if x sys.odd
+  if x
     mask = 0x00ff
     inv_mask = 0xff00
-  x = x >>
+  x = x >> 1
   vram_addr += x
   vram_addr += offset
 
@@ -118,9 +118,7 @@ def shift_sprite_left(u16 start)
 def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
   // highly optimised pixel setting
   include sys.vram.shifted_pixels
-  y = y <<
-  y = y <<
-  y = y <<
+  y = y << 3
   y += word_x
   y += SYS_VRAM_ADDR
 
@@ -249,7 +247,7 @@ def read_inputs()
 def update_cannon()
   read_inputs()
   // calculate which word the cannon is in
-  let u16 cannon_addr = cannon_x >>
+  let u16 cannon_addr = cannon_x >> 1
   if cannon_addr > 6
     cannon_addr = 6
 

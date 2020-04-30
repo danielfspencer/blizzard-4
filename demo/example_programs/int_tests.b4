@@ -38,10 +38,10 @@ assert(u16_tmp == 2)
 u16_tmp = 1 - 1
 assert(u16_tmp == 0)
 
-u16_tmp = 1 >>
+u16_tmp = 1 >> 1
 assert(u16_tmp == 0)
 
-u16_tmp = 1 <<
+u16_tmp = 1 << 1
 assert(u16_tmp == 2)
 
 u16_tmp = 1 * 1
@@ -87,8 +87,9 @@ u16_tmp = 9 ^ 5
 assert(u16_tmp == 59049)
 
 u16_tmp = 0xffff + 1
-assert(sys.ov)
-
+let bool overflow
+{write [alu.ov] &overflow}
+assert(overflow)
 
 //s16 tests
 current_type = "s16"
@@ -100,10 +101,10 @@ assert(s16_tmp == 2)
 s16_tmp = 1 - 1
 assert(s16_tmp == 0)
 
-s16_tmp = 1 >>
+s16_tmp = 1 >> 1
 assert(s16_tmp == 0)
 
-s16_tmp = 1 <<
+s16_tmp = 1 << 1
 assert(s16_tmp == 2)
 
 s16_tmp = 1 * 1
@@ -187,10 +188,10 @@ assert(u32_tmp == 2)
 u32_tmp = 1 - 1
 assert(u32_tmp == 0)
 
-u32_tmp = 1 >>
+u32_tmp = 1 >> 1
 assert(u32_tmp == 0)
 
-u32_tmp = 1 <<
+u32_tmp = 1 << 1
 assert(u32_tmp == 2)
 
 u32_tmp = 1 * 1
@@ -249,10 +250,10 @@ assert(s32_tmp == 2)
 s32_tmp = 1 - 1
 assert(s32_tmp == 0)
 
-s32_tmp = 1 >>
+s32_tmp = 1 >> 1
 assert(s32_tmp == 0)
 
-s32_tmp = 1 <<
+s32_tmp = 1 << 1
 assert(s32_tmp == 2)
 
 s32_tmp = 1 * 1

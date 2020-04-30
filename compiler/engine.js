@@ -15,7 +15,7 @@ const max_ram_size = 16384
 const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,none:0}
 const mixable_numeric_types = [["u16","s16"],["u32","s32"]]
 const reserved_keywords = [
-  "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include","__root","__global", "__return"
+  "if","for","while","repeat","struct","def","true","false","sys","return","break","continue","include","__root","__global", "__return"
 ]
 
 const return_instruction = "return [stack.0] [stack.1]"
@@ -135,26 +135,13 @@ function benchmark(iterations) {
   return Math.round(lines / (avg_time/1000))
 }
 
-function all_matches(pattern, string) {
-  let list = []
-  let m
-  do {
-    m = pattern.exec(string)
-    if (m) {
-      list.push(m[0])
-    }
-  } while (m)
-  return list
-}
+function get_static_value(token, type, fail) {
+  let [token_prefix, token_value, token_type] = translate(token, type)
 
-function find_operation(pattern, string) {
-  let operators = all_matches(pattern,string)
-  if (operators.length === 1) {
-    return operators[0]
-  } else if (operators.length === 3) {
-    return operators[1]
+  if (token_prefix.length > 0 || token_type !== type) {
+    fail()
   } else {
-    throw new CompError("Unable to find mathematical operator")
+    return token_value
   }
 }
 
@@ -836,41 +823,29 @@ function tokenise(input, line) {
     }
     token = {name:"type_name_assignment_tuple", type:"command", arguments:{name:name,type:type,expr:expr}}
 
-  } else if (/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/.test(input)) {          // is an expression
-    let operation = find_operation(/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/g, input)
-    if (operation in {"+":"", "-":"", "/":"", "*":"", "^":"", "%":""}) { // dual operand [non bool]
-      let args = input.split(operation)
-      let expr1 = tokenise(args[0], line)
-      let expr2 = tokenise(args[1], line)
-      token = {name:operation,type:"expression",arguments:{expr1:expr1,expr2:expr2}}
+  } else if (/^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.test(input)) {          // is an expression
+    let matches = /^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.exec(input)
 
-    } else if (operation in {">":"", "<":"","==":"","!=":"", "&":"", ">=":"", "<=":"", "|":"", "..":"", ":":""}) { // dual operand [bool]
-      let args = input.split(operation)
-      let expr1 = tokenise(args[0], line)
-      let expr2 = tokenise(args[1], line)
-      token = {name:operation,type:"expression",arguments:{expr1:expr1,expr2:expr2}}
+    let [, expr1_text, operator, expr2_text] = matches
+    const dual_operand = ["+", "-", "/", "*", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", "..", ":", ">>", "<<"]
+    const single_operand = ["!"]
 
-    } else if (operation in {">>":"", "<<":"", "!":"", ">> 8":""}) { // single operand [non-bool]
-      let args = input.split(operation)
-      let arg
-      if (args[0] === "") {
-        arg = args[1]
+    if (dual_operand.includes(operator)) {
+      let expr1 = tokenise(expr1_text, line)
+      let expr2 = tokenise(expr2_text, line)
+      token = { name:operator, type: "expression", arguments: { expr1:expr1, expr2:expr2 }}
+
+    } else if (single_operand.includes(operator)) {
+      let expr
+      if (expr1_text !== "") {
+        expr = tokenise(expr1_text, line)
       } else {
-        arg = args[0]
+        expr = tokenise(expr2_text, line)
       }
-      let expr = tokenise(arg, line)
-      token = {name:operation,type:"expression",arguments:{expr:expr}}
-
-    } else if (operation === "sys.odd") {
-      let args = /([^\n\r]*)sys.odd\s*/.exec(input)
-      let expr = tokenise(args[1], line)
-      token = {name:"is_odd",type:"expression",arguments:{expr:expr}}
-
-    } else if (operation === "sys.ov") {
-      token = {name:"overflow",type:"expression",arguments:{}}
+      token = { name:operator, type: "expression", arguments: { expr:expr } }
 
     } else {
-      throw new CompError(`Unknown operator '${operation}'`)
+      throw new CompError(`Unknown operator '${operator}'`)
     }
 
   } else if (/(^true$)|(^false$)/.test(input)) {    //is true/false (the reserved keywords for bool data type)
@@ -879,16 +854,22 @@ function tokenise(input, line) {
   } else if (/^([a-zA-Z_]\w*)$/.test(input) ) {                       //variable or const (by name)
     token = {name:"var_or_const",type:"expression",arguments:{name:input}}
 
-  } else if (/^((\(.*\))?(\[.*\]))$/.test(input)) {                          //array of expressions
-    let matches = /^((\(.*\))?(\[.*\]))$/.exec(input)
+  } else if (/^(\(.*\))?(\[.*\])$/.test(input)) {                          //array of expressions
+    let matches = /^(\(.*\))?(\[.*\])$/.exec(input)
 
-    let type_size = undefined
-    if(matches[2] !== undefined) {
-      let type_size_string = matches[2].slice(1, -1)
-      type_size = type_size_string.split(",")
+    let type_string
+    let size_string
+    let size_token
+    if (matches[1] !== undefined) {
+      let type_size_string = matches[1].slice(1, -1)
+      ;[type_string, size_string] = type_size_string.split(",")
+
+      if (size_string !== undefined) {
+        size_token = tokenise(size_string, line)
+      }
     }
 
-    let elements_string = matches[3].slice(1, -1)
+    let elements_string = matches[2].slice(1, -1)
     let elements_array = elements_string.split(",")
     let token_array = []
 
@@ -901,7 +882,8 @@ function tokenise(input, line) {
     token = {name:"expr_array",type:"expression",
       arguments:{
       exprs:token_array,
-      type_size:type_size
+      type: type_string,
+      size: size_token
     }}
 
   } else if (/^([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)$/.test(input)) {
@@ -1039,24 +1021,13 @@ function translate(token, ctx_type) {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
       })
 
-      let label = `const_${args.name}`
-      let memory = []
-      for (let i = 0; i < expr_value.length; i++) {
-        memory.push(`${label}_${i}`)
-      }
-
       // add entry to symbol table
       state.symbol_table.__global[args.name] = {
         type: "constant",
         data_type: args.type,
         specific: {
-          value: memory.slice()
+          value: expr_value
         }
-      }
-
-      for (let word of expr_value) {
-        state.consts.push(`${memory.shift()}:`)
-        state.consts.push(word)
       }
     } break
 
@@ -2030,16 +2001,40 @@ function translate(token, ctx_type) {
     } break
 
     case ">>": {
+      if (!(["number"].includes(args.expr2.name))) {
+        throw new CompError("Number of places to shift must be static")
+      }
+      let num_places = parseInt(args.expr2.arguments.value)
+
+      if (num_places < 0) {
+        throw new CompError("Number of places to shift must be static")
+      } else if (num_places > 15) {
+        registers = ["0"]
+        break
+      }
+
       switch (ctx_type) {
         case "u16": {
-          prefix = write_operand(args.expr,ctx_type)
+          prefix = write_operand(args.expr1,ctx_type)
+
+          let temp_word = get_temp_word()
+          while (num_places > 1) {
+            prefix.push(`write [alu.>>] ${temp_word.label}`)
+            prefix.push(`write [${temp_word.label}] alu.1`)
+            num_places--
+          }
+          temp_word.free()
+
           registers = ["[alu.>>]"]
         } break
 
         case "u32":
         case "s32":
         case "s16": {
-          [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr])
+          if (num_places !== 1) {
+            throw new CompError("Not implemented")
+          }
+          [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr1])
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -2047,16 +2042,47 @@ function translate(token, ctx_type) {
     } break
 
     case "<<": {
+      if (!(["number"].includes(args.expr2.name))) {
+        throw new CompError("Number of places to shift must be static")
+      }
+      let num_places = parseInt(args.expr2.arguments.value)
+
+      if (num_places < 0) {
+        throw new CompError("Number of places to shift must be static")
+      } else if (num_places > 15) {
+        registers = ["0"]
+        break
+      }
+
       switch (ctx_type) {
         case "u16":
         case "s16": {
-          prefix = write_operand(args.expr,ctx_type)
+          prefix = write_operand(args.expr1,ctx_type)
+
+          let temp_word = get_temp_word()
+          while (num_places > 1) {
+            prefix.push(`write [alu.<<] ${temp_word.label}`)
+            prefix.push(`write [${temp_word.label}] alu.1`)
+            num_places--
+          }
+          temp_word.free()
+
           registers = ["[alu.<<]"]
         } break
 
         case "s32":
         case "u32": {
-          [prefix, registers] = function_call("sys.u32_lshift", [args.expr])
+          if (num_places !== 1) {
+            throw new CompError("Not implemented")
+          }
+          let [call_prefix, call_registers] = function_call("sys.u32_lshift", [args.expr1])
+
+          while (num_places > 0) {
+            prefix.push(...call_prefix)
+            num_places--
+          }
+
+          registers = call_registers
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -2097,59 +2123,30 @@ function translate(token, ctx_type) {
       registers = [expr_regs[index[1][0]]]
     } break
 
-    case "is_odd": {
-      let [prefix, expr_value, expr_type] = translate(args.expr)
-      switch (expr_type) {
-        case "s16":
-        case "u16": {
-          registers = [expr_value[0]]
-        } break
-
-        case "s32":
-        case "u32": {
-          registers = [expr_value[1]]
-        } break
-
-        default:
-          throw new CompError(`Unsupported datatype '${expr_type}' for operation '${token.name}'`)
-      }
-      type = "bool"
-    } break
-
-    case "overflow": {
-      type = "bool"
-      registers = ["[alu.ov]"]
-    } break
-
     case "expr_array": {
       let label = `expr_array_${gen_label("expr_array")}`
 
-      let given_type_size = args.type_size
-      let length = args.exprs.length
-
-      // if no context given use 1st element to determine type
-      // and assume current length is max length
-      let contained_type
-      if (ctx_type === undefined && given_type_size === undefined) {
-        contained_type = args.exprs[0].arguments.type_guess
-      } else {
-        contained_type = ctx_type
-      }
-      let max_length = length
-
-      // but explicitly given type and max length will override these
-      if (given_type_size !== undefined) {
-        if (given_type_size.length === 1) {
-          contained_type = given_type_size[0]
-        } else if (given_type_size.length === 2) {
-          contained_type = given_type_size[0]
-          max_length = parseInt(given_type_size[1])
+      let contained_type = args.type
+      if (contained_type === undefined) {
+        if (args.exprs.length > 0) {
+          contained_type = args.exprs[0].arguments.type_guess
+          log.warn(`line ${token.line}:\nInferring type as '${contained_type}' from first element of array`)
+        } else {
+          throw new CompError("Empty arrays must have a type specified")
         }
       }
 
-      if (ctx_type === undefined && given_type_size === undefined) {
-        log.warn(`line ${token.line}:\nInferring type as '${contained_type}' from first element of array`)
+      let max_length
+      if (args.size === undefined) {
+        max_length = args.exprs.length
+        log.warn(`line ${token.line}:\nInferring max. length as '${max_length}' from number of expressions`)
+      } else {
+        max_length = get_static_value(args.size, "u16", () => {
+          throw new CompError("Array size must be static & of type 'u16'")
+        })
       }
+
+      let length = args.exprs.length
 
       let item_size = get_data_type_size(contained_type)
       let consts_to_add = [`${label}:`]
@@ -2233,9 +2230,7 @@ function translate(token, ctx_type) {
         }
       } else if (table_entry.type === "constant") {
         // it's a constant
-        for (let addr of table_entry.specific.value) {
-          registers.push(`[${addr}]`)
-        }
+        registers = table_entry.specific.value
       } else {
         throw new CompError(`Unknown symbol type '${table_entry.type}'`)
       }
@@ -2529,14 +2524,16 @@ function translate(token, ctx_type) {
           next_case_label = `${label}_${i+1}`
         }
 
-        let prefix_and_value = translate(exprs[i], "bool")
-        let prefix = prefix_and_value[0]
-        let value = prefix_and_value[1]
-        if (prefix_and_value[2] !==  "bool") {
-          throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
+        let [prefix, value, type] = translate(exprs[i], "bool")
+        if (type === "u16" || type === "s16" || type === "u32" || type === "s32") {
+          log.warn(`line ${token.line}:\nWhen using non-bool types as conditionals, only the least significant bit is used`)
+        } else if (type === "bool") {
+          // all ok
+        } else {
+          throw new CompError(`Conditional expression expected type 'bool', got '${type}'`)
         }
         result.push(...prefix)
-        result.push(`goto ${next_case_label} ${value[0]}`)
+        result.push(`goto ${next_case_label} ${value[value.length - 1]}`)
 
         result.push(...translate_body(main_tokens[i]))
 
