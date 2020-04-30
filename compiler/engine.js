@@ -135,29 +135,6 @@ function benchmark(iterations) {
   return Math.round(lines / (avg_time/1000))
 }
 
-function all_matches(pattern, string) {
-  let list = []
-  let m
-  do {
-    m = pattern.exec(string)
-    if (m) {
-      list.push(m[0])
-    }
-  } while (m)
-  return list
-}
-
-function find_operation(pattern, string) {
-  let operators = all_matches(pattern,string)
-  if (operators.length === 1) {
-    return operators[0]
-  } else if (operators.length === 3) {
-    return operators[1]
-  } else {
-    throw new CompError("Unable to find mathematical operator")
-  }
-}
-
 function parse_int(string) {
   if (string.startsWith("0b")) {            //bin (positive)
     return parseInt(string.substring(2),2)
