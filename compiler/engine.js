@@ -135,6 +135,16 @@ function benchmark(iterations) {
   return Math.round(lines / (avg_time/1000))
 }
 
+function get_static_value(token, type, fail) {
+  let [token_prefix, token_value, token_type] = translate(token, type)
+
+  if (token_prefix.length > 0 || token_type !== type) {
+    fail()
+  } else {
+    return token_value
+  }
+}
+
 function parse_int(string) {
   if (string.startsWith("0b")) {            //bin (positive)
     return parseInt(string.substring(2),2)
@@ -844,16 +854,22 @@ function tokenise(input, line) {
   } else if (/^([a-zA-Z_]\w*)$/.test(input) ) {                       //variable or const (by name)
     token = {name:"var_or_const",type:"expression",arguments:{name:input}}
 
-  } else if (/^((\(.*\))?(\[.*\]))$/.test(input)) {                          //array of expressions
-    let matches = /^((\(.*\))?(\[.*\]))$/.exec(input)
+  } else if (/^(\(.*\))?(\[.*\])$/.test(input)) {                          //array of expressions
+    let matches = /^(\(.*\))?(\[.*\])$/.exec(input)
 
-    let type_size = undefined
-    if(matches[2] !== undefined) {
-      let type_size_string = matches[2].slice(1, -1)
-      type_size = type_size_string.split(",")
+    let type_string
+    let size_string
+    let size_token
+    if (matches[1] !== undefined) {
+      let type_size_string = matches[1].slice(1, -1)
+      ;[type_string, size_string] = type_size_string.split(",")
+
+      if (size_string !== undefined) {
+        size_token = tokenise(size_string, line)
+      }
     }
 
-    let elements_string = matches[3].slice(1, -1)
+    let elements_string = matches[2].slice(1, -1)
     let elements_array = elements_string.split(",")
     let token_array = []
 
@@ -866,7 +882,8 @@ function tokenise(input, line) {
     token = {name:"expr_array",type:"expression",
       arguments:{
       exprs:token_array,
-      type_size:type_size
+      type: type_string,
+      size: size_token
     }}
 
   } else if (/^([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)$/.test(input)) {
@@ -2109,32 +2126,27 @@ function translate(token, ctx_type) {
     case "expr_array": {
       let label = `expr_array_${gen_label("expr_array")}`
 
-      let given_type_size = args.type_size
-      let length = args.exprs.length
-
-      // if no context given use 1st element to determine type
-      // and assume current length is max length
-      let contained_type
-      if (ctx_type === undefined && given_type_size === undefined) {
-        contained_type = args.exprs[0].arguments.type_guess
-      } else {
-        contained_type = ctx_type
-      }
-      let max_length = length
-
-      // but explicitly given type and max length will override these
-      if (given_type_size !== undefined) {
-        if (given_type_size.length === 1) {
-          contained_type = given_type_size[0]
-        } else if (given_type_size.length === 2) {
-          contained_type = given_type_size[0]
-          max_length = parseInt(given_type_size[1])
+      let contained_type = args.type
+      if (contained_type === undefined) {
+        if (args.exprs.length > 0) {
+          contained_type = args.exprs[0].arguments.type_guess
+          log.warn(`line ${token.line}:\nInferring type as '${contained_type}' from first element of array`)
+        } else {
+          throw new CompError("Empty arrays must have a type specified")
         }
       }
 
-      if (ctx_type === undefined && given_type_size === undefined) {
-        log.warn(`line ${token.line}:\nInferring type as '${contained_type}' from first element of array`)
+      let max_length
+      if (args.size === undefined) {
+        max_length = args.exprs.length
+        log.warn(`line ${token.line}:\nInferring max. length as '${max_length}' from number of expressions`)
+      } else {
+        max_length = get_static_value(args.size, "u16", () => {
+          throw new CompError("Array size must be static & of type 'u16'")
+        })
       }
+
+      let length = args.exprs.length
 
       let item_size = get_data_type_size(contained_type)
       let consts_to_add = [`${label}:`]
