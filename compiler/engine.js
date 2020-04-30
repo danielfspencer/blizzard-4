@@ -1027,24 +1027,13 @@ function translate(token, ctx_type) {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
       })
 
-      let label = `const_${args.name}`
-      let memory = []
-      for (let i = 0; i < expr_value.length; i++) {
-        memory.push(`${label}_${i}`)
-      }
-
       // add entry to symbol table
       state.symbol_table.__global[args.name] = {
         type: "constant",
         data_type: args.type,
         specific: {
-          value: memory.slice()
+          value: expr_value
         }
-      }
-
-      for (let word of expr_value) {
-        state.consts.push(`${memory.shift()}:`)
-        state.consts.push(word)
       }
     } break
 
@@ -2252,9 +2241,7 @@ function translate(token, ctx_type) {
         }
       } else if (table_entry.type === "constant") {
         // it's a constant
-        for (let addr of table_entry.specific.value) {
-          registers.push(`[${addr}]`)
-        }
+        registers = table_entry.specific.value
       } else {
         throw new CompError(`Unknown symbol type '${table_entry.type}'`)
       }
