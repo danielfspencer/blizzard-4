@@ -2773,7 +2773,7 @@ function translate(token, ctx_type) {
 
       // add return instruction unless it is already there
       if (target[target.length -1] !== `  ${return_instruction}`) {
-        target.push(` ${return_instruction}`)
+        target.push(`  ${return_instruction}`)
       }
     } break
 
