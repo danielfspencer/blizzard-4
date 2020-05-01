@@ -193,16 +193,10 @@ function assemble(lines) {
       // it's a command
       var op = line[0]
       var args = []
-      var argNo = 0
       var pointerMap = ""
-      var cnd = "0"
 
       // assemble the op code
         var decimal = opToCode(op)
-        if (op.endsWith("?")) {
-          cnd = "1"
-          op = op.substr(0, line[0].length - 1)
-        }
         if (op in opDefs) {
           op = ("000" + opToCode(op).toString(2)).slice(-3)
         } else {
@@ -226,13 +220,9 @@ function assemble(lines) {
           args[y-1] =  numToBin(item)
         }
       }
-      // compute number of args
-      argNo = ("000" + args.length.toString(2)).slice(-3)
-      // computer pointer map
-      pointerMap = ("0000000" + pointerMap).slice(-7)
-      pointerMap = pointerMap.split('').reverse().join('')
+
       //now assemble the whole command
-      var header = op + pointerMap + "00000" + cnd
+      var header = op + pointerMap + "00000000000"
       if (args.length !== 0) {var body = "\n" + args.join("\n") } else {var body = ""}
       assembled.push( header + body + "\n" )
       adr += args.length +1
