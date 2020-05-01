@@ -229,10 +229,8 @@ function assemble(lines) {
       // compute number of args
       argNo = ("000" + args.length.toString(2)).slice(-3)
       // computer pointer map
-      pointerMap = ("0000000" + pointerMap).slice(-7)
-      pointerMap = pointerMap.split('').reverse().join('')
       //now assemble the whole command
-      var header = op + pointerMap + "00000" + cnd
+      var header = op + pointerMap + "0000000000" + cnd
       if (args.length !== 0) {var body = "\n" + args.join("\n") } else {var body = ""}
       assembled.push( header + body + "\n" )
       adr += args.length +1
