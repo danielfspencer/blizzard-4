@@ -14,12 +14,13 @@
 <table>
   <tr>
     <td rowspan="2">Address<sub>2</sub> (&micro;PC)</td>
+    <td rowspan="2">Argument Addressing</td>
     <td rowspan="2">Stage Name</td>
     <td colspan="8">&micro; instruction</td>
   </tr>
   <tr>
     <td><div class="rotate">pc -> read bus</div></td>
-    <td><div class="rotate">arg 3 -> selected bus</div></td>
+    <td><div class="rotate">arg 3 -> read bus</div></td>
     <td><div class="rotate">data bus -> command reg</div></td>
     <td><div class="rotate">data bus -> arg 1</div></td>
     <td><div class="rotate">data bus -> arg 2</div></td>
@@ -28,7 +29,8 @@
     <td><div class="rotate">increment mode</div></td>
   </tr>
   <tr>
-    <td>000</td>
+    <td>0</td>
+    <td rowspan="8">[immediate][immediate]</td>
     <td>fetch</td>
     <td><div class="one">1</div></td>
     <td>0</td>
@@ -40,22 +42,10 @@
     <td>0</td>
   </tr>
   <tr>
-    <td>001</td>
+    <td>00001</td>
     <td>load arg1</td>
     <td><div class="one">1</div></td>
     <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td><div class="one">1</div></td>
-    <td>0</td>
-    <td>0</td>
-  </tr>
-  <tr>
-    <td>010</td>
-    <td>load arg1</td>
-    <td>0</td>
-    <td><div class="one">1</div></td>
     <td>0</td>
     <td><div class="one">1</div></td>
     <td>0</td>
@@ -64,7 +54,104 @@
     <td>0</td>
   </tr>
   <tr>
-    <td>011</td>
+    <td>00010</td>
+    <td>load arg2</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td><div class="one">1</div></td>
+  </tr>
+  <tr>
+    <td>00011</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>00100</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>00101</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>00110</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>00111</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>01000</td>
+    <td rowspan="8">[immediate][direct]</td>
+    <td>fetch</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>01001</td>
+    <td>load arg1</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>01010</td>
     <td>load arg2</td>
     <td><div class="one">1</div></td>
     <td>0</td>
@@ -76,7 +163,7 @@
     <td>0</td>
   </tr>
   <tr>
-    <td>100</td>
+    <td>01011</td>
     <td>load arg2</td>
     <td>0</td>
     <td><div class="one">1</div></td>
@@ -88,6 +175,246 @@
     <td><div class="one">1</div></td>
   </tr>
   <tr>
+    <td>01100</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>01101</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>01110</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>01111</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>10000</td>
+    <td rowspan="8">[direct][immediate]</td>
+    <td>fetch</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>10001</td>
+    <td>load arg1</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>10010</td>
+    <td>load arg1</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>10011</td>
+    <td>load arg2</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td><div class="one">1</div></td>
+  </tr>
+  <tr>
+    <td>10100</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>10101</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>10110</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>10111</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>11000</td>
+    <td rowspan="8">[direct][direct]</td>
+    <td>fetch</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>11001</td>
+    <td>load arg1</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>11010</td>
+    <td>load arg1</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>11011</td>
+    <td>load arg2</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>11100</td>
+    <td>load arg2</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td>0</td>
+    <td><div class="one">1</div></td>
+    <td><div class="one">1</div></td>
+  </tr>
+  <tr>
+    <td>11101</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>11110</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>11111</td>
+    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
   </tr>
 </table>
 
@@ -140,7 +467,7 @@
   </tr>
   <tr>
     <td>00001</td>
-    <td>1</td>
+    <td><div class="one">1</div></td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -221,7 +548,7 @@
   </tr>
   <tr>
     <td>00101</td>
-    <td>1</td>
+    <td><div class="one">1</div></td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -302,7 +629,7 @@
   </tr>
   <tr>
     <td>01001</td>
-    <td>1</td>
+    <td><div class="one">1</div></td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -383,7 +710,7 @@
   </tr>
   <tr>
     <td>01101</td>
-    <td>1</td>
+    <td><div class="one">1</div></td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -464,7 +791,7 @@
   </tr>
   <tr>
     <td>10001</td>
-    <td>1</td>
+    <td><div class="one">1</div></td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -545,7 +872,7 @@
   </tr>
   <tr>
     <td>10101</td>
-    <td>1</td>
+    <td><div class="one">1</div></td>
     <td>0</td>
     <td>0</td>
     <td>0</td>

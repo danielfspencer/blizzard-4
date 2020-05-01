@@ -2,19 +2,22 @@
 `PC = program counter`
 `SP = stack pointer`
 
-| Opcode<sub>2</sub> | Opcode<sub>10</sub> | Name | Arguments | Description | Cycles |
+| Opcode<sub>2</sub> | Opcode<sub>10</sub> | Name | Arguments | Description | Cycles* |
 | ------------------ | ------------------- | ---- | --------- | ----------- | ------ |
-| 000 | 0 | `stop` | none | stops the computer | 6 |
-| 001 | 1 | `return` | PC value, SP value | sets PC & SP to the given values | 6 |
-| 010 | 2 | `goto` | address, cond | sets PC to *address* if the LSB of *cond* is 0 | 6 |
-| 011 | 3 | `call` | address, frame size| sets PC to *address* & increments SP by *frame size* | 9 |
-| 100 | 4 | `write` | data, address | writes *data* to *address* | 6 |
-| 101 | 5 | `copy` | address, address | writes the data at the first address to the second address | 6 |
+| 000 | 0 | `stop` | none | stops the computer | 4 |
+| 001 | 1 | `return` | PC value, SP value | sets PC & SP to the given values | 4 |
+| 010 | 2 | `goto` | address, cond | sets PC to *address* if the LSB of *cond* is 0 | 4 |
+| 011 | 3 | `call` | address, frame size| sets PC to *address* & increments SP by *frame size* | 7 |
+| 100 | 4 | `write` | data, address | writes *data* to *address* | 4 |
+| 101 | 5 | `copy` | address, address | writes the data at the first address to the second address | 4 |
+
+\*Each use of the `[]` substitution syntax requires 1 extra cycle to execute the instruction. Therefore each instruction can take up to 2 cycles longer to execute if both arguments use `[]`.
 
 ## Addressing modes
+
 - Immediate mode (value is stored in the instruction)
 - Direct mode (address is stored in the instruction)
-- Indirect mode (a pointer is stored in the instruction)
+- Indirect mode (a pointer is stored in the instruction) (only available in the 1st argument of copy)
 
 Use `[]` substitution syntax to use another level of indirect lookup. Promotes each to a higher level.
 
