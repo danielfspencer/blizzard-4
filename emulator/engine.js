@@ -90,10 +90,37 @@ function init_activity_indicators() {
 //control unit microcode
 const load_fetch_microcode = [
   [1,0,1,0,0,0,1,0],
+  [1,0,0,1,0,0,1,0],
+  [1,0,0,0,1,0,1,1],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [1,0,1,0,0,0,1,0],
+  [1,0,0,1,0,0,1,0],
+  [1,0,0,0,0,1,0,0],
+  [0,1,0,0,1,0,1,1],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [1,0,1,0,0,0,1,0],
+  [1,0,0,0,0,1,0,0],
+  [0,1,0,1,0,0,1,0],
+  [1,0,0,0,1,0,1,1],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [1,0,1,0,0,0,1,0],
   [1,0,0,0,0,1,0,0],
   [0,1,0,1,0,0,1,0],
   [1,0,0,0,0,1,0,0],
-  [0,1,0,0,1,0,1,1]
+  [0,1,0,0,1,0,1,1],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0]
 ]
 
 const execute_microcode = [
@@ -620,14 +647,15 @@ function simulate_effect_of_write_bus_change() {
 }
 
 function get_load_fetch_microcode_instructions() {
-  let address = micro_program_counter
+  let addr_mode = (command_word & 0b1100000000000) >> 8
+  let address = addr_mode + micro_program_counter
   let instructions = load_fetch_microcode[address]
 
-  if (instructions === undefined) {
-    halt_error("Invalid adddress for microcode")
-  }
+  debug && console.debug(`load/fetch microcode[${get_padded_num(address,5,2)}]`)
 
-  debug && console.debug(`load/fetch microcode[${get_padded_num(address,3,2)}]`)
+  if (instructions === undefined) {
+    halt_error("Invalid adddress for load/fetch microcode")
+  }
   return instructions
 }
 
@@ -637,11 +665,11 @@ function get_execute_microcode_instructions() {
   let address = opcode + micro_program_counter
   let instructions = execute_microcode[address]
 
-  if (instructions === undefined) {
-    halt_error("Invalid adddress for microcode")
-  }
-
   debug && console.debug(`execute microcode[${get_padded_num(address,5,2)}]`)
+
+  if (instructions === undefined) {
+    halt_error("Invalid adddress for execute microcode")
+  }
   return instructions
 }
 
@@ -650,7 +678,7 @@ function run_load_fetch_microcode(instructions, read_clock) {
 
   if (read_clock) {
     instructions[0] && micro_instructions.read_clock.pc_to_read_bus()
-    instructions[1] && micro_instructions.read_clock.arg3_to_selected_bus()
+    instructions[1] && micro_instructions.read_clock.arg3_to_read_bus()
   } else {
     instructions[2] && micro_instructions.write_clock.data_bus_to_cmd_reg()
     instructions[3] && micro_instructions.write_clock.data_bus_to_arg1()
@@ -691,22 +719,9 @@ const micro_instructions = {
       debug && console.debug("pc -> read bus")
       read_bus = program_counter
     },
-    arg3_to_selected_bus: () => {
-      debug && console.debug("arg3 -> addr mode selected bus")
-
-      var addr_modes = (command_word & 0b0001100000000000) >> 11
-      var addr_mode = 0
-      if ((micro_program_counter & 0b10) === 0) {
-        addr_mode = (addr_modes & 0b10) >> 1
-      } else {
-        addr_mode = (addr_modes & 0b01)
-      }
-
-      if (addr_mode) {
-        read_bus = arg_regs[2]
-      } else {
-        data_bus = arg_regs[2]
-      }
+    arg3_to_read_bus: () => {
+      debug && console.debug("arg3 -> read bus")
+      read_bus = arg_regs[2]
     },
     arg1_to_data_bus: () => {
       debug && console.debug("arg1 -> data bus")
