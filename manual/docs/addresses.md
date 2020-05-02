@@ -47,12 +47,12 @@
 
 | Absolute<br>Address | Internal<br>Address | Description |	Mnemonic | Read/Write | Width<br>(bits) |
 | --- | --- | --- | --- | --- | --- |
-| 4096 | 0 | User input switches #1 | `usrio.inp1` | R | 16 |
-| 4097 | 1 | User input switches #2 | `usrio.inp2` | R | 16 |
-| 4098 | 2 | User input switches #3 | `usrio.inp3` | R | 16 |
-| 4099 | 3 | Output LEDs row #1 | `usrio.out1` | W | 16 |
-| 4100 | 4 | Output LEDs row #2 | `usrio.out2` | W | 16 |
-| 4101 | 5 | Output LEDs row #3 | `usrio.out3` | W | 16 |
+| 4096 | 0 | User input switches #1 | `io.inp1` | R | 16 |
+| 4097 | 1 | User input switches #2 | `io.inp2` | R | 16 |
+| 4098 | 2 | User input switches #3 | `io.inp3` | R | 16 |
+| 4099 | 3 | Output LEDs row #1 | `io.out1` | W | 16 |
+| 4100 | 4 | Output LEDs row #2 | `io.out2` | W | 16 |
+| 4101 | 5 | Output LEDs row #3 | `io.out3` | W | 16 |
 | 4102 | 6 | ps/2 fifo pop last element | `io.pop` | R | 16 |
 
 <br>
