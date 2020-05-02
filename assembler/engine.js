@@ -166,6 +166,23 @@ function assemble(lines) {
   var labels = {}
 
   log.info("1st Pass...")
+  let changed_count = 0
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i]
+
+    // replace any `write [addr1] addr2` instructions with `copy addr1 addr2`
+    if (/^\s*write \[\S*\]/.test(line)) {
+      let matches = /^\s*write \[(\S*)\] (\S*)/.exec(line)
+      changed_count++
+
+      line = `copy ${matches[1]} ${matches[2]}`
+
+      lines[i] = line
+    }
+  }
+  log.info(`↳ success, ${changed_count} instruction(s) optimised`)
+
+  log.info("2nd Pass...")
   for (var i = 0; i < lines.length; i++) {
     if (lines[i] === "" ) {continue} // skip empty lines
     if (/\s*\/\//.test(lines[i])) {continue} // skip comments
@@ -232,16 +249,15 @@ function assemble(lines) {
 
   var asm_string = assembled.join("") //join it all into one string
 
-  log.info("2nd Pass...")
+  log.info("3rd Pass...")
   for (var key in labels) {
     var bin = numToBin(labels[key].toString())
     asm_string = asm_string.replace( RegExp("\\b"+key+"\\b","gi") , bin)
   }
   log.info("↳ success, " + Object.keys(labels).length + " label(s) replaced")
 
-  log.info("3rd Pass...")
+  log.info("4th Pass...")
   var as_list = asm_string.split("\n")
-
   for (let i = 0; i < as_list.length; i++) {
     let line = as_list[i]
     if (!   /^[0-1]{16}\n?$/.test(line) && line != "") {
