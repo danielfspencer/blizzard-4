@@ -54,20 +54,14 @@ sys.**s32_greater**(s32 a, s32 b) -> bool
 
 sys.**s32_less**(s32 a, s32 b) -> bool
 
-sys.**array_pointer**(u16 index, u16 item_size, u16 base_addr) -> u16
+sys.**mem_copy**(u16 origin_addr, u16 target_addr, u16 length)
 
-sys.**rom_to_ram_copy**(u16 origin_address, u16 target_address, u16 length) -> u16
+sys.**array_set**(u16 base_addr, u16 item_size, u16 index, u16 item_addr)
 
-sys.**ram_to_ram_copy**(u16 origin_address, u16 target_address, u16 length) -> u16
+sys.**array_read**(u16 base_addr, u16 item_size, u16 index, u16 target_addr)
 
-sys.**rom_to_global_ram_copy**(u16 origin_address, u16 target_address, u16 length) -> u16
+sys.**array_shift**(u16 base_addr, u16 item_size, u16 index, u16 length)
 
-sys.**global_ram_to_ram_copy**(u16 origin_address, u16 target_address, u16 length) -> u16
-
-sys.**ram_to_global_ram_copy**(u16 origin_address, u16 target_address, u16 length) -> u16
-
-sys.**global_ram_to_global_ram_copy**(u16 origin_address, u16 target_address, u16 length)
- -> u16
 sys.**vram.or_word**(u16 word, u16 addr)
 
 sys.**vram.nand_word**(u16 word, u16 addr)
@@ -86,7 +80,7 @@ sys.**vram.draw_square**(u16 x, u16 y, u16 length, bool data = true)
 
 sys.**vram.draw_circle**(u16 x, u16 y, u16 radius, bool data = true)
 
-sys.**vram.draw_line**(u16 x0_i, u16 y0_i, u16 x1_i, u16 y1_i, bool data = true)
+sys.**vram.draw_line**(u16 x0, u16 y0, u16 x1, u16 y1, bool data = true)
 
 sys.**print_string**(str string, u16 x = 0, u16 y = 0)
 

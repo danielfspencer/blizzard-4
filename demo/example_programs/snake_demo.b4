@@ -1,36 +1,34 @@
-var array x_coords (u16,490)[10,11,12]
-var array y_coords (u16,490)[10,10,10]
+let array x_coords = (u16,490)[10,11,12]
+let array y_coords = (u16,490)[10,10,10]
 
-var u16 head_x x_coords[0]
-var u16 head_y y_coords[0]
+let u16 head_x = x_coords[0]
+let u16 head_y = y_coords[0]
 
-var u16 direction 1
-var u16 temp_x
-var u16 temp_y
+let u16 direction = 1
 
-var u16 key_code
+let u16 key_code
 
 def get_keypress() -> u16
-  var u16 kbd 8192
-  var u16 scancode *kbd
-  var u16 char_code 0
+  include sys.consts
+  let u16 scancode = *SYS_KEYBOARD_ADDR
+  let u16 char_code = 0
 
   while scancode > 0
     if scancode == 0xAA
       //pass
     else if scancode == 0xF0
-      scancode = *kbd
+      scancode = *SYS_KEYBOARD_ADDR
     else if scancode == 0xE0
       //pass
     else
       char_code = sys.kbd.scancode_to_charcode(scancode)
       return char_code
-    scancode = *kbd
+    scancode = *SYS_KEYBOARD_ADDR
 
   return char_code
 
-var u16 head 120
-var u16 tail 0
+let u16 head = 120
+let u16 tail = 0
 while true
   key_code = get_keypress()
   if key_code == 29
@@ -66,8 +64,8 @@ while true
   sys.vram.set_pixel(head_x,head_y)
 
   if key_code != 8
-    temp_x = x_coords[tail]
-    temp_y = y_coords[tail]
+    let u16 temp_x = x_coords[tail]
+    let u16 temp_y = y_coords[tail]
 
     if tail < 489
       tail++

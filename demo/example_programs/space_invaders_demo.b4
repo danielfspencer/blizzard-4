@@ -1,24 +1,29 @@
+include sys.consts
+
 def draw_8x8(u16 rom_addr, u16 x, u16 y)
   // draw an 8x8 pixel sprite
-  var u16 offset y
-  var u16 vram_addr 6144
-  var u16 mask 0xff00
-  var u16 inv_mask 0x00ff
-  if x sys.odd
+  let u16 offset = y
+  let u16 vram_addr = SYS_VRAM_ADDR
+  let u16 mask = 0xff00
+  let u16 inv_mask = 0x00ff
+  if x
     mask = 0x00ff
     inv_mask = 0xff00
-  x = x >>
+  x = x >> 1
   vram_addr += x
   vram_addr += offset
+
+  let u16 scratch1
+  let u16 scratch2
   repeat 8
     {copy $vram_addr alu.1}
     {copy &inv_mask alu.2}
-    {copy alu.& ram.7}
+    {copy alu.& &scratch1}
     {copy $rom_addr alu.1}
     {copy &mask alu.2}
-    {copy alu.& ram.8}
-    {copy ram.8 alu.1}
-    {copy ram.7 alu.2}
+    {copy alu.& &scratch2}
+    {write $scratch2 alu.1}
+    {write $scratch1 alu.2}
     {copy alu.| $vram_addr}
     rom_addr++
     vram_addr += 8
@@ -55,13 +60,13 @@ def shift_down(u16 start, u16 end)
       {copy &end alu.1}
 
 def shift_sprite_right(u16 start)
-  var u16 end start + 64
-  var bool carry
+  let u16 end = start + 64
+  let bool carry
   while end > start
     {copy $end alu.1}
     {copy alu.>> $end}
     end--
-    {copy $end ram.2}
+    {copy $end &carry}
     if carry
       end++
       {copy $end alu.1}
@@ -72,7 +77,7 @@ def shift_sprite_right(u16 start)
     {copy $end alu.1}
     {copy alu.>> $end}
     end -= 7
-    {copy $end ram.2}
+    {copy $end &carry}
     if carry
       end += 7
       {copy $end alu.1}
@@ -81,15 +86,15 @@ def shift_sprite_right(u16 start)
       end -= 7
 
 def shift_sprite_left(u16 start)
-  var u16 end start + 65
-  var bool carry
+  let u16 end = start + 65
+  let bool carry
   while start < end
     {copy $start alu.1}
     {copy alu.<< $start}
     start++
     {copy $start alu.1}
     {write 0b1000000000000000 alu.2}
-    {copy alu.ov ram.2}
+    {copy alu.ov &carry}
     if carry
       start--
       {copy $start alu.1}
@@ -102,7 +107,7 @@ def shift_sprite_left(u16 start)
     start += 7
     {copy $start alu.1}
     {write 0b1000000000000000 alu.2}
-    {copy alu.ov ram.2}
+    {copy alu.ov &carry}
     if carry
       start -= 7
       {copy $start alu.1}
@@ -113,75 +118,75 @@ def shift_sprite_left(u16 start)
 def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
   // highly optimised pixel setting
   include sys.vram.shifted_pixels
-  y = y <<
-  y = y <<
-  y = y <<
+  y = y << 3
   y += word_x
-  y += 6144
+  y += SYS_VRAM_ADDR
 
-  {write sys.vram.shifted_pixels ram.4}
-  {write [ram.4] alu.1}
+  let u16 scratch
+
+  {write sys.vram.shifted_pixels &scratch}
+  {write $scratch alu.1}
   {write $sub_x alu.2}
-  {write [alu.+] ram.4}
+  {write [alu.+] &scratch}
 
   if data
-    {copy [ram.4] alu.1}
+    {copy $scratch alu.1}
     {copy $y alu.2}
     {write [alu.|] $y}
   else
-    {copy [ram.4] alu.1}
-    {copy alu.! ram.5}
-    {copy ram.5 alu.1}
+    {copy $scratch alu.1}
+    {copy alu.! &scratch}
+    {copy $scratch alu.1}
     {copy $y alu.2}
     {write [alu.&] $y}
 
 // lower numbers = faster
-const u16 alien_speed 8
-const u16 shot_speed 1
+const u16 alien_speed = 8
+const u16 shot_speed = 1
 
 // addresses for sprites
 global u16 cannon_sprite
-{write sprites ram^.0}
-global u16 invader_sprite cannon_sprite + 8
+{write sprites &cannon_sprite}
+global u16 invader_sprite = cannon_sprite + 8
 
 // status of the input buttons
-global bool button_left
-global bool button_right
-global bool button_fire
+global bool button_left = false
+global bool button_right = false
+global bool button_fire = false
 
 // the column the cannon is in
-global u16 cannon_x 7
+global u16 cannon_x = 7
 
 // the pixel position of the cannon in the column
-global u16 cannon_x_sub 0
+global u16 cannon_x_sub = 0
 
 // the player's score
-global u16 game_score 0
+global u16 game_score = 0
 
 // vram addresses for start and end of the block of invaders
-global u16 start_row 88
-global u16 end_row 336
+global u16 start_row = 88
+global u16 end_row = 336
 
 // which row of invaders should be moved next
-global u16 selected_row 0
+global u16 selected_row = 0
 
 // the distance of the invaders from their left-most position
-global u16 invader_x_pos 0
+global u16 invader_x_pos = 0
 
 // which direction the invaders are currently moving in
-global bool invader_shift_right true
+global bool invader_shift_right = true
 
 // are they currently moving down?
-global bool invader_shift_down false
+global bool invader_shift_down = false
 
 // have we just finished moving them down?
-global bool invader_has_shifted_down true
+global bool invader_has_shifted_down = true
 
 // the alive/dead status of each alien
-global array alien_status (bool,18)[true]
+global array alien_status = (bool,18)[]
 
 // is the shot on screen?
-global bool shot_present
+global bool shot_present = false
 
 // pixel-level x position of shot
 global u16 shot_x
@@ -196,7 +201,7 @@ global u16 shot_x_sub
 global u16 shot_y
 
 // the y coord of the lowest alien above the shot
-global u16 lowest_invader_above_player_shot end_row / 8
+global u16 lowest_invader_above_player_shot = end_row / 8
 
 // which row the alien above the shot is in (0-2)
 global u16 row_of_invader_above_shot
@@ -207,18 +212,18 @@ def wait_time(u16 iterations)
     iterations--
 
 def read_inputs()
+  include sys.consts
   // detect which keys are being pressed
-  var u16 kbd 8192
-  var u16 scancode *kbd
-  var u16 char_code 0
+  let u16 scancode = *SYS_KEYBOARD_ADDR
+  let u16 char_code = 0
 
   while scancode > 0
     if scancode == 0xAA
       // pass
     else if scancode == 0xF0
-      scancode = *kbd
+      scancode = *SYS_KEYBOARD_ADDR
     else if scancode == 0xE0
-      scancode = *kbd
+      scancode = *SYS_KEYBOARD_ADDR
       if scancode == 0x6b
         button_left = true
         return
@@ -229,7 +234,7 @@ def read_inputs()
         button_fire = true
         return
       else if scancode == 0xf0
-        scancode = *kbd
+        scancode = *SYS_KEYBOARD_ADDR
         if scancode == 0x6b
           button_left = false
         else if scancode == 0x74
@@ -237,17 +242,17 @@ def read_inputs()
         else if scancode == 0x75
           button_fire = false
 
-    scancode = *kbd
+    scancode = *SYS_KEYBOARD_ADDR
 
 def update_cannon()
   read_inputs()
   // calculate which word the cannon is in
-  var u16 cannon_addr cannon_x >>
+  let u16 cannon_addr = cannon_x >> 1
   if cannon_addr > 6
     cannon_addr = 6
 
   if button_left
-    var u16 tmp cannon_x + cannon_x_sub
+    let u16 tmp = cannon_x + cannon_x_sub
     if tmp > 0
       if cannon_x_sub > 0
         cannon_x_sub--
@@ -270,12 +275,12 @@ def update_cannon()
     wait_time(20)
 
 def move_aliens()
-  var u16 addr_offset 88 * selected_row
+  let u16 addr_offset = 88 * selected_row
   // start_addr holds the vram address of the top of the block of invaders
-  var u16 start_addr start_row + 6144
+  let u16 start_addr = start_row + SYS_VRAM_ADDR
   start_addr += addr_offset
   // end_addr holds the vram address of the bottom of the block of invaders
-  var u16 end_addr start_addr + 68
+  let u16 end_addr = start_addr + 68
 
   if invader_shift_down
     shift_down(start_addr-29, end_addr)
@@ -321,7 +326,7 @@ def update_score()
 def erase_invader(u16 x, u16 y)
   // erase the space invader at the given coords
   // check invader status
-  var u16 tmp 6 * y
+  let u16 tmp = 6 * y
 
   if alien_status[tmp + x]
     // set invader as dead
@@ -332,19 +337,19 @@ def erase_invader(u16 x, u16 y)
   free tmp
 
   // calculate the vram address of the top of the invader
-  var u16 vram_addr x + 1
+  let u16 vram_addr = x + 1
   vram_addr += start_row
   // rows are 11 pixels high and 8 words wide
-  var u16 tmp 88 * y
+  let u16 tmp = 88 * y
   vram_addr += tmp
   free tmp
 
   // erase the invader (TODO make this faster & better)
-  for var u16 i; i < 64; i += 8
+  for let u16 i = 0; i < 64; i += 8
     sys.vram.nand_word(0xffff, vram_addr + i)
 
   // score is 10 for bottom row, 20 for middle and 30 for top
-  var u16 tmp 3 - y
+  let u16 tmp = 3 - y
   tmp = 10 * tmp
   game_score += tmp
   update_score()
@@ -365,7 +370,7 @@ def update_shot()
           // check if shot could hit an alien, we do this by checking if the shot is
           // within the 8 pixel width of an alien in the 16 pixel wide column
           if shot_x_sub >= invader_x_pos
-            var u16 tmp invader_x_pos + 8
+            let u16 tmp = invader_x_pos + 8
             if shot_x_sub < tmp
               // if it has hit then delete the alien
               erase_invader(shot_x_word-1,row_of_invader_above_shot)
@@ -390,7 +395,7 @@ def update_shot()
     // calculate the y coord of the lowest invader above the shot
 
     // get which invader we are below
-    var u16 column shot_x_word - 1
+    let u16 column = shot_x_word - 1
 
     // assume bottom invader is still present
     lowest_invader_above_player_shot = end_row / 8
@@ -412,7 +417,7 @@ def update_shot()
 
 // this could be replaced by array.fill in the future
 // mark all invader as alive
-for var u16 i; i < alien_status.max_len(); i++
+for let u16 i = 0; i < alien_status.max_len(); i++
   alien_status[i] = true
 free i
 
@@ -421,9 +426,9 @@ draw_8x8(cannon_sprite,cannon_x,960)
 sys.print_string("SCORE 0")
 
 // draw alien invaders
-var bool flip
-for var u16 row start_row; row < end_row; row += 88
-  for var u16 col 2; col < 14; col += 2
+let bool flip
+for let u16 row = start_row; row < end_row; row += 88
+  for let u16 col = 2; col < 14; col += 2
     if flip
       draw_8x8(invader_sprite,col,row)
     else
@@ -433,8 +438,8 @@ for var u16 row start_row; row < end_row; row += 88
 free row
 free col
 
-var u16 cycle
-var u16 cycle2
+let u16 cycle = 0
+let u16 cycle2 = 0
 
 // main game loop
 while true

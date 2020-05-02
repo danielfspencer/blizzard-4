@@ -39,10 +39,7 @@
                   <div id="cmd_blank_leds" class="led_row">
                     <div class="led blank"></div><div class="led blank"></div><div class="led blank"></div><div class="led blank"></div>
                     <div class="led blank"></div><div class="led blank"></div><div class="led blank"></div><div class="led blank"></div>
-                    <div class="led blank"></div><div class="led blank"></div>
-                  </div>
-                  <div id="cmd_word_2nd_part_leds" class="led_row">
-                    <div class="led red"></div>
+                    <div class="led blank"></div><div class="led blank"></div><div class="led blank"></div>
                   </div>
                 </td>
               </tr><tr>
@@ -85,20 +82,33 @@
             <table class="right_align">
               <tr>
                 <td></td>
-                <td>fetch load exe</td>
+                <td>fetch exe</td>
               </tr><tr>
                 <td>proc. mode</td>
                 <td>
                   <div id="proc_mode_leds" class="led_row">
+                    <div class="led blue"></div><div class="led blue"></div>
+                  </div>
+                </td>
+                <td>
+                  <a>clock set</a>
+                </td>
+                <td>
+                  <input id="clock-target" type="number" name="quantity" min="100" value="100000" step="100"><a> Hz</a>
+                </td>
+              </tr><tr>
+                <td>&micro;PC</td>
+                <td>
+                  <div id="micro_program_counter" class="led_row tooltip_enabled">
+                    <div id="micro_program_counter_tooltip" class="tooltip_content">-----</div>
                     <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
                   </div>
                 </td>
-                <td>args. remaining</td>
                 <td>
-                  <div id="arg_num_leds" class="led_row tooltip_enabled">
-                    <div id="arg_num_leds_tooltip" class="tooltip_content">-----</div>
-                    <div class="led blue"></div><div class="led blue"></div>
-                  </div>
+                  <a>actual</a>
+                </td>
+                <td>
+                  <input id="clock-actual" type="number" value="0" readonly><a> Hz</a>
                 </td>
               </tr><tr>
                 <td>prgm count.</td>
@@ -110,34 +120,6 @@
                     <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
                     <div class="led red"></div><div class="led red"></div><div class="led red"></div><div class="led red"></div>
                   </div>
-                </td>
-              </tr><tr>
-                <td>frame #</td>
-                <td>
-                  <div id="frame_num_leds" class="led_row tooltip_enabled">
-                    <div id="frame_num_leds_tooltip" class="tooltip_content">-----</div>
-                    <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
-                  </div>
-                </td>
-                <td>
-                  <a>clock set</a>
-                </td>
-                <td>
-                  <input id="clock-target" type="number" name="quantity" min="100" value="100000" step="100"><a> Hz</a>
-                </td>
-              </tr><tr>
-                <td>cnd. reg</td>
-                <td>
-                  <div id="cnd_reg_leds" class="led_row tooltip_enabled">
-                    <div id="cnd_reg_leds_tooltip" class="tooltip_content">-----</div>
-                    <div class="led green"></div>
-                  </div>
-                </td>
-                <td>
-                  <a>actual</a>
-                </td>
-                <td>
-                  <input id="clock-actual" type="number" value="0" readonly><a> Hz</a>
                 </td>
               </tr><tr>
                 <td colspan="4">
@@ -286,39 +268,34 @@
                     </div>
                   </td>
                 </tr><tr>
+                  <td>sp.</td>
+                  <td colspan="5">
+                    <div id="stack_pointer_leds" class="led_row tooltip_enabled">
+                      <div id="stack_pointer_leds_tooltip" class="tooltip_content">-----</div>
+                      <div class="led blank"></div><div class="led blank"></div><div class="led blue"></div><div class="led blue"></div>
+                      <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                      <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                      <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
+                    </div>
+                  </td>
+                </tr><tr>
                   <td>read</td>
                   <td>
                     <div id="ram_read_leds" class="led_row">
                       <div class="led green"></div>
                     </div>
                   </td>
-                  <td>
-                    offset
-                  </td>
-                  <td>
-                    <div id="ram_offset_leds" class="led_row">
-                      <div class="led blue"></div><div class="led blue"></div><div class="led blue"></div><div class="led blue"></div>
-                    </div>
-                  </td>
-                  <td rowspan="2">
-                    <div id="ram_addr_mode_leds" class="led_row">
-                      direct addr.<div class="led blue"></div>
-                    </div>
-                  </td>
-                </tr><tr>
                   <td>write</td>
                   <td>
                     <div id="ram_write_leds" class="led_row">
                       <div class="led red"></div>
                     </div>
                   </td>
-                  <td></td>
-                  <td id="ram-addr-mode-lables"><a>+1</a> <a>0</a> <a>-1</a> <a>^</a></td>
                 </tr>
               </table>
             </td>
             <td>
-              <table>
+              <table class="right_align">
                 <tr>
                   <td>addr.</td>
                   <td colspan="2">

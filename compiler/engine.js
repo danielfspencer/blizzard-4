@@ -9,12 +9,16 @@ let token_dump = []
 let timer = () => performance.now()
 importScripts('libraries.js')
 
+const min_frame_size = 2
+const max_frame_size = 2048
+const max_ram_size = 16384
 const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,none:0}
-const data_type_default_value = {u16:"0",s16:"0",u32:"0",s32:"0",float:"0",bool:"false",str:"\"\""}
 const mixable_numeric_types = [["u16","s16"],["u32","s32"]]
 const reserved_keywords = [
-  "if","for","while","repeat","struct","def","true","false","sys.odd","sys.ov","sys","return","break","continue","include","__root","__global", "__return"
+  "if","for","while","repeat","struct","def","true","false","sys","return","break","continue","include","__root","__global", "__return"
 ]
+
+const return_instruction = "return [stack.0] [stack.1]"
 
 onmessage = (event) => {
   let message = event.data
@@ -88,12 +92,11 @@ function init_vars() {
     include_only_signatures_mode: false,
     symbol_table: {__root:{}, __global:{}},
     struct_definitions: {},
-    free_ram: {__root:gen_free_ram_map(), __global:gen_free_ram_map()},
+    frame_usage: {__root:[], __global:[]},
     function_table: {},
     consts: [],
     funcs: {},
     required: {},
-    max_allocated_ram_slots: 0,
     inner_structure_label: null,
     labels: {__root: {if:0, for:0, while:0, str:0, expr_array:0}}
   }
@@ -132,26 +135,13 @@ function benchmark(iterations) {
   return Math.round(lines / (avg_time/1000))
 }
 
-function all_matches(pattern, string) {
-  let list = []
-  let m
-  do {
-    m = pattern.exec(string)
-    if (m) {
-      list.push(m[0])
-    }
-  } while (m)
-  return list
-}
+function get_static_value(token, type, fail) {
+  let [token_prefix, token_value, token_type] = translate(token, type)
 
-function find_operation(pattern, string) {
-  let operators = all_matches(pattern,string)
-  if (operators.length === 1) {
-    return operators[0]
-  } else if (operators.length === 3) {
-    return operators[1]
+  if (token_prefix.length > 0 || token_type !== type) {
+    fail()
   } else {
-    throw new CompError("Unable to find mathematical operator")
+    return token_value
   }
 }
 
@@ -222,14 +212,6 @@ function set_token(name, operation, exprs, line) {
   return set_var
 }
 
-function gen_free_ram_map() {
-  let map = []
-  for (let x = 0; x < 1023; x++) { //last word of RAM is function return address
-    map.push(x)
-  }
-  return map
-}
-
 function assert_local_name_available(name) {
   const places = [
     Object.keys(state.symbol_table[state.scope]),
@@ -264,17 +246,21 @@ function assert_valid_function_name(name) {
   }
 }
 
-function buffer_if_needed(address, calle) {
-  let prefix = []
-  let new_address = address
-
+function buffer_if_needed(address) {
   if (/(alu\.)|(ram\+\.)/.test(address)) {
     let buffer = get_temp_word()
-    prefix.push(`write ${address} ${buffer.label}`)
-    new_address = buffer.label
+    return {
+      prefix: [`write ${address} ${buffer.label}`],
+      label: `[${buffer.label}]`,
+      free: buffer.free
+    }
+  } else {
+    return {
+      prefix: [],
+      label: address,
+      free: () => {}
+    }
   }
-
-  return [prefix, new_address]
 }
 
 function gen_label(type) {
@@ -308,8 +294,12 @@ function operation_assignment_token(var_name, op, value_token) {
   return translate(token)
 }
 
-function function_call(name, args) {
+function function_call(name, args, raw_input = false) {
   load_lib(name)
+  if (raw_input) {
+    // if the arguments are not tokens, first tokenise them
+    args = args.map(tokenise)
+  }
   let token = {
     name:"function",
     type:"expression",
@@ -323,39 +313,76 @@ function function_call(name, args) {
   return translate(token)
 }
 
-function alloc_block(size) {
-  log.debug(`Request for ${size} words(s) of RAM`)
+function alloc_stack(size) {
+  // TODO find first contiguous slot for allocation instead of assuming the end
+  log.debug(`Request for ${size} words(s) of stack`)
   let addrs = []
-  if (size > state.free_ram[state.scope].length) {
-    throw new CompError(`Out of memory, ${size} word(s) requested (only ${state.free_ram[state.scope].length} free)`)
-  }
+  let base_addr = frame_size(state.scope)
+
   for (let i = 0; i < size; i++) {
-    addrs.push(state.free_ram[state.scope].shift())
-  }
-
-  if (!state.scope.startsWith("sys.")) {
-    let allocated_slots = 1023 - state.free_ram[state.scope].length
-    if (allocated_slots > state.max_allocated_ram_slots) {
-      state.max_allocated_ram_slots = allocated_slots
+    let addr = base_addr + i
+    if (addr >= max_frame_size) {
+      throw new CompError(`Stack frame is out of memory, ${size} word(s) requested (only ${max_frame_size - base_addr} free)`)
     }
+    addrs.push(addr)
+    state.frame_usage[state.scope].push(addr)
   }
-  return addrs
-}
-
-function alloc_global_block(size) {
-  let old_state = state.scope
-  state.scope = "__global"
-  let addrs = alloc_block(size)
-  state.scope = old_state
 
   return addrs
 }
 
-function free_global_block(addrs) {
-  let old_state = state.scope
-  state.scope = "__global"
-  free_block(addrs)
-  state.scope = old_state
+function free_stack(addrs) {
+  let filter = item => !addrs.includes(item)
+  state.frame_usage[state.scope] = state.frame_usage[state.scope].filter(filter)
+}
+
+function alloc_global(size) {
+  // TODO find first contiguous slot for allocation instead of assuming the end
+  log.debug(`Request for ${size} words(s) of global RAM`)
+  let addrs = []
+  let base_addr = frame_size("__global")
+
+  for (let i = 0; i < size; i++) {
+    let addr = base_addr + i
+    if (addr >= max_ram_size) {
+      throw new CompError(`Out of memory, ${size} word(s) requested (only ${max_ram_size - base_addr} free)`)
+    }
+    addrs.push(addr)
+    state.frame_usage.__global.push(addr)
+  }
+
+  return addrs
+}
+
+
+function free_global(addrs) {
+  let filter = item => !addrs.includes(item)
+  state.frame_usage.__global = state.frame_usage.__global.filter(filter)
+}
+
+function frame_size(scope) {
+  let frame_usage = state.frame_usage[scope]
+
+  if (frame_usage.length == 0) {
+    if (scope === "__global") {
+      return 0
+    } else {
+      return min_frame_size
+    }
+  } else {
+    return frame_usage[frame_usage.length - 1] + 1
+  }
+}
+
+function stack_to_absolute(stack_addr) {
+  let prefix = [
+    `write ${stack_addr + 16384} alu.1`,
+    `write [ctl.sp] alu.2`
+  ]
+  return {
+    prefix: prefix,
+    value: "[alu.+]"
+  }
 }
 
 function assert_valid_datatype(type) {
@@ -386,25 +413,12 @@ function get_data_type_size(type) {
   }
 }
 
-function get_data_type_default(type) {
-  if (type in data_type_default_value) {
-    return data_type_default_value[type]
-  } else {
-    throw new CompError(`Type '${type}' has no default value and must initalised`)
-  }
-}
-
-function free_block(addrs) {
-  state.free_ram[state.scope].push(...addrs)
-  state.free_ram[state.scope].sort((a,b) => (a - b))
-}
-
 function get_temp_word() {
-  let addr = alloc_block(1)
+  let addr = alloc_stack(1)
   return {
     addr: addr[0],
-    label: `ram.${addr[0]}`,
-    free: () => free_block(addr)
+    label: `stack.${addr[0]}`,
+    free: () => free_stack([addr])
   }
 }
 
@@ -489,6 +503,9 @@ function tokenise(input, line) {
   } else if (/^{(.+)}$/.test(input)) {
     token = {name:"asm",type:"command",arguments:{value:/{(.+)}/.exec(input)[1]}}
 
+  } else if (/^#([^#]+)#$/.test(input)) {
+    token = {name:"inline_asm",type:"expression",arguments:{value:/^#([^#]+)#$/.exec(input)[1]}}
+
   } else if (/^<(.+)>$/.test(input)) {
     let content = /^<(.+)>$/.exec(input)[1]
     let expr_strings = content.split(",")
@@ -503,22 +520,30 @@ function tokenise(input, line) {
   } else if (/^\"(.+)\"$|^(\"\")$/.test(input)) {     //string
     token = {name:"str",type:"expression",arguments:{value:input,type_guess:"str"}}
 
-  } else if (/^(var|const|global)/.test(input)) {        // (var/arg/const/global) [type] [name] <expr>
-    if (list.length < 3) {
-      throw new CompError("Decleration syntax:\nvar/const/global [type] [name] <expr>")
-    }
+  } else if (/^(const|global|let) (\S+) (\S+)(?: = (.+))?$/.test(input)) {        // (var/global) [type] [name] <expr>
+    let matches = /^(const|global|let) (\S+) (\S+)(?: = (.+))?$/.exec(input)
 
-    let alloc_type = list[0]      // var / const / global
-    let type = list[1]
-    let name = list[2]
-    let expr
+    let alloc_type = matches[1]
+    let type =  matches[2]
+    let name = matches[3]
+    let expr_text = matches[4]
+
     assert_valid_name(name)
-
-    if (list.length >= 4) {
-      expr = tokenise(list.slice(3).join(" "), line) // extract all the letters after command
+    let expr
+    if (expr_text !== undefined) {
+      expr = tokenise(expr_text, line)
     }
 
-    token = {name:`${alloc_type}_alloc`,type:"command",arguments:{type:type, name:name, expr:expr}}
+    let token_name, is_global
+    if (alloc_type === "const") {
+      token_name = "const_alloc"
+      is_global = true
+    } else {
+      token_name = "var_alloc"
+      is_global = alloc_type == "global"
+    }
+
+    token = {name:token_name, type:"command", arguments: { type:type, name:name, expr:expr, global:is_global }}
 
   } else if (list[0] === "if") {               // if [bool]
     if (list.length > 1) {
@@ -798,41 +823,29 @@ function tokenise(input, line) {
     }
     token = {name:"type_name_assignment_tuple", type:"command", arguments:{name:name,type:type,expr:expr}}
 
-  } else if (/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/.test(input)) {          // is an expression
-    let operation = find_operation(/(>> 8)|(>>)|(<<)|(!=)|(<=)|(>=)|[\+\-\*\/\!\<\>\&\^\|\%:]|(==)|(\.\.)|(sys\.ov)|(sys\.odd)/g, input)
-    if (operation in {"+":"", "-":"", "/":"", "*":"", "^":"", "%":""}) { // dual operand [non bool]
-      let args = input.split(operation)
-      let expr1 = tokenise(args[0], line)
-      let expr2 = tokenise(args[1], line)
-      token = {name:operation,type:"expression",arguments:{expr1:expr1,expr2:expr2}}
+  } else if (/^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.test(input)) {          // is an expression
+    let matches = /^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.exec(input)
 
-    } else if (operation in {">":"", "<":"","==":"","!=":"", "&":"", ">=":"", "<=":"", "|":"", "..":"", ":":""}) { // dual operand [bool]
-      let args = input.split(operation)
-      let expr1 = tokenise(args[0], line)
-      let expr2 = tokenise(args[1], line)
-      token = {name:operation,type:"expression",arguments:{expr1:expr1,expr2:expr2}}
+    let [, expr1_text, operator, expr2_text] = matches
+    const dual_operand = ["+", "-", "/", "*", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", "..", ":", ">>", "<<"]
+    const single_operand = ["!"]
 
-    } else if (operation in {">>":"", "<<":"", "!":"", ">> 8":""}) { // single operand [non-bool]
-      let args = input.split(operation)
-      let arg
-      if (args[0] === "") {
-        arg = args[1]
+    if (dual_operand.includes(operator)) {
+      let expr1 = tokenise(expr1_text, line)
+      let expr2 = tokenise(expr2_text, line)
+      token = { name:operator, type: "expression", arguments: { expr1:expr1, expr2:expr2 }}
+
+    } else if (single_operand.includes(operator)) {
+      let expr
+      if (expr1_text !== "") {
+        expr = tokenise(expr1_text, line)
       } else {
-        arg = args[0]
+        expr = tokenise(expr2_text, line)
       }
-      let expr = tokenise(arg, line)
-      token = {name:operation,type:"expression",arguments:{expr:expr}}
-
-    } else if (operation === "sys.odd") {
-      let args = /([^\n\r]*)sys.odd\s*/.exec(input)
-      let expr = tokenise(args[1], line)
-      token = {name:"is_odd",type:"expression",arguments:{expr:expr}}
-
-    } else if (operation === "sys.ov") {
-      token = {name:"overflow",type:"expression",arguments:{}}
+      token = { name:operator, type: "expression", arguments: { expr:expr } }
 
     } else {
-      throw new CompError(`Unknown operator '${operation}'`)
+      throw new CompError(`Unknown operator '${operator}'`)
     }
 
   } else if (/(^true$)|(^false$)/.test(input)) {    //is true/false (the reserved keywords for bool data type)
@@ -841,27 +854,36 @@ function tokenise(input, line) {
   } else if (/^([a-zA-Z_]\w*)$/.test(input) ) {                       //variable or const (by name)
     token = {name:"var_or_const",type:"expression",arguments:{name:input}}
 
-  } else if (/^((\(.*\))?(\[.*\]))$/.test(input)) {                          //array of expressions
-    let matches = /^((\(.*\))?(\[.*\]))$/.exec(input)
+  } else if (/^(\(.*\))?(\[.*\])$/.test(input)) {                          //array of expressions
+    let matches = /^(\(.*\))?(\[.*\])$/.exec(input)
 
-    let type_size = undefined
-    if(matches[2] !== undefined) {
-      let type_size_string = matches[2].slice(1, -1)
-      type_size = type_size_string.split(",")
+    let type_string
+    let size_string
+    let size_token
+    if (matches[1] !== undefined) {
+      let type_size_string = matches[1].slice(1, -1)
+      ;[type_string, size_string] = type_size_string.split(",")
+
+      if (size_string !== undefined) {
+        size_token = tokenise(size_string, line)
+      }
     }
 
-    let elements_string = matches[3].slice(1, -1)
+    let elements_string = matches[2].slice(1, -1)
     let elements_array = elements_string.split(",")
     let token_array = []
 
-    for (let item of elements_array) {
-      token_array.push(tokenise(item,line))
+    if (elements_string !== "") {
+      for (let item of elements_array) {
+        token_array.push(tokenise(item,line))
+      }
     }
 
     token = {name:"expr_array",type:"expression",
       arguments:{
       exprs:token_array,
-      type_size:type_size
+      type: type_string,
+      size: size_token
     }}
 
   } else if (/^([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)$/.test(input)) {
@@ -940,188 +962,110 @@ function translate(token, ctx_type) {
       }
 
       assert_valid_datatype(args.type)
-      assert_local_name_available(args.name)
 
-      let value
-      if (args.expr === undefined) {
-        value = tokenise(get_data_type_default(args.type))
+      let allocator, scope, prefix
+      if (args.global) {
+        assert_global_name_available(args.name)
+        allocator = alloc_global
+        scope = "__global"
+        prefix = "ram."
       } else {
-        value = args.expr
+        assert_local_name_available(args.name)
+        allocator = alloc_stack
+        scope = state.scope
+        prefix = "stack."
       }
 
-      let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
-      assert_compatable_types(args.type, expr_type, token.line, () => {
-        throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
-      })
-
-      let memory = alloc_block(expr_value.length)
+      let memory = allocator(get_data_type_size(args.type))
 
       // add entry to symbol table
-      state.symbol_table[state.scope][args.name] = {
+      state.symbol_table[scope][args.name] = {
         type: "variable",
         data_type: args.type,
         specific: {
-          ram_addresses: memory.slice()
+          ram_addresses: memory.slice(),
+          addr_prefix: prefix
         }
       }
 
-      // make data available
-      result = expr_prefix
+      if (args.expr !== undefined) {
+        let [expr_prefix, expr_value, expr_type] = translate(args.expr, args.type)
+        assert_compatable_types(args.type, expr_type, token.line, () => {
+          throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
+        })
 
-      for (let expr_word of expr_value) {
-        result.push(`write ${expr_word} ram.${memory.shift()}`)
+        // make data available
+        result = expr_prefix
+
+        for (let expr_word of expr_value) {
+          result.push(`write ${expr_word} ${prefix}${memory.shift()}`)
+        }
       }
+
     } break
 
     case "const_alloc": {    //const [name] [type] [expr]
       assert_valid_datatype(args.type)
       assert_global_name_available(args.name)
 
-      let value
       if (args.expr === undefined) {
-        value = tokenise(get_data_type_default(args.type))
-      } else {
-        value = args.expr
+        throw new CompError("Constants must be initialised")
       }
 
-      if (!(["str", "number"].includes(value.name))) {
-        log.info(value)
+      if (!(["str", "number", "inline_asm"].includes(args.expr.name))) {
         throw new CompError("Constant must be static values")
       }
 
-      let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
+      let [expr_prefix, expr_value, expr_type] = translate(args.expr, args.type)
       assert_compatable_types(args.type, expr_type, token.line, () => {
         throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
       })
-
-      let label = `const_${args.name}`
-      let memory = []
-      for (let i = 0; i < expr_value.length; i++) {
-        memory.push(`${label}_${i}`)
-      }
 
       // add entry to symbol table
       state.symbol_table.__global[args.name] = {
         type: "constant",
         data_type: args.type,
         specific: {
-          value: memory.slice()
+          value: expr_value
         }
-      }
-
-      for (let word of expr_value) {
-        state.consts.push(`${memory.shift()}:`)
-        state.consts.push(word)
-      }
-    } break
-
-    case "global_alloc": {    //global [name] [type] <expr>
-      // arrays require a different allocation method
-      if (args.type === "array") {
-        token.name = "global_array_alloc"
-        result = translate(token)
-        break
-      }
-
-      assert_valid_datatype(args.type)
-      assert_local_name_available(args.name)
-
-      let value
-      if (args.expr === undefined) {
-        value = tokenise(get_data_type_default(args.type))
-      } else {
-        value = args.expr
-      }
-
-      let [expr_prefix, expr_value, expr_type] = translate(value, args.type)
-      assert_compatable_types(args.type, expr_type, token.line, () => {
-        throw new CompError(`Wrong data type, expected '${args.type}', got '${expr_type}'`)
-      })
-
-      let memory = alloc_global_block(expr_value.length)
-
-      // add entry to symbol table
-      state.symbol_table.__global[args.name] = {
-        type: "variable",
-        data_type: args.type,
-        specific: {
-          ram_addresses: memory.slice()
-        }
-      }
-
-      // make data available
-      result = expr_prefix
-
-      for (let expr_word of expr_value) {
-        result.push(`write ${expr_word} ram^.${memory.shift()}`)
       }
     } break
 
     case "var_array_alloc": {
-      assert_local_name_available(args.name)
-
       let [expr_prefix, expr_values, expr_type] = translate(args.expr)
 
       if (expr_type !== "expr_array") {
         throw new CompError(`Array declarations require type 'expr_array', got '${expr_type}'`)
       }
 
-      let [base_addr, current_len, max_len, data_type] = expr_values
+      let [source_base_addr, current_len, max_len, data_type] = expr_values
 
       assert_valid_datatype(data_type)
       let element_size = get_data_type_size(data_type)
 
-      let header_memory = alloc_block(3)
-      let array_memory = alloc_block(max_len * element_size)
-
-      // add to symbol table
-      state.symbol_table[state.scope][args.name] = {
-        type: "variable",
-        data_type: "array",
-        specific: {
-          element_data_type: data_type, // TODO
-          base_addr: header_memory[0],
-          current_len: header_memory[1],
-          max_len: header_memory[2],
-          array_mem: array_memory
-        }
+      let allocator, scope, prefix
+      if (args.global) {
+        assert_global_name_available(args.name)
+        allocator = alloc_global
+        scope = "__global"
+        prefix = "ram."
+      } else {
+        assert_local_name_available(args.name)
+        allocator = alloc_stack
+        scope = state.scope
+        prefix = "stack."
       }
 
-      result.push(`write ram.${array_memory[0]} ram.${header_memory[0]}`)
-      result.push(`write ${current_len} ram.${header_memory[1]}`)
-      result.push(`write ${max_len} ram.${header_memory[2]}`)
-
-      // call function to copy inital values to array
-      load_lib("sys.rom_to_ram_copy")
-      result.push(`write ${base_addr} ram+.0`)
-      result.push(`write ram.${array_memory[0]} ram+.1`)
-      result.push(`write ${current_len * element_size} ram+.2`)
-      result.push("call func_sys.rom_to_ram_copy_3")
-    } break
-
-    case "global_array_alloc": {
-      assert_global_name_available(args.name)
-
-      let [expr_prefix, expr_values, expr_type] = translate(args.expr)
-
-      if (expr_type !== "expr_array") {
-        throw new CompError(`Array declarations require type 'expr_array', got '${expr_type}'`)
-      }
-
-      let [base_addr, current_len, max_len, data_type] = expr_values
-
-      assert_valid_datatype(data_type)
-      let element_size = get_data_type_size(data_type)
-
-      let header_memory = alloc_global_block(3)
-      let array_memory = alloc_global_block(max_len * element_size)
+      let header_memory = allocator(3)
+      let array_memory = allocator(max_len * element_size)
 
       // add to symbol table
-      state.symbol_table.__global[args.name] = {
+      state.symbol_table[scope][args.name] = {
         type: "variable",
         data_type: "array",
         specific: {
           element_data_type: data_type,
+          addr_prefix: prefix,
           base_addr: header_memory[0],
           current_len: header_memory[1],
           max_len: header_memory[2],
@@ -1129,16 +1073,27 @@ function translate(token, ctx_type) {
         }
       }
 
-      result.push(`write ram^.${array_memory[0]} ram^.${header_memory[0]}`)
-      result.push(`write ${current_len} ram^.${header_memory[1]}`)
-      result.push(`write ${max_len} ram^.${header_memory[2]}`)
+
+      let absoulte_base_addr
+      if (args.global) {
+        absoulte_base_addr = `ram.${array_memory[0]}`
+      } else {
+        let absoulte = stack_to_absolute(array_memory[0])
+        result.push(...absoulte.prefix)
+        absoulte_base_addr = "[alu.+]"
+      }
+
+      // write the values to memory
+      result.push(`write ${absoulte_base_addr} ${prefix}${header_memory[0]}`)
+      result.push(`write ${current_len} ${prefix}${header_memory[1]}`)
+      result.push(`write ${max_len} ${prefix}${header_memory[2]}`)
+
+      let base_addr = `[${prefix}${header_memory[0]}]`
 
       // call function to copy inital values to array
-      load_lib("sys.rom_to_global_ram_copy")
-      result.push(`write ${base_addr} ram+.0`)
-      result.push(`write ram.${array_memory[0]} ram+.1`)
-      result.push(`write ${current_len * element_size} ram+.2`)
-      result.push("call func_sys.rom_to_global_ram_copy_3")
+      let [call_prefix, call_value, call_type] = function_call("sys.mem_copy", [`#${source_base_addr}#`, `#${base_addr}#`, `#${current_len * element_size}#`], true)
+      result.push(...call_prefix)
+
     } break
 
     case "set": {            //[name] = [expr]
@@ -1150,11 +1105,9 @@ function translate(token, ctx_type) {
 
       if (args.name in local_table) {
         // this is a local variable or argument
-        is_global = false
         table_entry = local_table[args.name]
       } else if (args.name in global_table) {
         // this is a global variable
-        is_global = true
         table_entry = global_table[args.name]
       } else {
         throw new CompError(`Variable '${args.name}' is undefined`)
@@ -1165,6 +1118,7 @@ function translate(token, ctx_type) {
       }
 
       let dst_regs = table_entry.specific.ram_addresses
+      let addr_prefix = table_entry.specific.addr_prefix
       let dst_type = table_entry.data_type
 
       // get the value and type of the expression
@@ -1176,16 +1130,9 @@ function translate(token, ctx_type) {
       // run the code state.required by the expression
       result = prefix
 
-      let ram_prefix
-      if (is_global) {
-        ram_prefix = "ram^"
-      } else {
-        ram_prefix = "ram"
-      }
-
       // copy the new value into the variable's memory
       for (let i = 0; i < dst_regs.length; i++) {
-        result.push(`write ${value[i]} ${ram_prefix}.${dst_regs[i]}`)
+        result.push(`write ${value[i]} ${addr_prefix}${dst_regs[i]}`)
       }
     } break
 
@@ -1220,79 +1167,69 @@ function translate(token, ctx_type) {
 
     case "array_set": {
       let array_name = args.name
-      let index_expr = args.index_expr
-      let expr = args.expr
+      let operation = args.operation
 
-      let [index_prefix, index_value, index_type] = translate(index_expr, "u16")
+      let local_table = state.symbol_table[state.scope]
+      let global_table = state.symbol_table.__global
+
+      let table_entry
+      if (array_name in local_table) {
+        // this is a local array
+        table_entry = local_table[array_name].specific
+      } else if (array_name in global_table) {
+        // this is a global array
+        table_entry = global_table[array_name].specific
+      } else {
+        throw new CompError(`Cannot find array named '${array_name}'`)
+      }
+
+      let addr_prefix = table_entry.addr_prefix
+      let array_type = table_entry.element_data_type
+
+      let base_addr = `[${addr_prefix}${table_entry.base_addr}]`
+      let current_len = `[${addr_prefix}${table_entry.current_len}]`
+      let max_len = `[${addr_prefix}${table_entry.max_len}]`
+      let item_size = get_data_type_size(array_type)
+
+      // get the value of the index expression
+      let [index_prefix, index_value, index_type] = translate(args.index_expr, "u16")
       if (index_type !== "u16") {
         throw new CompError("Array indexes must be of type 'u16'")
       }
       result.push(...index_prefix)
 
-      let scope_name
-      let ram_prefix
-      if (array_name in state.symbol_table[state.scope]) {
-        // this is a local array
-        scope_name = state.scope
-        ram_prefix = "ram."
-      } else if (array_name in state.symbol_table.__global) {
-        // this is a global array
-        scope_name = "__global"
-        ram_prefix = "ram^."
-      } else {
-        throw new CompError(`Cannot find array named '${array_name}'`)
-      }
-
-      let table_entry = state.symbol_table[scope_name][array_name].specific
-      let array_type = table_entry.element_data_type
-
-      let base_addr = `[${ram_prefix}${table_entry.base_addr}]`
-      let item_size = get_data_type_size(array_type)
-
-      // calculate address of the specified index
-      load_lib("sys.array_pointer")
-      result.push(`write ${index_value} ram+.0`)
-      result.push(`write ${item_size} ram+.1`)
-      result.push(`write ${base_addr} ram+.2`)
-      result.push("call func_sys.array_pointer_3") //output is in ram+.3
-
-      let temp_var = get_temp_word()
-      result.push(`write [ram+.3] ${temp_var.label}`)
-      let target_addr = `[${temp_var.label}]`
-
       //evaluate the expression and put the result in a buffer area
-      let [expr_prefix, expr_values, expr_type] = translate(expr, array_type)
+      let [expr_prefix, expr_values, expr_type] = translate(args.expr, array_type)
       assert_compatable_types(array_type, expr_type, token.line, () => {
         throw new CompError(`Array expected type '${array_type}', got '${expr_type}'`)
       })
-
       result.push(...expr_prefix)
 
-      let memory = alloc_block(item_size)
+      let memory = alloc_global(item_size)
       let buffer = memory.slice()
+      let source_addr = `ram.${memory[0]}`
 
+      // copy expression into buffer area
       for (let word of expr_values) {
         result.push(`write ${word} ram.${buffer.shift()}`)
       }
 
-      let source_addr = `ram.${memory[0]}`
-
-      //copy value of expr into correct position in array
-      result.push(`write ${source_addr} ram+.0`)
-      result.push(`write ${target_addr} ram+.1`)
-      result.push(`write ${item_size} ram+.2`)
-
-      // if this is a global array we need a different copy function
-      if (scope_name === "__global") {
-        load_lib("sys.ram_to_global_ram_copy")
-        result.push("call func_sys.ram_to_global_ram_copy_3")
+      // fast path for single word items
+      if (item_size === 1) {
+        // buffer the index value (in case it is still in the alu)
+        let buffer = buffer_if_needed(index_value)
+        result.push(...buffer.prefix)
+        result.push(`write ${base_addr} alu.1`)
+        result.push(`write ${buffer.label} alu.2`)
+        result.push(`write [${source_addr}] [alu.+]`)
+        buffer.free()
       } else {
-        load_lib("sys.ram_to_ram_copy")
-        result.push("call func_sys.ram_to_ram_copy_3")
+        // slower path using mem_copy for >1 word data types
+        let [call_prefix,,] = function_call("sys.array_set", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${source_addr}#`], true)
+        result.push(...call_prefix)
       }
 
-      temp_var.free()
-      free_block(memory)
+      // free_global(memory) might corrupt 1st stack frame
     } break
 
     case "struct_member_set": {
@@ -1329,7 +1266,7 @@ function translate(token, ctx_type) {
       })
 
       for (let i = 0; i < expr_value.length; i++) {
-        result.push(`write ${expr_value[i]} ram.${target_addrs[i]}`)
+        result.push(`write ${expr_value[i]} stack.${target_addrs[i]}`)
       }
     } break
 
@@ -1337,26 +1274,26 @@ function translate(token, ctx_type) {
       let array_name = args.name
       let operation = args.operation
 
-      let scope_name
-      let ram_prefix
-      if (array_name in state.symbol_table[state.scope]) {
+      let local_table = state.symbol_table[state.scope]
+      let global_table = state.symbol_table.__global
+
+      let table_entry
+      if (array_name in local_table) {
         // this is a local array
-        scope_name = state.scope
-        ram_prefix = "ram."
-      } else if (array_name in state.symbol_table.__global) {
+        table_entry = local_table[array_name].specific
+      } else if (array_name in global_table) {
         // this is a global array
-        scope_name = "__global"
-        ram_prefix = "ram^."
+        table_entry = global_table[array_name].specific
       } else {
         throw new CompError(`Cannot find array named '${array_name}'`)
       }
 
-      let table_entry = state.symbol_table[scope_name][array_name].specific
+      let addr_prefix = table_entry.addr_prefix
       let array_type = table_entry.element_data_type
 
-      let base_addr = `[${ram_prefix}${table_entry.base_addr}]`
-      let current_len = `[${ram_prefix}${table_entry.current_len}]`
-      let max_len = `[${ram_prefix}${table_entry.max_len}]`
+      let base_addr = `[${addr_prefix}${table_entry.base_addr}]`
+      let current_len = `[${addr_prefix}${table_entry.current_len}]`
+      let max_len = `[${addr_prefix}${table_entry.max_len}]`
       let item_size = get_data_type_size(array_type)
 
       if (operation === "append") {
@@ -1385,48 +1322,16 @@ function translate(token, ctx_type) {
         let [index_expression, item_expression] = args.exprs
 
         //evaluate the expression that gives the index
-        let [expr_prefix, expr_value, expr_type] = translate(index_expression, "u16")
-        if (expr_type !== "u16") {
+        let [index_prefix, index_value, index_type] = translate(index_expression, "u16")
+        if (index_type !== "u16") {
           throw new CompError("Array indexes must be of type 'u16'")
         }
-        result.push(...expr_prefix)
+        result.push(...index_prefix)
 
-        let source_addr = get_temp_word()
-        let target_addr = get_temp_word()
+        let [call_prefix,,] = function_call("sys.array_shift", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${current_len}#`], true)
+        result.push(...call_prefix)
 
-        //calculate address of the specified index and index+1
-        load_lib("sys.array_pointer")
-        result.push(`write ${expr_value} ram+.0`)
-        result.push(`write ${item_size} ram+.1`)
-        result.push(`write ${base_addr} ram+.2`)
-        result.push("call func_sys.array_pointer_3") //output is in ram+.3
-
-        result.push(`write [ram+.3] ${source_addr.label}`)
-        result.push("write [ram+.3] alu.1")
-        result.push(`write ${item_size} alu.2`)
-        result.push(`write [alu.+] ${target_addr.label}`)
-
-        //calculate the length of the array in memory
-        load_lib("sys.u16_multiply")
-        result.push(`write ${item_size} ram+.0`)
-        result.push(`write ${current_len} ram+.1`)
-        result.push("call func_sys.u16_multiply_2")
-
-        //shift entire array (that is below the specified poisiton) one item_size down
-        result.push(`write [${source_addr.label}] ram+.0`)
-        result.push(`write [${target_addr.label}] ram+.1`)
-        result.push("write [ram+.2] ram+.2")
-
-        // if this is a global array we need a different copy function
-        if (scope_name === "__global") {
-          load_lib("sys.global_ram_to_global_ram_copy")
-          result.push("call func_sys.global_ram_to_global_ram_copy_3")
-        } else {
-          load_lib("sys.ram_to_ram_copy")
-          result.push("call func_sys.ram_to_ram_copy_3")
-        }
-
-        //put item at the specified index
+        // put item at the specified index
         let set_token = {name:"array_set",type:"command",arguments:{
           name: array_name,
           index_expr: index_expression,
@@ -1438,10 +1343,6 @@ function translate(token, ctx_type) {
         result.push(`write ${current_len} alu.1`)
         result.push("write 1 alu.2")
         result.push(`write [alu.+] ${current_len.slice(1, -1)}`)
-
-        source_addr.free()
-        target_addr.free()
-
       } else {
         throw new CompError("not implemented")
       }
@@ -1478,9 +1379,9 @@ function translate(token, ctx_type) {
       }
 
       if (is_global) {
-        free_global_block(addrs)
+        free_global(addrs)
       } else {
-        free_block(addrs)
+        free_stack(addrs)
       }
 
       delete state.symbol_table[state.scope][args.name]
@@ -1541,7 +1442,7 @@ function translate(token, ctx_type) {
 
         if (args.expr.name === "var_or_const" && args.expr.arguments.name == "__return") {
           // the __return special variable already points to the return_buffer so we don't need to copy
-          result.push("return")
+          result.push(return_instruction)
           break;
         }
 
@@ -1562,12 +1463,12 @@ function translate(token, ctx_type) {
         // copy result into return buffer
         let return_buffer = table_entry.return_value
         for (let i = 0; i < value.length; i++) {
-          result.push(`write ${value[i]} ram.${return_buffer[i]}`)
+          result.push(`write ${value[i]} stack.${return_buffer[i]}`)
         }
       }
 
       // add the actual return instruction
-      result.push("return")
+      result.push(return_instruction)
     } break
 
     case "include": {
@@ -1584,14 +1485,14 @@ function translate(token, ctx_type) {
       if (state.inner_structure_label === null) {
         throw new CompError("'break' can only be used in for/while loops")
       }
-      result.push(`goto ${state.inner_structure_label}_end`)
+      result.push(`goto ${state.inner_structure_label}_end 0`)
     } break
 
     case "continue": {
       if (state.inner_structure_label === null) {
         throw new CompError("'continue' can only be used in for/while loops")
       }
-      result.push(`goto ${state.inner_structure_label}_cond`)
+      result.push(`goto ${state.inner_structure_label}_cond 0`)
     } break
 
     case "signature_def": {
@@ -1614,6 +1515,10 @@ function translate(token, ctx_type) {
     let registers = [""]
     let type = ctx_type
     switch (token.name) {
+
+    case "inline_asm": {
+      registers = args.value.split(",")
+    } break
 
     // number types
     case "number":  { // a generic number that can be turned into the type state.required by the context
@@ -2096,16 +2001,40 @@ function translate(token, ctx_type) {
     } break
 
     case ">>": {
+      if (!(["number"].includes(args.expr2.name))) {
+        throw new CompError("Number of places to shift must be static")
+      }
+      let num_places = parseInt(args.expr2.arguments.value)
+
+      if (num_places < 0) {
+        throw new CompError("Number of places to shift must be static")
+      } else if (num_places > 15) {
+        registers = ["0"]
+        break
+      }
+
       switch (ctx_type) {
         case "u16": {
-          prefix = write_operand(args.expr,ctx_type)
+          prefix = write_operand(args.expr1,ctx_type)
+
+          let temp_word = get_temp_word()
+          while (num_places > 1) {
+            prefix.push(`write [alu.>>] ${temp_word.label}`)
+            prefix.push(`write [${temp_word.label}] alu.1`)
+            num_places--
+          }
+          temp_word.free()
+
           registers = ["[alu.>>]"]
         } break
 
         case "u32":
         case "s32":
         case "s16": {
-          [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr])
+          if (num_places !== 1) {
+            throw new CompError("Not implemented")
+          }
+          [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr1])
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -2113,16 +2042,47 @@ function translate(token, ctx_type) {
     } break
 
     case "<<": {
+      if (!(["number"].includes(args.expr2.name))) {
+        throw new CompError("Number of places to shift must be static")
+      }
+      let num_places = parseInt(args.expr2.arguments.value)
+
+      if (num_places < 0) {
+        throw new CompError("Number of places to shift must be static")
+      } else if (num_places > 15) {
+        registers = ["0"]
+        break
+      }
+
       switch (ctx_type) {
         case "u16":
         case "s16": {
-          prefix = write_operand(args.expr,ctx_type)
+          prefix = write_operand(args.expr1,ctx_type)
+
+          let temp_word = get_temp_word()
+          while (num_places > 1) {
+            prefix.push(`write [alu.<<] ${temp_word.label}`)
+            prefix.push(`write [${temp_word.label}] alu.1`)
+            num_places--
+          }
+          temp_word.free()
+
           registers = ["[alu.<<]"]
         } break
 
         case "s32":
         case "u32": {
-          [prefix, registers] = function_call("sys.u32_lshift", [args.expr])
+          if (num_places !== 1) {
+            throw new CompError("Not implemented")
+          }
+          let [call_prefix, call_registers] = function_call("sys.u32_lshift", [args.expr1])
+
+          while (num_places > 0) {
+            prefix.push(...call_prefix)
+            num_places--
+          }
+
+          registers = call_registers
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -2163,59 +2123,30 @@ function translate(token, ctx_type) {
       registers = [expr_regs[index[1][0]]]
     } break
 
-    case "is_odd": {
-      let [prefix, expr_value, expr_type] = translate(args.expr)
-      switch (expr_type) {
-        case "s16":
-        case "u16": {
-          registers = [expr_value[0]]
-        } break
-
-        case "s32":
-        case "u32": {
-          registers = [expr_value[1]]
-        } break
-
-        default:
-          throw new CompError(`Unsupported datatype '${expr_type}' for operation '${token.name}'`)
-      }
-      type = "bool"
-    } break
-
-    case "overflow": {
-      type = "bool"
-      registers = ["[alu.ov]"]
-    } break
-
     case "expr_array": {
       let label = `expr_array_${gen_label("expr_array")}`
 
-      let given_type_size = args.type_size
-      let length = args.exprs.length
-
-      // if no context given use 1st element to determine type
-      // and assume current length is max length
-      let contained_type
-      if (ctx_type === undefined) {
-        contained_type = args.exprs[0].arguments.type_guess
-      } else {
-        contained_type = ctx_type
-      }
-      let max_length = length
-
-      // but explicitly given type and max length will override these
-      if (given_type_size !== undefined) {
-        if (given_type_size.length === 1) {
-          contained_type = given_type_size[0]
-        } else if (given_type_size.length === 2) {
-          contained_type = given_type_size[0]
-          max_length = parseInt(given_type_size[1])
+      let contained_type = args.type
+      if (contained_type === undefined) {
+        if (args.exprs.length > 0) {
+          contained_type = args.exprs[0].arguments.type_guess
+          log.warn(`line ${token.line}:\nInferring type as '${contained_type}' from first element of array`)
+        } else {
+          throw new CompError("Empty arrays must have a type specified")
         }
       }
 
-      if (ctx_type === undefined && given_type_size === undefined) {
-        log.warn(`line ${token.line}:\nInferring type as '${contained_type}' from first element of array`)
+      let max_length
+      if (args.size === undefined) {
+        max_length = args.exprs.length
+        log.warn(`line ${token.line}:\nInferring max. length as '${max_length}' from number of expressions`)
+      } else {
+        max_length = get_static_value(args.size, "u16", () => {
+          throw new CompError("Array size must be static & of type 'u16'")
+        })
       }
+
+      let length = args.exprs.length
 
       let item_size = get_data_type_size(contained_type)
       let consts_to_add = [`${label}:`]
@@ -2259,9 +2190,9 @@ function translate(token, ctx_type) {
         let size = get_data_type_size(expr_type)
 
         for (let i = 0; i < size; i++) {
-          let [buffer_prefix, buffer_addr] = buffer_if_needed(expr_values[i])
-          prefix.push(...buffer_prefix)
-          registers.push(buffer_addr)
+          let value = buffer_if_needed(expr_values[i])
+          prefix.push(...value.prefix)
+          registers.push(value.label)
         }
 
         expr_index++
@@ -2292,16 +2223,14 @@ function translate(token, ctx_type) {
         // it's a regular variable/argument
         for (let addr of table_entry.specific.ram_addresses) {
           if (is_global) {
-            registers.push(`[ram^.${addr}]`)
-          } else {
             registers.push(`[ram.${addr}]`)
+          } else {
+            registers.push(`[stack.${addr}]`)
           }
         }
       } else if (table_entry.type === "constant") {
         // it's a constant
-        for (let addr of table_entry.specific.value) {
-          registers.push(`[${addr}]`)
-        }
+        registers = table_entry.specific.value
       } else {
         throw new CompError(`Unknown symbol type '${table_entry.type}'`)
       }
@@ -2336,102 +2265,88 @@ function translate(token, ctx_type) {
       let array_name = args.name
       let operation = args.operation
 
-      let scope_name
-      let ram_prefix
-      if (array_name in state.symbol_table[state.scope]) {
+      let local_table = state.symbol_table[state.scope]
+      let global_table = state.symbol_table.__global
+
+      let table_entry
+      if (array_name in local_table) {
         // this is a local array
-        scope_name = state.scope
-        ram_prefix = "ram."
-      } else if (array_name in state.symbol_table.__global) {
+        table_entry = local_table[array_name].specific
+      } else if (array_name in global_table) {
         // this is a global array
-        scope_name = "__global"
-        ram_prefix = "ram^."
+        table_entry = global_table[array_name].specific
       } else {
         throw new CompError(`Cannot find array named '${array_name}'`)
       }
 
-      let table_entry = state.symbol_table[scope_name][array_name].specific
+      let addr_prefix = table_entry.addr_prefix
       let array_type = table_entry.element_data_type
 
-      let base_addr = `[${ram_prefix}${table_entry.base_addr}]`
-      let current_len = `[${ram_prefix}${table_entry.current_len}]`
-      let max_len = `[${ram_prefix}${table_entry.max_len}]`
+      let base_addr = `[${addr_prefix}${table_entry.base_addr}]`
+      let current_len = `[${addr_prefix}${table_entry.current_len}]`
+      let max_len = `[${addr_prefix}${table_entry.max_len}]`
       let item_size = get_data_type_size(array_type)
 
-
       if (operation === "index") {
-        let prefix_value_type = translate(args.expr, "u16")
-        if (prefix_value_type[2] !==  "u16") {
+        let [index_prefix, index_value, index_type] = translate(args.expr, "u16")
+        if (index_type !== "u16") {
           throw new CompError("Array indexes must be of type 'u16'")
         }
-        prefix.push(...prefix_value_type[0])
+        prefix.push(...index_prefix)
 
-        let index = prefix_value_type[1]
 
-        //calculate address of item at the specified index
-        load_lib("sys.array_pointer")
-        prefix.push(`write ${index} ram+.0`)
-        prefix.push(`write ${item_size} ram+.1`)
-        prefix.push(`write ${base_addr} ram+.2`)
-        prefix.push("call func_sys.array_pointer_3") //output is in ram+.3
+        // fast path for single word items
+        if (item_size === 1) {
+          // buffer the index value (in case it is still in the alu)
+          let buffer = buffer_if_needed(index_value)
+          prefix.push(...buffer.prefix)
 
-        let memory = alloc_block(item_size)
-
-        //copy item from calculated address to allocated result registers
-        prefix.push("write [ram+.3] ram+.0")
-        prefix.push(`write ram.${memory[0]} ram+.1`)
-        prefix.push(`write ${item_size} ram+.2`)
-
-        // if this is a global array we need a different copy function
-        if (scope_name === "__global") {
-          load_lib("sys.global_ram_to_ram_copy")
-          prefix.push("call func_sys.global_ram_to_ram_copy_3")
+          // TODO leaks global memory
+          let result = alloc_global(1)
+          prefix.push(`write ${base_addr} alu.1`)
+          prefix.push(`write ${buffer.label} alu.2`)
+          prefix.push(`copy [alu.+] ram.${result}`)
+          registers = [`[ram.${result}]`]
+          buffer.free()
         } else {
-          load_lib("sys.ram_to_ram_copy")
-          prefix.push("call func_sys.ram_to_ram_copy_3")
+          // slower path using mem_copy for >1 word data types
+          let dest_memory = alloc_global(item_size)
+          let abs_dest = `ram.${dest_memory[0]}`
+          let [call_prefix,,] = function_call("sys.array_read", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${abs_dest}#`], true)
+          prefix.push(...call_prefix)
+          registers = []
+          for (let addr of dest_memory) {
+            registers.push(`[ram.${addr}]`)
+          }
         }
-
-        registers = []
-        for (let addr of memory) {
-          registers.push(`[ram.${addr}]`)
-        }
+        type = array_type
 
       } else if (operation === "len") {
         registers = [current_len]
         type = "u16"
 
-       } else if (operation === "max_len") {
+      } else if (operation === "max_len") {
         registers = [max_len]
         type = "u16"
 
       } else if (operation === "pop") {
-        // simply take one away from the length of the array, then return the item at that index
-
+        // take one away from the length of the array, then return the item at that index
         prefix.push(`write ${current_len} alu.1`)
         prefix.push("write 1 alu.2")
         prefix.push(`write [alu.-] ${current_len.slice(1, -1)}`)
 
-        //calculate address of item at the specified index
-        load_lib("sys.array_pointer")
-        prefix.push(`write ${current_len} ram+.0`)
-        prefix.push(`write ${item_size} ram+.1`)
-        prefix.push(`write ${base_addr} ram+.2`)
-        prefix.push("call func_sys.array_pointer_3") //output is in ram+.3
-
-        let memory = alloc_block(item_size)
-
-        //copy item from calculated address to allocated result registers
-        load_lib("sys.ram_to_ram_copy")
-        prefix.push("write [ram+.3] ram+.0")
-        prefix.push(`write ram.${memory[0]} ram+.1`)
-        prefix.push(`write ${item_size} ram+.2`)
-        prefix.push("call func_sys.ram_to_ram_copy_3")
-
-        registers = []
-        for (let addr of memory) {
-          registers.push(`[ram.${addr}]`)
+        // evaluate and index token instead of re-implmenting the same logic here
+        let index_token = {name:"array_expression",type:"expression",arguments:{
+          name: array_name,
+          operation: "index",
+          expr: tokenise(`{${current_len}}`)
+          }
         }
+        let [index_prefix, index_value, index_type] = translate(index_token)
+        prefix.push(...index_prefix)
 
+        registers = index_value
+        type = index_type
       } else {
         throw new CompError("not implemented")
       }
@@ -2485,7 +2400,7 @@ function translate(token, ctx_type) {
 
         // copy each word into argument memory
         for (let i = 0; i < details.ram_addresses.length; i++) {
-          prefix.push(`write ${expr_value[i]} ram+.${details.ram_addresses[i]}`)
+          prefix.push(`write ${expr_value[i]} stack.${details.ram_addresses[i] + frame_size(state.scope)}`)
         }
 
         args_processed++
@@ -2498,11 +2413,11 @@ function translate(token, ctx_type) {
       }
 
       // actually call the function
-      prefix.push(`call ${entry_point}`)
+      prefix.push(`call ${entry_point} ${frame_size(state.scope)}`)
 
       registers = []
       for (let addr of table_entry.return_value) {
-        registers.push(`[ram+.${addr}]`)
+        registers.push(`[stack.${addr + frame_size(state.scope)}]`)
       }
 
       if (args.ignore_type_mismatch) {
@@ -2529,17 +2444,18 @@ function translate(token, ctx_type) {
       }
 
       let size = get_data_type_size(type)
-      let temp_buffer = alloc_block(size)
+      let temp_buffer = alloc_stack(size)
 
       // make pointer value available
       prefix.push(...addr_prefix)
 
       // copy pointer value into temp ram word
-      let [buffer_prefix, buffer_addr] = buffer_if_needed(addr_value[0])
-      prefix.push(...buffer_prefix)
+      let buffer = buffer_if_needed(addr_value[0])
+      prefix.push(...buffer.prefix)
 
       // lookup pointer value and copy into temp buffer
-      prefix.push(`copy ${buffer_addr} ram.${temp_buffer[0]}`)
+      prefix.push(`copy ${buffer.label} stack.${temp_buffer[0]}`)
+      buffer.free()
 
       // if the target type is more than one word, copy more words
       if (size > 1) {
@@ -2547,14 +2463,14 @@ function translate(token, ctx_type) {
 
         for (let i = 1; i < size; i++) {
           prefix.push(`write ${i} alu.2`)
-          prefix.push(`copy [alu.+] ram.${temp_buffer[i]}`)
+          prefix.push(`copy [alu.+] stack.${temp_buffer[i]}`)
         }
       }
 
       // output registers are the values of the temp buffer
       registers = []
       for (let addr of temp_buffer) {
-        registers.push(`[ram.${addr}]`)
+        registers.push(`[stack.${addr}]`)
       }
     } break
 
@@ -2608,20 +2524,21 @@ function translate(token, ctx_type) {
           next_case_label = `${label}_${i+1}`
         }
 
-        let prefix_and_value = translate(exprs[i], "bool")
-        let prefix = prefix_and_value[0]
-        let value = prefix_and_value[1]
-        if (prefix_and_value[2] !==  "bool") {
-          throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
+        let [prefix, value, type] = translate(exprs[i], "bool")
+        if (type === "u16" || type === "s16" || type === "u32" || type === "s32") {
+          log.warn(`line ${token.line}:\nWhen using non-bool types as conditionals, only the least significant bit is used`)
+        } else if (type === "bool") {
+          // all ok
+        } else {
+          throw new CompError(`Conditional expression expected type 'bool', got '${type}'`)
         }
         result.push(...prefix)
-        result.push(`write ${value[0]} ctl.cnd`)
-        result.push(`goto? ${next_case_label}`)
+        result.push(`goto ${next_case_label} ${value[value.length - 1]}`)
 
         result.push(...translate_body(main_tokens[i]))
 
         if ((else_present || else_if_present) && i !==  exprs.length) {
-          result.push(`goto ${label}_end`)
+          result.push(`goto ${label}_end 0`)
         }
       }
 
@@ -2652,8 +2569,7 @@ function translate(token, ctx_type) {
         throw new CompError(`Conditional expression expected type 'bool', got '${expr_prefix_and_value[2]}'`)
       }
       result.push(...expr_prefix)
-      result.push(`write ${expr_value} ctl.cnd`)
-      result.push(`goto? ${label}_end`)
+      result.push(`goto ${label}_end ${expr_value}`)
       result.push([(`${label}_start:`)])
 
       let prev_state = state.inner_structure_label
@@ -2666,9 +2582,8 @@ function translate(token, ctx_type) {
       result.push(...cmd_result)
 
       result.push(...expr_prefix)
-      result.push(`write ${expr_value} ctl.cnd`)
-      result.push(`goto? ${label}_end`)
-      result.push(`goto ${label}_start`)
+      result.push(`goto ${label}_end ${expr_value}`)
+      result.push(`goto ${label}_start 0`)
       result.push(`${label}_end:`)
     } break
 
@@ -2682,8 +2597,7 @@ function translate(token, ctx_type) {
         throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
       }
       result.push(...prefix)
-      result.push(`write ${value} ctl.cnd`)
-      result.push(`goto? ${label}_end`)
+      result.push(`goto ${label}_end ${value}`)
       result.push([(`${label}_start:`)])
 
       let prev_state = state.inner_structure_label
@@ -2693,9 +2607,8 @@ function translate(token, ctx_type) {
       state.inner_structure_label = prev_state
 
       result.push(...prefix)
-      result.push(`write ${value} ctl.cnd`)
-      result.push(`goto? ${label}_end`)
-      result.push(`goto ${label}_start`)
+      result.push(`goto ${label}_end ${value}`)
+      result.push(`goto ${label}_start 0`)
       result.push(`${label}_end:`)
     } break
 
@@ -2754,7 +2667,7 @@ function translate(token, ctx_type) {
       state.scope = args.name
 
       // generate free ram and symbol table for this scope
-      state.free_ram[state.scope] = gen_free_ram_map()
+      state.frame_usage[state.scope] = []
       state.symbol_table[state.scope] = {}
       state.labels[state.scope] = {if:0,for:0,while:0,str:0,expr_array:0}
 
@@ -2783,14 +2696,15 @@ function translate(token, ctx_type) {
         let is_optional_arg = entry.arguments.expr !== undefined
         let size = get_data_type_size(type)
 
-        let memory = alloc_block(size)
+        let memory = alloc_stack(size)
 
         // put argument into symbol table
         state.symbol_table[args.name][name] = {
           type: "argument",
           data_type: type,
           specific: {
-            ram_addresses: memory.slice()
+            ram_addresses: memory.slice(),
+            addr_prefix: "stack."
           }
         }
 
@@ -2814,7 +2728,7 @@ function translate(token, ctx_type) {
             target.push(...expr_prefix)
 
             for (let word of expr_value) {
-              target.push(`write ${word} ram.${memory.shift()}`)
+              target.push(`write ${word} stack.${memory.shift()}`)
             }
           }
         } else {
@@ -2828,7 +2742,7 @@ function translate(token, ctx_type) {
       }
 
       // allocate space for return value (or 0 words if type is "none")
-      let return_buffer = alloc_block(get_data_type_size(args.type))
+      let return_buffer = alloc_stack(get_data_type_size(args.type))
       state.function_table[args.name].return_value = return_buffer
 
       // add __return variable to symbol table
@@ -2838,7 +2752,8 @@ function translate(token, ctx_type) {
         type: "argument",
         data_type: args.type,
         specific: {
-          ram_addresses: return_buffer
+          ram_addresses: return_buffer,
+          addr_prefix: "stack."
         }
       }
 
@@ -2857,8 +2772,8 @@ function translate(token, ctx_type) {
       log.debug(`namespace -> ${state.scope}`)
 
       // add return instruction unless it is already there
-      if (target[target.length -1] !== "  return") {
-        target.push("return")
+      if (target[target.length -1] !== `  ${return_instruction}`) {
+        target.push(`  ${return_instruction}`)
       }
     } break
 
@@ -2891,6 +2806,10 @@ function translate(token, ctx_type) {
           offset: total_size
         }
         total_size += size
+      }
+
+      if (total_size === 0) {
+        throw new CompError("There must be at least 1 struct member")
       }
 
       state.struct_definitions[args.name] = {
@@ -3046,7 +2965,9 @@ function compile(input, nested) {
         postMessage(["update",(((i+1)/tokens.length)*100)+50])
       }
     }
-    output += "stop"
+    output += "stop 0 0"
+
+    output = `write ${frame_size("__global")} ctl.sp\n${output}`
 
     t1 = timer()
     log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
@@ -3085,14 +3006,6 @@ function compile(input, nested) {
     if (non_deallocated_vars > 0) {
       log.warn(`${non_deallocated_vars} variable(s) are never deallocated`)
     }
-
-    let ram_percent = Math.round((state.max_allocated_ram_slots / 1023) * 100)
-
-    let ram_message = `RAM use: ${ram_percent}% (${state.max_allocated_ram_slots}/1023 words)`
-    if (typeof process === 'undefined') { // if we are running in a browser not nodejs
-      ram_message += `<progress value="${state.max_allocated_ram_slots}" max="1023" class="ram-bar"></progress>`
-    }
-    log.info(ram_message)
 
     log.info(`Standard library functions used: ${Object.keys(state.required).length}`)
   }

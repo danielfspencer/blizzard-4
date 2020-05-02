@@ -1,15 +1,15 @@
-var array x_coords (u16,51)[1,1,1,1,1,1,2,3,4,5,5,5,5,5,5,1,1,1,2,3,4,5,2,3,4,5,1,2,3,4,1,2,2,2,2,2,2,1,3,2,3,4,2,3,4,1,1,1,5,5,5]
-var array y_coords (u16,51)[1,2,3,4,5,6,3,3,3,1,2,3,4,5,6,3,4,5,2,2,2,3,4,4,4,4,5,6,6,6,1,1,2,3,4,5,6,6,6,2,2,2,6,6,6,3,4,5,3,4,5]
+let array x_coords = (u16,51)[1,1,1,1,1,1,2,3,4,5,5,5,5,5,5,1,1,1,2,3,4,5,2,3,4,5,1,2,3,4,1,2,2,2,2,2,2,1,3,2,3,4,2,3,4,1,1,1,5,5,5]
+let array y_coords = (u16,51)[1,2,3,4,5,6,3,3,3,1,2,3,4,5,6,3,4,5,2,2,2,3,4,4,4,4,5,6,6,6,1,1,2,3,4,5,6,6,6,2,2,2,6,6,6,3,4,5,3,4,5]
 
-var u16 xpos
-var u16 ypos
-var u16 spacing 0
-var u16 x
-var u16 y
+let u16 xpos = 0
+let u16 ypos = 0
+let u16 spacing = 0
+let u16 x = 0
+let u16 y = 0
 
 while spacing < 4
 
-  for var u16 i; i < 15; i++
+  for let u16 i = 0; i < 15; i++
     x = x_coords[i]
     y = y_coords[i]
     sys.vram.set_pixel(x+xpos,y+ypos)
@@ -18,7 +18,7 @@ while spacing < 4
   xpos += spacing
 
   free i
-  for var u16 i 15; i < 30; i++
+  for let u16 i = 15; i < 30; i++
     x = x_coords[i]
     y = y_coords[i]
     sys.vram.set_pixel(x+xpos,y+ypos)
@@ -27,7 +27,7 @@ while spacing < 4
   xpos += spacing
 
   free i
-  for var u16 i 30; i < 39; i++
+  for let u16 i = 30; i < 39; i++
     x = x_coords[i]
     y = y_coords[i]
     sys.vram.set_pixel(x+xpos,y+ypos)
@@ -36,7 +36,7 @@ while spacing < 4
   xpos += spacing
 
   free i
-  for var u16 i 30; i < 39; i++
+  for let u16 i = 30; i < 39; i++
     x = x_coords[i]
     y = y_coords[i]
     sys.vram.set_pixel(x+xpos,y+ypos)
@@ -45,7 +45,7 @@ while spacing < 4
   xpos += spacing
 
   free i
-  for var u16 i 39; i < 51; i++
+  for let u16 i = 39; i < 51; i++
     x = x_coords[i]
     y = y_coords[i]
     sys.vram.set_pixel(x+xpos,y+ypos)

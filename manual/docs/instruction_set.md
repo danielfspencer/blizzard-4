@@ -1,17 +1,23 @@
 ## Instruction Set
-| Opcode<sub>2</sub> | Opcode<sub>10</sub> | Name | Arguments | Description | Cycles |
+`PC = program counter`
+`SP = stack pointer`
+
+| Opcode<sub>2</sub> | Opcode<sub>10</sub> | Name | Arguments | Description | Cycles* |
 | ------------------ | ------------------- | ---- | --------- | ----------- | ------ |
 | 000 | 0 | `stop` | none | stops the computer | 4 |
-| 001 | 1 | `return` | none | returns to function call (and moves to the previous frame) | 5 |
-| 010 | 2 | `goto` | address | sets the program counter to the specified address | 6 |
-| 011 | 3 | `call` | address | calls the function at the given address (moves to next frame up) | 7 |
-| 100 | 4 | `write` | data, address | writes the data to the address | 8 |
-| 101 | 5 | `copy` | address, address | copies the data at the first address to the second | 8 |
+| 001 | 1 | `return` | PC value, SP value | sets PC & SP to the given values | 4 |
+| 010 | 2 | `goto` | address, cond | sets PC to *address* if the LSB of *cond* is 0 | 4 |
+| 011 | 3 | `call` | address, frame size| sets PC to *address* & increments SP by *frame size* | 7 |
+| 100 | 4 | `write` | data, address | writes *data* to *address* | 4 |
+| 101 | 5 | `copy` | address, address | writes the data at the first address to the second address | 4 |
+
+\*Each use of the `[]` substitution syntax requires 1 extra cycle to execute the instruction. Therefore each instruction can take up to 2 cycles longer to execute if both arguments use `[]`.
 
 ## Addressing modes
+
 - Immediate mode (value is stored in the instruction)
 - Direct mode (address is stored in the instruction)
-- Indirect mode (a pointer is stored in the instruction)
+- Indirect mode (a pointer is stored in the instruction) (only available in the 1st argument of copy)
 
 Use `[]` substitution syntax to use another level of indirect lookup. Promotes each to a higher level.
 
@@ -22,7 +28,7 @@ Use `[]` substitution syntax to use another level of indirect lookup. Promotes e
 
 
 ## Machine code format
-Each instruction consists of one *command word*  followed by between 0 and 2 *argument words*.
+Each instruction consists of one *command word*  followed by 2 *argument words*.
 
 #### Command word
 <table>
@@ -31,12 +37,9 @@ Each instruction consists of one *command word*  followed by between 0 and 2 *ar
   </tr><tr>
     <td>Function</td><td colspan="3">Opcode</td>
     <td colspan="2">Addr.<br>Mode</td>
-    <td colspan="10">Unused</td>
-    <td>cond.<br>bit</td>
+    <td colspan="11">Unused</td>
   </tr>
 </table>
-
-The first two bits of the command word determine the number of argument words that follow it.
 
 #### Argument word
 <table>
@@ -47,10 +50,3 @@ The first two bits of the command word determine the number of argument words th
     <td colspan="16">Address / data</td>
   </tr>
 </table>
-
-#### Examples
-| | 0 args. | 1 arg. | 2 args. |
-| --- | --- | --- | --- |
-| Format | command word | command word<br>argument word #1 | command word<br>argument word #1<br>argument word #2 |
-| Example<br>(assembly) | `return` | `goto 0x8001` | `copy ram.0 alu.1` |
-| Example<br>(machine code) | `0010000000000000` | `0100000000000000`<br>`1000000000000001` | `1010000000000000`<br>`0101000000000000`<br>`0000100000000000` |

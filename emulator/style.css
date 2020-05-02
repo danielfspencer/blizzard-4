@@ -42,6 +42,10 @@ table {
   width: 100%;
 }
 
+#memory_panel > table {
+  width: 100%;
+}
+
 .right_align {
   margin-left: auto;
 }

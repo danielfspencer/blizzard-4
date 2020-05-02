@@ -1,13 +1,13 @@
-global u16 line
+global u16 line = 0
+global u16 tests_passed = 0
+global u16 total_tests = 0
 global str current_type
-global u16 tests_passed
-global u16 total_tests
 global u16 sub_test_num
 
-var u16 u16_tmp
-var s16 s16_tmp
-var u32 u32_tmp
-var s32 s32_tmp
+let u16 u16_tmp
+let s16 s16_tmp
+let u32 u32_tmp
+let s32 s32_tmp
 
 def assert(bool condition)
   if condition
@@ -24,8 +24,8 @@ def assert(bool condition)
 
   sub_test_num++
   total_tests++
-  {write $tests_passed usrio.out2}
-  {write $total_tests usrio.out3}
+  {write $tests_passed io.out2}
+  {write $total_tests io.out3}
 
 
 // u16 tests
@@ -38,10 +38,10 @@ assert(u16_tmp == 2)
 u16_tmp = 1 - 1
 assert(u16_tmp == 0)
 
-u16_tmp = 1 >>
+u16_tmp = 1 >> 1
 assert(u16_tmp == 0)
 
-u16_tmp = 1 <<
+u16_tmp = 1 << 1
 assert(u16_tmp == 2)
 
 u16_tmp = 1 * 1
@@ -87,8 +87,9 @@ u16_tmp = 9 ^ 5
 assert(u16_tmp == 59049)
 
 u16_tmp = 0xffff + 1
-assert(sys.ov)
-
+let bool overflow
+{write [alu.ov] &overflow}
+assert(overflow)
 
 //s16 tests
 current_type = "s16"
@@ -100,10 +101,10 @@ assert(s16_tmp == 2)
 s16_tmp = 1 - 1
 assert(s16_tmp == 0)
 
-s16_tmp = 1 >>
+s16_tmp = 1 >> 1
 assert(s16_tmp == 0)
 
-s16_tmp = 1 <<
+s16_tmp = 1 << 1
 assert(s16_tmp == 2)
 
 s16_tmp = 1 * 1
@@ -148,9 +149,9 @@ assert(s16_tmp == 4)
 s16_tmp = -2 / -2
 assert(s16_tmp == 1)
 
-const s16 minus10 -10
-const s16 minus50 -50
-const s16 minus5 -5
+const s16 minus10 = -10
+const s16 minus50 = -50
+const s16 minus5 = -5
 
 s16_tmp = minus50 / minus10
 assert(s16_tmp == 5)
@@ -167,8 +168,8 @@ assert(s16_tmp == 21609)
 s16_tmp = 9 ^ 4
 assert(s16_tmp == 6561)
 
-const s16 minus9 -9
-const s16 minus729 -729
+const s16 minus9 = -9
+const s16 minus729 = -729
 
 s16_tmp = minus9  ^ 4
 assert(s16_tmp == 6561)
@@ -187,10 +188,10 @@ assert(u32_tmp == 2)
 u32_tmp = 1 - 1
 assert(u32_tmp == 0)
 
-u32_tmp = 1 >>
+u32_tmp = 1 >> 1
 assert(u32_tmp == 0)
 
-u32_tmp = 1 <<
+u32_tmp = 1 << 1
 assert(u32_tmp == 2)
 
 u32_tmp = 1 * 1
@@ -249,10 +250,10 @@ assert(s32_tmp == 2)
 s32_tmp = 1 - 1
 assert(s32_tmp == 0)
 
-s32_tmp = 1 >>
+s32_tmp = 1 >> 1
 assert(s32_tmp == 0)
 
-s32_tmp = 1 <<
+s32_tmp = 1 << 1
 assert(s32_tmp == 2)
 
 s32_tmp = 1 * 1
@@ -297,9 +298,9 @@ assert(s32_tmp == 4)
 s32_tmp = -2 / -2
 assert(s32_tmp == 1)
 
-const s32 s32_minus10 -10
-const s32 s32_minus50 -50
-const s32 s32_minus5 -5
+const s32 s32_minus10 =  -10
+const s32 s32_minus50 = -50
+const s32 s32_minus5 = -5
 
 s32_tmp = s32_minus50 / s32_minus10
 assert(s32_tmp == 5)
@@ -316,8 +317,8 @@ assert(s32_tmp == 21609)
 s32_tmp = 9 ^ 4
 assert(s32_tmp == 6561)
 
-const s32 s32_minus9 -9
-const s32 s32_minus729 -729
+const s32 s32_minus9 = -9
+const s32 s32_minus729 = -729
 s32_tmp = s32_minus9 ^ 4
 assert(s32_tmp == 6561)
 
