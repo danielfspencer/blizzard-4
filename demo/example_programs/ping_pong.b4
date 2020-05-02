@@ -24,7 +24,7 @@ let bool bottom_move_left = false
 let bool bottom_move_right = false
 
 let u16 mode = 2
-let u16 speed = 5
+let u16 speed = 10
 let u16 iter = 0
 let u16 key_code
 
