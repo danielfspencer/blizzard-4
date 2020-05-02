@@ -8,9 +8,9 @@ while true
   // reset the timer
   *SYS_TIMER_ADDR = 0
 
-  for let u16 i = 0; i < 20; i++
+  for let u16 i = 0; i < 25; i++
     // wait a few cycles
 
   value = *SYS_TIMER_ADDR
-  freq = 7100 / value
+  freq = 6700 / value
   sys.print_u16(freq, 0, 0, true)
