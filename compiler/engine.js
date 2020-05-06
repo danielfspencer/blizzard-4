@@ -823,37 +823,6 @@ function tokenise(input, line) {
     }
     token = {name:"type_name_assignment_tuple", type:"command", arguments:{name:name,type:type,expr:expr}}
 
-  } else if (/^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.test(input)) {          // is an expression
-    let matches = /^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.exec(input)
-
-    let [, expr1_text, operator, expr2_text] = matches
-    const dual_operand = ["+", "-", "/", "*", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", "..", ":", ">>", "<<"]
-    const single_operand = ["!"]
-
-    if (dual_operand.includes(operator)) {
-      let expr1 = tokenise(expr1_text, line)
-      let expr2 = tokenise(expr2_text, line)
-      token = { name:operator, type: "expression", arguments: { expr1:expr1, expr2:expr2 }}
-
-    } else if (single_operand.includes(operator)) {
-      let expr
-      if (expr1_text !== "") {
-        expr = tokenise(expr1_text, line)
-      } else {
-        expr = tokenise(expr2_text, line)
-      }
-      token = { name:operator, type: "expression", arguments: { expr:expr } }
-
-    } else {
-      throw new CompError(`Unknown operator '${operator}'`)
-    }
-
-  } else if (/(^true$)|(^false$)/.test(input)) {    //is true/false (the reserved keywords for bool data type)
-    token = {name:"bool",type:"expression",arguments:{value:input}}
-
-  } else if (/^([a-zA-Z_]\w*)$/.test(input) ) {                       //variable or const (by name)
-    token = {name:"var_or_const",type:"expression",arguments:{name:input}}
-
   } else if (/^(\(.*\))?(\[.*\])$/.test(input)) {                          //array of expressions
     let matches = /^(\(.*\))?(\[.*\])$/.exec(input)
 
@@ -885,6 +854,37 @@ function tokenise(input, line) {
       type: type_string,
       size: size_token
     }}
+
+  } else if (/^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.test(input)) {          // is an expression
+    let matches = /^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.exec(input)
+
+    let [, expr1_text, operator, expr2_text] = matches
+    const dual_operand = ["+", "-", "/", "*", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", "..", ":", ">>", "<<"]
+    const single_operand = ["!"]
+
+    if (dual_operand.includes(operator)) {
+      let expr1 = tokenise(expr1_text, line)
+      let expr2 = tokenise(expr2_text, line)
+      token = { name:operator, type: "expression", arguments: { expr1:expr1, expr2:expr2 }}
+
+    } else if (single_operand.includes(operator)) {
+      let expr
+      if (expr1_text !== "") {
+        expr = tokenise(expr1_text, line)
+      } else {
+        expr = tokenise(expr2_text, line)
+      }
+      token = { name:operator, type: "expression", arguments: { expr:expr } }
+
+    } else {
+      throw new CompError(`Unknown operator '${operator}'`)
+    }
+
+  } else if (/(^true$)|(^false$)/.test(input)) {    //is true/false (the reserved keywords for bool data type)
+    token = {name:"bool",type:"expression",arguments:{value:input}}
+
+  } else if (/^([a-zA-Z_]\w*)$/.test(input) ) {                       //variable or const (by name)
+    token = {name:"var_or_const",type:"expression",arguments:{name:input}}
 
   } else if (/^([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)$/.test(input)) {
     let matches = /^([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)$/.exec(input)
