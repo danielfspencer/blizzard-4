@@ -1265,6 +1265,8 @@ function translate(token, ctx_type) {
         throw new CompError(`Struct member '${member_name}' requires type '${member_type}', got '${expr_type}'`)
       })
 
+      result.push(...expr_prefix)
+
       for (let i = 0; i < expr_value.length; i++) {
         result.push(`write ${expr_value[i]} stack.${target_addrs[i]}`)
       }
