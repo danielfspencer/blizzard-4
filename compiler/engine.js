@@ -2461,7 +2461,7 @@ function translate(token, ctx_type) {
 
       // if the target type is more than one word, copy more words
       if (size > 1) {
-        prefix.push(`copy ${buffer_addr} alu.1`)
+        prefix.push(`write ${buffer.label} alu.1`)
 
         for (let i = 1; i < size; i++) {
           prefix.push(`write ${i} alu.2`)
