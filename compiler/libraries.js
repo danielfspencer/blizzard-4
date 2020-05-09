@@ -671,11 +671,11 @@ const libs = {
     "        return",
     "",
     "    e2 = err",
-    "    if e2 > minus_dx",
+    "    if e2 >= minus_dx",
     "      err -= dy",
     "      x0 += sx ",
     "    ",
-    "    if e2 < dy",
+    "    if e2 <= dy",
     "      err += dx",
     "      y0 += sy"
   ],
