@@ -899,11 +899,11 @@ function tokenise(input, line) {
       size: size_token
     }}
 
-  } else if (/^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.test(input)) {          // is an expression
-    let matches = /^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.exec(input)
+  } else if (/^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|==) *(\S*)$/.test(input)) {          // is an expression
+    let matches = /^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|==) *(\S*)$/.exec(input)
 
     let [, expr1_text, operator, expr2_text] = matches
-    const dual_operand = ["+", "-", "/", "*", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", "..", ":", ">>", "<<"]
+    const dual_operand = ["+", "-", "/", "*", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", ">>", "<<"]
     const single_operand = ["!"]
 
     if (dual_operand.includes(operator)) {
@@ -2107,35 +2107,6 @@ function translate(token, ctx_type) {
     case "!": {
       prefix = write_operand(args.expr,ctx_type)
       registers = ["[alu.!]"]
-    } break
-
-    case "..": {
-      let expr1 = translate(args.expr1,ctx_type)
-      let expr1_prefix = expr1[0]
-      let expr1_reg = expr1[1]
-      prefix = expr1_prefix
-      let expr2 = translate(args.expr2,ctx_type)
-      let expr2_prefix = expr2[0]
-      let expr2_reg = expr2[1]
-      prefix.push(...expr2_prefix)
-      registers = expr1_reg
-      registers.push(...expr2_reg)
-    } break
-
-    case ":": {
-      let expr = translate(args.expr1,ctx_type)
-      prefix = expr[0]
-      let expr_regs = expr[1]
-
-      let index = translate(args.expr2,"u16")
-      if (index[2] !==  "u16") {
-        throw new CompError("Word selector index must be of type 'u16'") //should also be static (ie. number token)
-      }
-      if (index[1][0] >= expr_regs.length) {
-        throw new CompError("Index out of range")
-      }
-
-      registers = [expr_regs[index[1][0]]]
     } break
 
     case "expr_array": {

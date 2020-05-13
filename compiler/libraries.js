@@ -534,7 +534,7 @@ const libs = {
     "  let s16 dx = 1",
     "  let s16 dy = radius * minustwo",
     "  let s16 x1 = 0",
-    "  let s16 y1 = radius:0",
+    "  let s16 y1 = radius",
     "  ",
     "  sys.vram.set_pixel(x, y + radius, data)",
     "  sys.vram.set_pixel(x, y - radius, data)",
@@ -609,7 +609,7 @@ const libs = {
   ],
   "sys.print_string": [
     "def sys.print_string(str string, u16 x = 0, u16 y = 0)",
-    "  let u16 pointer = string:0",
+    "  let u16 pointer = #$string#",
     "  let u16 char = *pointer",
     "  ",
     "  while char > 0",
@@ -748,7 +748,7 @@ const libs = {
    "      sys.vram.render_char(char,x,y)",
    "      x++",
    "       ",
-   "  let u16 ones = num : 1",
+   "  let u16 ones = #$num[1]#",
    "  sys.vram.render_char(ones+48,x,y)"
   ],
   "sys.print_s32":[
