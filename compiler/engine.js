@@ -2020,11 +2020,13 @@ function translate(token, ctx_type) {
         throw new CompError("Number of places to shift must be static")
       }
       let num_places = parseInt(args.expr2.arguments.value)
+      let data_type_size = get_data_type_size(ctx_type)
+      let bits = data_type_size * 16
 
       if (num_places < 0) {
         throw new CompError("Number of places to shift must be static")
-      } else if (num_places > 15) {
-        registers = ["0"]
+      } else if (num_places == 0 || num_places >= bits) {
+        registers = Array(data_type_size).fill("0")
         break
       }
 
@@ -2046,10 +2048,33 @@ function translate(token, ctx_type) {
         case "u32":
         case "s32":
         case "s16": {
-          if (num_places !== 1) {
-            throw new CompError("Not implemented")
+          if (num_places > 1) {
+            // allocate buffer for intermediate values
+            let buffer = alloc_stack(data_type_size)
+            let buffer_values = buffer.map((addr) => {return `[stack.${addr}]`})
+            let buffer_as_arg = `#${buffer_values.join(",")}#`
+
+            // write operand to buffer
+            let [op_prefix, op_value] = translate(args.expr1, ctx_type)
+            prefix.push(...op_prefix)
+            for (let i = 0; i < data_type_size; i++) {
+              prefix.push(`write ${op_value[i]} stack.${buffer[i]}`)
+            }
+
+            // repeatedly shift the content of the buffer and write the result into the buffer
+            while (num_places > 0) {
+              let [call_prefix, call_registers] = function_call(`sys.${ctx_type}_rshift`, [buffer_as_arg], true)
+              prefix.push(...call_prefix)
+              for (let i = 0; i < data_type_size; i++) {
+                prefix.push(`write ${call_registers[i]} stack.${buffer[i]}`)
+              }
+              num_places--
+            }
+
+            registers = buffer_values
+          } else {
+            [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr1])
           }
-          [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr1])
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -2061,11 +2086,13 @@ function translate(token, ctx_type) {
         throw new CompError("Number of places to shift must be static")
       }
       let num_places = parseInt(args.expr2.arguments.value)
+      let data_type_size = get_data_type_size(ctx_type)
+      let bits = data_type_size * 16
 
       if (num_places < 0) {
         throw new CompError("Number of places to shift must be static")
-      } else if (num_places > 15) {
-        registers = ["0"]
+      } else if (num_places == 0 || num_places >= bits) {
+        registers = Array(data_type_size).fill("0")
         break
       }
 
@@ -2087,17 +2114,33 @@ function translate(token, ctx_type) {
 
         case "s32":
         case "u32": {
-          if (num_places !== 1) {
-            throw new CompError("Not implemented")
-          }
-          let [call_prefix, call_registers] = function_call("sys.u32_lshift", [args.expr1])
+          if (num_places > 1) {
+            // allocate buffer for intermediate values
+            let buffer = alloc_stack(data_type_size)
+            let buffer_values = buffer.map((addr) => {return `[stack.${addr}]`})
+            let buffer_as_arg = `#${buffer_values.join(",")}#`
 
-          while (num_places > 0) {
-            prefix.push(...call_prefix)
-            num_places--
-          }
+            // write operand to buffer
+            let [op_prefix, op_value] = translate(args.expr1, ctx_type)
+            prefix.push(...op_prefix)
+            for (let i = 0; i < data_type_size; i++) {
+              prefix.push(`write ${op_value[i]} stack.${buffer[i]}`)
+            }
 
-          registers = call_registers
+            // repeatedly shift the content of the buffer and write the result into the buffer
+            while (num_places > 0) {
+              let [call_prefix, call_registers] = function_call(`sys.u32_lshift`, [buffer_as_arg], true)
+              prefix.push(...call_prefix)
+              for (let i = 0; i < data_type_size; i++) {
+                prefix.push(`write ${call_registers[i]} stack.${buffer[i]}`)
+              }
+              num_places--
+            }
+
+            registers = buffer_values
+          } else {
+            [prefix, registers] = function_call(`sys.u32_lshift`, [args.expr1])
+          }
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
