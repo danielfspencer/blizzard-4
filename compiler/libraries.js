@@ -224,20 +224,20 @@ const libs = {
   ],
   "sys.u32_greater": [
     "def sys.u32_greater(u32 a, u32 b) -> bool",
-    "  if #$a[1]# > #$b[1]#",
+    "  if #$a[0]# > #$b[0]#",
     "    return true",
-    "  else if #$a[1]# == #$b[1]#",
-    "    if #$a[0]# > #$a[0]#",
+    "  else if #$a[0]# == #$b[0]#",
+    "    if #$a[1]# > #$b[1]#",
     "      return true",
     "",
     "  return false"
   ],
   "sys.u32_less": [
     "def sys.u32_less(u32 a, u32 b) -> bool",
-    "  if #$a[1]# < #$b[1]#",
+    "  if #$a[0]# < #$b[0]#",
     "    return true",
-    "  else if #$a[1]# == #$b[1]#",
-    "    if #$a[0]# < #$a[0]#",
+    "  else if #$a[0]# == #$b[0]#",
+    "    if #$a[1]# < #$b[1]#",
     "      return true",
     "",
     "  return false"
@@ -312,17 +312,23 @@ const libs = {
   ],
   "sys.s32_greater": [
     "def sys.s32_greater(s32 a, s32 b) -> bool",
-    "  a = a - b",
-    "  a -= 1",
+    "  {write 0b1000000000000000 alu.2}",
+    "  {write $a[0] alu.1}",
+    "  {write [alu.+] &a[0]}",
+    "  {write $b[0] alu.1}",
+    "  {write [alu.+] &b[0]}",
     "",
-    "  return #$a[0]# < 0b1000000000000000"
+    "  return sys.u32_greater(a,b)"
   ],
   "sys.s32_less": [
     "def sys.s32_less(s32 a, s32 b) -> bool",
-    "  a = a - b",
-    "  a -= 1",
+    "  {write 0b1000000000000000 alu.2}",
+    "  {write $a[0] alu.1}",
+    "  {write [alu.+] &a[0]}",
+    "  {write $b[0] alu.1}",
+    "  {write [alu.+] &b[0]}",
     "",
-    "  return #$a[0]# > 0b0111111111111111"
+    "  return sys.u32_less(a,b)"
   ],
   "sys.mem_copy": [
     "def sys.mem_copy(u16 origin_addr, u16 target_addr, u16 length)",
