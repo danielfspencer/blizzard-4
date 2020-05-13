@@ -357,6 +357,49 @@ function replace_var_references(words) {
   return words
 }
 
+function get_array_info(array_name) {
+  let local_table = state.symbol_table[state.scope]
+  let global_table = state.symbol_table.__global
+
+  let table_entry
+  let is_constant
+  if (array_name in local_table) {
+    // this is a local array
+    table_entry = local_table[array_name].specific
+    is_constant = local_table[array_name].type == "constant"
+  } else if (array_name in global_table) {
+    // this is a global array
+    table_entry = global_table[array_name].specific
+    is_constant = global_table[array_name].type == "constant"
+  } else {
+    throw new CompError(`Cannot find array named '${array_name}'`)
+  }
+
+  let array_type = table_entry.element_data_type
+  let response =  {
+    array_type: array_type,
+    item_size: get_data_type_size(array_type),
+    assert_writeable: () => {
+      if (is_constant) {
+        throw new CompError(`Constant array '${array_name}' cannot be modified`)
+      }
+    }
+  }
+
+  if (is_constant) {
+    response.base_addr = table_entry.base_addr
+    response.current_len = table_entry.current_len
+    response.max_len = table_entry.max_len
+  } else {
+    let addr_prefix = table_entry.addr_prefix
+    response.base_addr = `[${addr_prefix}${table_entry.base_addr}]`
+    response.current_len = `[${addr_prefix}${table_entry.current_len}]`
+    response.max_len = `[${addr_prefix}${table_entry.max_len}]`
+  }
+
+  return response
+}
+
 function alloc_stack(size) {
   // TODO find first contiguous slot for allocation instead of assuming the end
   log.debug(`Request for ${size} words(s) of stack`)
@@ -899,11 +942,11 @@ function tokenise(input, line) {
       size: size_token
     }}
 
-  } else if (/^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.test(input)) {          // is an expression
-    let matches = /^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|:|==|\.\.|sys\.odd) *(\S*)$/.exec(input)
+  } else if (/^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|==) *(\S*)$/.test(input)) {          // is an expression
+    let matches = /^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|==) *(\S*)$/.exec(input)
 
     let [, expr1_text, operator, expr2_text] = matches
-    const dual_operand = ["+", "-", "/", "*", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", "..", ":", ">>", "<<"]
+    const dual_operand = ["+", "-", "/", "*", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", ">>", "<<"]
     const single_operand = ["!"]
 
     if (dual_operand.includes(operator)) {
@@ -1012,6 +1055,13 @@ function translate(token, ctx_type) {
     } break
 
     case "const_alloc": {    //const [name] [type] [expr]
+    // arrays require a different allocation method
+      if (args.type === "array") {
+        token.name = "const_array_alloc"
+        result = translate(token)
+        break
+      }
+
       assert_valid_datatype(args.type)
       assert_global_name_available(args.name)
 
@@ -1019,7 +1069,7 @@ function translate(token, ctx_type) {
         throw new CompError("Constants must be initialised")
       }
 
-      if (!(["str", "number", "inline_asm"].includes(args.expr.name))) {
+      if (!(["str", "number", "inline_asm", "expr_array"].includes(args.expr.name))) {
         throw new CompError("Constant must be static values")
       }
 
@@ -1034,6 +1084,31 @@ function translate(token, ctx_type) {
         data_type: args.type,
         specific: {
           value: expr_value
+        }
+      }
+    } break
+
+    case "const_array_alloc": {
+      let [expr_prefix, expr_values, expr_type] = translate(args.expr)
+
+      if (expr_type !== "expr_array") {
+        throw new CompError(`Array declarations require type 'expr_array', got '${expr_type}'`)
+      }
+
+      let [source_base_addr, current_len, max_len, data_type] = expr_values
+
+      assert_valid_datatype(data_type)
+      assert_global_name_available(args.name)
+
+      // add to symbol table
+      state.symbol_table.__global[args.name] = {
+        type: "constant",
+        data_type: "array",
+        specific: {
+          element_data_type: data_type,
+          base_addr: source_base_addr,
+          current_len: current_len,
+          max_len: max_len
         }
       }
     } break
@@ -1173,30 +1248,9 @@ function translate(token, ctx_type) {
     } break
 
     case "array_set": {
-      let array_name = args.name
       let operation = args.operation
-
-      let local_table = state.symbol_table[state.scope]
-      let global_table = state.symbol_table.__global
-
-      let table_entry
-      if (array_name in local_table) {
-        // this is a local array
-        table_entry = local_table[array_name].specific
-      } else if (array_name in global_table) {
-        // this is a global array
-        table_entry = global_table[array_name].specific
-      } else {
-        throw new CompError(`Cannot find array named '${array_name}'`)
-      }
-
-      let addr_prefix = table_entry.addr_prefix
-      let array_type = table_entry.element_data_type
-
-      let base_addr = `[${addr_prefix}${table_entry.base_addr}]`
-      let current_len = `[${addr_prefix}${table_entry.current_len}]`
-      let max_len = `[${addr_prefix}${table_entry.max_len}]`
-      let item_size = get_data_type_size(array_type)
+      let array = get_array_info(args.name)
+      array.assert_writeable()
 
       // get the value of the index expression
       let [index_prefix, index_value, index_type] = translate(args.index_expr, "u16")
@@ -1206,13 +1260,13 @@ function translate(token, ctx_type) {
       result.push(...index_prefix)
 
       //evaluate the expression and put the result in a buffer area
-      let [expr_prefix, expr_values, expr_type] = translate(args.expr, array_type)
-      assert_compatable_types(array_type, expr_type, token.line, () => {
-        throw new CompError(`Array expected type '${array_type}', got '${expr_type}'`)
+      let [expr_prefix, expr_values, expr_type] = translate(args.expr, array.array_type)
+      assert_compatable_types(array.array_type, expr_type, token.line, () => {
+        throw new CompError(`Array expected type '${array.array_type}', got '${expr_type}'`)
       })
       result.push(...expr_prefix)
 
-      let memory = alloc_global(item_size)
+      let memory = alloc_global(array.item_size)
       let buffer = memory.slice()
       let source_addr = `ram.${memory[0]}`
 
@@ -1222,17 +1276,17 @@ function translate(token, ctx_type) {
       }
 
       // fast path for single word items
-      if (item_size === 1) {
+      if (array.item_size === 1) {
         // buffer the index value (in case it is still in the alu)
         let buffer = buffer_if_needed(index_value)
         result.push(...buffer.prefix)
-        result.push(`write ${base_addr} alu.1`)
+        result.push(`write ${array.base_addr} alu.1`)
         result.push(`write ${buffer.label} alu.2`)
         result.push(`write [${source_addr}] [alu.+]`)
         buffer.free()
       } else {
         // slower path using mem_copy for >1 word data types
-        let [call_prefix,,] = function_call("sys.array_set", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${source_addr}#`], true)
+        let [call_prefix,,] = function_call("sys.array_set", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${source_addr}#`], true)
         result.push(...call_prefix)
       }
 
@@ -1283,27 +1337,8 @@ function translate(token, ctx_type) {
       let array_name = args.name
       let operation = args.operation
 
-      let local_table = state.symbol_table[state.scope]
-      let global_table = state.symbol_table.__global
-
-      let table_entry
-      if (array_name in local_table) {
-        // this is a local array
-        table_entry = local_table[array_name].specific
-      } else if (array_name in global_table) {
-        // this is a global array
-        table_entry = global_table[array_name].specific
-      } else {
-        throw new CompError(`Cannot find array named '${array_name}'`)
-      }
-
-      let addr_prefix = table_entry.addr_prefix
-      let array_type = table_entry.element_data_type
-
-      let base_addr = `[${addr_prefix}${table_entry.base_addr}]`
-      let current_len = `[${addr_prefix}${table_entry.current_len}]`
-      let max_len = `[${addr_prefix}${table_entry.max_len}]`
-      let item_size = get_data_type_size(array_type)
+      let array = get_array_info(array_name)
+      array.assert_writeable()
 
       if (operation === "append") {
         // append just puts the given value at the current end of the list, then adds 1 to the size of the list
@@ -1323,9 +1358,9 @@ function translate(token, ctx_type) {
         result.push(...translate(set_token))
 
         // increment the curret length of the array to reflect the change
-        result.push(`write ${current_len} alu.1`)
+        result.push(`write ${array.current_len} alu.1`)
         result.push("write 1 alu.2")
-        result.push(`write [alu.+] ${current_len.slice(1, -1)}`)
+        result.push(`write [alu.+] ${array.current_len.slice(1, -1)}`)
 
       } else if (operation === "insert") {
         let [index_expression, item_expression] = args.exprs
@@ -1337,7 +1372,7 @@ function translate(token, ctx_type) {
         }
         result.push(...index_prefix)
 
-        let [call_prefix,,] = function_call("sys.array_shift", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${current_len}#`], true)
+        let [call_prefix,,] = function_call("sys.array_shift", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${array.current_len}#`], true)
         result.push(...call_prefix)
 
         // put item at the specified index
@@ -1349,9 +1384,9 @@ function translate(token, ctx_type) {
         result.push(...translate(set_token))
 
         //add one to length
-        result.push(`write ${current_len} alu.1`)
+        result.push(`write ${array.current_len} alu.1`)
         result.push("write 1 alu.2")
-        result.push(`write [alu.+] ${current_len.slice(1, -1)}`)
+        result.push(`write [alu.+] ${array.current_len.slice(1, -1)}`)
       } else {
         throw new CompError("not implemented")
       }
@@ -2020,11 +2055,13 @@ function translate(token, ctx_type) {
         throw new CompError("Number of places to shift must be static")
       }
       let num_places = parseInt(args.expr2.arguments.value)
+      let data_type_size = get_data_type_size(ctx_type)
+      let bits = data_type_size * 16
 
       if (num_places < 0) {
         throw new CompError("Number of places to shift must be static")
-      } else if (num_places > 15) {
-        registers = ["0"]
+      } else if (num_places == 0 || num_places >= bits) {
+        registers = Array(data_type_size).fill("0")
         break
       }
 
@@ -2046,10 +2083,33 @@ function translate(token, ctx_type) {
         case "u32":
         case "s32":
         case "s16": {
-          if (num_places !== 1) {
-            throw new CompError("Not implemented")
+          if (num_places > 1) {
+            // allocate buffer for intermediate values
+            let buffer = alloc_stack(data_type_size)
+            let buffer_values = buffer.map((addr) => {return `[stack.${addr}]`})
+            let buffer_as_arg = `#${buffer_values.join(",")}#`
+
+            // write operand to buffer
+            let [op_prefix, op_value] = translate(args.expr1, ctx_type)
+            prefix.push(...op_prefix)
+            for (let i = 0; i < data_type_size; i++) {
+              prefix.push(`write ${op_value[i]} stack.${buffer[i]}`)
+            }
+
+            // repeatedly shift the content of the buffer and write the result into the buffer
+            while (num_places > 0) {
+              let [call_prefix, call_registers] = function_call(`sys.${ctx_type}_rshift`, [buffer_as_arg], true)
+              prefix.push(...call_prefix)
+              for (let i = 0; i < data_type_size; i++) {
+                prefix.push(`write ${call_registers[i]} stack.${buffer[i]}`)
+              }
+              num_places--
+            }
+
+            registers = buffer_values
+          } else {
+            [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr1])
           }
-          [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr1])
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -2061,11 +2121,13 @@ function translate(token, ctx_type) {
         throw new CompError("Number of places to shift must be static")
       }
       let num_places = parseInt(args.expr2.arguments.value)
+      let data_type_size = get_data_type_size(ctx_type)
+      let bits = data_type_size * 16
 
       if (num_places < 0) {
         throw new CompError("Number of places to shift must be static")
-      } else if (num_places > 15) {
-        registers = ["0"]
+      } else if (num_places == 0 || num_places >= bits) {
+        registers = Array(data_type_size).fill("0")
         break
       }
 
@@ -2087,17 +2149,33 @@ function translate(token, ctx_type) {
 
         case "s32":
         case "u32": {
-          if (num_places !== 1) {
-            throw new CompError("Not implemented")
-          }
-          let [call_prefix, call_registers] = function_call("sys.u32_lshift", [args.expr1])
+          if (num_places > 1) {
+            // allocate buffer for intermediate values
+            let buffer = alloc_stack(data_type_size)
+            let buffer_values = buffer.map((addr) => {return `[stack.${addr}]`})
+            let buffer_as_arg = `#${buffer_values.join(",")}#`
 
-          while (num_places > 0) {
-            prefix.push(...call_prefix)
-            num_places--
-          }
+            // write operand to buffer
+            let [op_prefix, op_value] = translate(args.expr1, ctx_type)
+            prefix.push(...op_prefix)
+            for (let i = 0; i < data_type_size; i++) {
+              prefix.push(`write ${op_value[i]} stack.${buffer[i]}`)
+            }
 
-          registers = call_registers
+            // repeatedly shift the content of the buffer and write the result into the buffer
+            while (num_places > 0) {
+              let [call_prefix, call_registers] = function_call(`sys.u32_lshift`, [buffer_as_arg], true)
+              prefix.push(...call_prefix)
+              for (let i = 0; i < data_type_size; i++) {
+                prefix.push(`write ${call_registers[i]} stack.${buffer[i]}`)
+              }
+              num_places--
+            }
+
+            registers = buffer_values
+          } else {
+            [prefix, registers] = function_call(`sys.u32_lshift`, [args.expr1])
+          }
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -2107,35 +2185,6 @@ function translate(token, ctx_type) {
     case "!": {
       prefix = write_operand(args.expr,ctx_type)
       registers = ["[alu.!]"]
-    } break
-
-    case "..": {
-      let expr1 = translate(args.expr1,ctx_type)
-      let expr1_prefix = expr1[0]
-      let expr1_reg = expr1[1]
-      prefix = expr1_prefix
-      let expr2 = translate(args.expr2,ctx_type)
-      let expr2_prefix = expr2[0]
-      let expr2_reg = expr2[1]
-      prefix.push(...expr2_prefix)
-      registers = expr1_reg
-      registers.push(...expr2_reg)
-    } break
-
-    case ":": {
-      let expr = translate(args.expr1,ctx_type)
-      prefix = expr[0]
-      let expr_regs = expr[1]
-
-      let index = translate(args.expr2,"u16")
-      if (index[2] !==  "u16") {
-        throw new CompError("Word selector index must be of type 'u16'") //should also be static (ie. number token)
-      }
-      if (index[1][0] >= expr_regs.length) {
-        throw new CompError("Index out of range")
-      }
-
-      registers = [expr_regs[index[1][0]]]
     } break
 
     case "expr_array": {
@@ -2280,27 +2329,7 @@ function translate(token, ctx_type) {
       let array_name = args.name
       let operation = args.operation
 
-      let local_table = state.symbol_table[state.scope]
-      let global_table = state.symbol_table.__global
-
-      let table_entry
-      if (array_name in local_table) {
-        // this is a local array
-        table_entry = local_table[array_name].specific
-      } else if (array_name in global_table) {
-        // this is a global array
-        table_entry = global_table[array_name].specific
-      } else {
-        throw new CompError(`Cannot find array named '${array_name}'`)
-      }
-
-      let addr_prefix = table_entry.addr_prefix
-      let array_type = table_entry.element_data_type
-
-      let base_addr = `[${addr_prefix}${table_entry.base_addr}]`
-      let current_len = `[${addr_prefix}${table_entry.current_len}]`
-      let max_len = `[${addr_prefix}${table_entry.max_len}]`
-      let item_size = get_data_type_size(array_type)
+      let array = get_array_info(array_name)
 
       if (operation === "index") {
         let [index_prefix, index_value, index_type] = translate(args.expr, "u16")
@@ -2311,50 +2340,51 @@ function translate(token, ctx_type) {
 
 
         // fast path for single word items
-        if (item_size === 1) {
+        if (array.item_size === 1) {
           // buffer the index value (in case it is still in the alu)
           let buffer = buffer_if_needed(index_value)
           prefix.push(...buffer.prefix)
 
           // TODO leaks global memory
           let result = alloc_global(1)
-          prefix.push(`write ${base_addr} alu.1`)
+          prefix.push(`write ${array.base_addr} alu.1`)
           prefix.push(`write ${buffer.label} alu.2`)
           prefix.push(`copy [alu.+] ram.${result}`)
           registers = [`[ram.${result}]`]
           buffer.free()
         } else {
           // slower path using mem_copy for >1 word data types
-          let dest_memory = alloc_global(item_size)
+          let dest_memory = alloc_global(array.item_size)
           let abs_dest = `ram.${dest_memory[0]}`
-          let [call_prefix,,] = function_call("sys.array_read", [`#${base_addr}#`, `#${item_size}#`, `#${index_value}#`, `#${abs_dest}#`], true)
+          let [call_prefix,,] = function_call("sys.array_read", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${abs_dest}#`], true)
           prefix.push(...call_prefix)
           registers = []
           for (let addr of dest_memory) {
             registers.push(`[ram.${addr}]`)
           }
         }
-        type = array_type
+        type = array.array_type
 
       } else if (operation === "len") {
-        registers = [current_len]
+        registers = [array.current_len]
         type = "u16"
 
       } else if (operation === "max_len") {
-        registers = [max_len]
+        registers = [array.max_len]
         type = "u16"
 
       } else if (operation === "pop") {
+        array.assert_writeable()
         // take one away from the length of the array, then return the item at that index
-        prefix.push(`write ${current_len} alu.1`)
+        prefix.push(`write ${array.current_len} alu.1`)
         prefix.push("write 1 alu.2")
-        prefix.push(`write [alu.-] ${current_len.slice(1, -1)}`)
+        prefix.push(`write [alu.-] ${array.current_len.slice(1, -1)}`)
 
         // evaluate and index token instead of re-implmenting the same logic here
         let index_token = {name:"array_expression",type:"expression",arguments:{
           name: array_name,
           operation: "index",
-          expr: tokenise(`{${current_len}}`)
+          expr: tokenise(`{${array.current_len}}`)
           }
         }
         let [index_prefix, index_value, index_type] = translate(index_token)
