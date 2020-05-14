@@ -294,7 +294,7 @@ function operation_assignment_token(var_name, op, value_token) {
   return translate(token)
 }
 
-function function_call(name, args, raw_input = false) {
+function function_call(name, args, type, raw_input = false) {
   load_lib(name)
   if (raw_input) {
     // if the arguments are not tokens, first tokenise them
@@ -306,7 +306,8 @@ function function_call(name, args, raw_input = false) {
     arguments: {
       name: name,
       exprs: args,
-      ignore_type_mismatch: true
+      ignore_type_mismatch: true,
+      forced_type: type
     }
   }
 
@@ -1173,7 +1174,7 @@ function translate(token, ctx_type) {
       let base_addr = `[${prefix}${header_memory[0]}]`
 
       // call function to copy inital values to array
-      let [call_prefix, call_value, call_type] = function_call("sys.mem_copy", [`#${source_base_addr}#`, `#${base_addr}#`, `#${current_len * element_size}#`], true)
+      let [call_prefix, call_value, call_type] = function_call("sys.mem_copy", [`#${source_base_addr}#`, `#${base_addr}#`, `#${current_len * element_size}#`], "u16", true)
       result.push(...call_prefix)
 
     } break
@@ -1286,7 +1287,7 @@ function translate(token, ctx_type) {
         buffer.free()
       } else {
         // slower path using mem_copy for >1 word data types
-        let [call_prefix,,] = function_call("sys.array_set", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${source_addr}#`], true)
+        let [call_prefix,,] = function_call("sys.array_set", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${source_addr}#`], "u16", true)
         result.push(...call_prefix)
       }
 
@@ -1372,7 +1373,7 @@ function translate(token, ctx_type) {
         }
         result.push(...index_prefix)
 
-        let [call_prefix,,] = function_call("sys.array_shift", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${array.current_len}#`], true)
+        let [call_prefix,,] = function_call("sys.array_shift", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${array.current_len}#`], "u16", true)
         result.push(...call_prefix)
 
         // put item at the specified index
@@ -1747,7 +1748,7 @@ function translate(token, ctx_type) {
 
         case "s32":
         case "u32": {
-          [prefix, registers] = function_call("sys.u32_add", [args.expr1,args.expr2])
+          [prefix, registers] = function_call("sys.u32_add", [args.expr1,args.expr2], type)
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -1765,7 +1766,7 @@ function translate(token, ctx_type) {
 
         case "s32":
         case "u32": {
-          [prefix, registers] = function_call("sys.u32_subtract", [args.expr1,args.expr2])
+          [prefix, registers] = function_call("sys.u32_subtract", [args.expr1,args.expr2], type)
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -1779,7 +1780,7 @@ function translate(token, ctx_type) {
         case "u32":
         case "s16":
         case "u16": {
-          [prefix, registers] = function_call(`sys.${ctx_type}_multiply`, [args.expr1,args.expr2])
+          [prefix, registers] = function_call(`sys.${ctx_type}_multiply`, [args.expr1,args.expr2], type)
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -1793,7 +1794,7 @@ function translate(token, ctx_type) {
         case "u32":
         case "s16":
         case "u16": {
-          [prefix, registers] = function_call(`sys.${ctx_type}_divide`, [args.expr1,args.expr2])
+          [prefix, registers] = function_call(`sys.${ctx_type}_divide`, [args.expr1,args.expr2], type)
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -1807,7 +1808,7 @@ function translate(token, ctx_type) {
         case "u32":
         case "s16":
         case "u16": {
-          [prefix, registers] = function_call(`sys.${ctx_type}_exponent`, [args.expr1,args.expr2])
+          [prefix, registers] = function_call(`sys.${ctx_type}_exponent`, [args.expr1,args.expr2], type)
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -1821,7 +1822,7 @@ function translate(token, ctx_type) {
         case "u32":
         case "s16":
         case "u16": {
-          [prefix, registers] = function_call(`sys.${ctx_type}_modulo`, [args.expr1,args.expr2])
+          [prefix, registers] = function_call(`sys.${ctx_type}_modulo`, [args.expr1,args.expr2], type)
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
@@ -1852,7 +1853,7 @@ function translate(token, ctx_type) {
 
         case "s32":
         case "u32": {
-          [prefix, registers] = function_call(`sys.${operand_type}_greater`, [args.expr1,args.expr2])
+          [prefix, registers] = function_call(`sys.${operand_type}_greater`, [args.expr1,args.expr2], operand_type)
         } break
 
         default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
@@ -1884,7 +1885,7 @@ function translate(token, ctx_type) {
 
           case "s32":
           case "u32": {
-            [prefix, registers] = function_call(`sys.${operand_type}_less`, [args.expr1,args.expr2])
+            [prefix, registers] = function_call(`sys.${operand_type}_less`, [args.expr1,args.expr2], operand_type)
           } break
 
         default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
@@ -1926,12 +1927,12 @@ function translate(token, ctx_type) {
         case "u32": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let prefix_and_value = function_call(`sys.${operand_type}_greater`, [args.expr1,args.expr2])
+          let prefix_and_value = function_call(`sys.${operand_type}_greater`, [args.expr1,args.expr2], operand_type)
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2])
+          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2], operand_type)
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -1984,12 +1985,12 @@ function translate(token, ctx_type) {
         case "u32": {
           let temp_vars = [get_temp_word(), get_temp_word()]
 
-          let prefix_and_value = function_call(`sys.${operand_type}_less`, [args.expr1,args.expr2])
+          let prefix_and_value = function_call(`sys.${operand_type}_less`, [args.expr1,args.expr2], operand_type)
           prefix = prefix_and_value[0]
 
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
 
-          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2])
+          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2], operand_type)
           prefix.push(...prefix_and_value[0])
           prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
 
@@ -2018,7 +2019,7 @@ function translate(token, ctx_type) {
 
         case "s32":
         case "u32": {
-          [prefix, registers] = function_call("sys.u32_equal", [args.expr1,args.expr2])
+          [prefix, registers] = function_call("sys.u32_equal", [args.expr1,args.expr2], operand_type)
         } break
 
         default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
@@ -2042,7 +2043,7 @@ function translate(token, ctx_type) {
 
         case "s32":
         case "u32": {
-          [prefix, registers] = function_call("sys.u32_not_equal", [args.expr1,args.expr2])
+          [prefix, registers] = function_call("sys.u32_not_equal", [args.expr1,args.expr2], operand_type)
         } break
 
         default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
@@ -2108,7 +2109,7 @@ function translate(token, ctx_type) {
 
             // repeatedly shift the content of the buffer and write the result into the buffer
             while (num_places > 0) {
-              let [call_prefix, call_registers] = function_call(`sys.${ctx_type}_rshift`, [buffer_as_arg], true)
+              let [call_prefix, call_registers] = function_call(`sys.${ctx_type}_rshift`, [buffer_as_arg], operand_type, true)
               prefix.push(...call_prefix)
               for (let i = 0; i < data_type_size; i++) {
                 prefix.push(`write ${call_registers[i]} stack.${buffer[i]}`)
@@ -2118,7 +2119,7 @@ function translate(token, ctx_type) {
 
             registers = buffer_values
           } else {
-            [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr1])
+            [prefix, registers] = function_call(`sys.${ctx_type}_rshift`, [args.expr1], ctx_type)
           }
         } break
 
@@ -2174,7 +2175,7 @@ function translate(token, ctx_type) {
 
             // repeatedly shift the content of the buffer and write the result into the buffer
             while (num_places > 0) {
-              let [call_prefix, call_registers] = function_call(`sys.u32_lshift`, [buffer_as_arg], true)
+              let [call_prefix, call_registers] = function_call(`sys.u32_lshift`, [buffer_as_arg], ctx_type, true)
               prefix.push(...call_prefix)
               for (let i = 0; i < data_type_size; i++) {
                 prefix.push(`write ${call_registers[i]} stack.${buffer[i]}`)
@@ -2184,7 +2185,7 @@ function translate(token, ctx_type) {
 
             registers = buffer_values
           } else {
-            [prefix, registers] = function_call(`sys.u32_lshift`, [args.expr1])
+            [prefix, registers] = function_call(`sys.u32_lshift`, [args.expr1], ctx_type)
           }
         } break
 
@@ -2366,7 +2367,7 @@ function translate(token, ctx_type) {
           // slower path using mem_copy for >1 word data types
           let dest_memory = alloc_global(array.item_size)
           let abs_dest = `ram.${dest_memory[0]}`
-          let [call_prefix,,] = function_call("sys.array_read", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${abs_dest}#`], true)
+          let [call_prefix,,] = function_call("sys.array_read", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${abs_dest}#`], "u16", true)
           prefix.push(...call_prefix)
           registers = []
           for (let addr of dest_memory) {
@@ -2443,8 +2444,11 @@ function translate(token, ctx_type) {
         let arg_type = details.data_type
         let arg_token = args.exprs.shift()
 
-        let [expr_prefix, expr_value, expr_type] = translate(arg_token, arg_type)
-        if ((!args.ignore_type_mismatch)) {
+        let expr_prefix, expr_value, expr_type
+        if (args.ignore_type_mismatch) {
+          [expr_prefix, expr_value, expr_type] = translate(arg_token, args.forced_type)
+        } else {
+          [expr_prefix, expr_value, expr_type] = translate(arg_token, arg_type)
           assert_compatable_types(arg_type, expr_type, token.line, () => {
             throw new CompError(`In call to ${args.name}()\nArgument '${arg_name}' is of type '${arg_type}', but got '${expr_type}'`)
           })
