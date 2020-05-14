@@ -27,155 +27,149 @@ def assert(bool condition)
   {write $tests_passed io.out2}
   {write $total_tests io.out3}
 
+def assert_true(bool condition)
+  assert(condition)
+
+def assert_false(bool condition)
+  assert(!condition)
 
 // u16 tests
 current_type = "u16"
 sub_test_num = 0
 
 u16_tmp = 1 + 1
-assert(u16_tmp == 2)
+assert_true(u16_tmp == 2)
 
 u16_tmp = 1 - 1
-assert(u16_tmp == 0)
+assert_true(u16_tmp == 0)
 
 u16_tmp = 1 >> 1
-assert(u16_tmp == 0)
+assert_true(u16_tmp == 0)
 
 u16_tmp = 1 << 1
-assert(u16_tmp == 2)
+assert_true(u16_tmp == 2)
 
 u16_tmp = 1 * 1
-assert(u16_tmp == 1)
+assert_true(u16_tmp == 1)
 
 u16_tmp = 1 / 1
-assert(u16_tmp == 1)
+assert_true(u16_tmp == 1)
 
 u16_tmp = 2 * 2
-assert(u16_tmp == 4)
+assert_true(u16_tmp == 4)
 
 u16_tmp = 4 / 2
-assert(u16_tmp == 2)
+assert_true(u16_tmp == 2)
 
 u16_tmp = 7 * 2
-assert(u16_tmp == 14)
+assert_true(u16_tmp == 14)
 
 u16_tmp = 14 / 2
-assert(u16_tmp == 7)
+assert_true(u16_tmp == 7)
 
 u16_tmp = 4 ^ 4
-assert(u16_tmp == 256)
+assert_true(u16_tmp == 256)
 
 u16_tmp = 63 % 4
-assert(u16_tmp == 3)
+assert_true(u16_tmp == 3)
 
-u16_tmp = 2
-assert(u16_tmp < 3)
+assert_true(54 < 65534)
 
-u16_tmp = 3
-assert(u16_tmp > 2)
+assert_true(3 > 2)
 
-u16_tmp = 3
-assert(u16_tmp >= 2)
+assert_true(2 >= 2)
 
-u16_tmp = 2
-assert(u16_tmp <= 3)
+assert_true(2 <= 3)
 
 u16_tmp = 250 * 147
-assert(u16_tmp == 36750)
+assert_true(u16_tmp == 36750)
 
 u16_tmp = 9 ^ 5
-assert(u16_tmp == 59049)
+assert_true(u16_tmp == 59049)
 
 u16_tmp = 0xffff + 1
 let bool overflow
 {write [alu.ov] &overflow}
-assert(overflow)
+assert_true(overflow)
 
 //s16 tests
 current_type = "s16"
 sub_test_num = 0
 
 s16_tmp = 1 + 1
-assert(s16_tmp == 2)
+assert_true(s16_tmp == 2)
 
 s16_tmp = 1 - 1
-assert(s16_tmp == 0)
+assert_true(s16_tmp == 0)
 
 s16_tmp = 1 >> 1
-assert(s16_tmp == 0)
+assert_true(s16_tmp == 0)
 
 s16_tmp = 1 << 1
-assert(s16_tmp == 2)
+assert_true(s16_tmp == 2)
 
 s16_tmp = 1 * 1
-assert(s16_tmp == 1)
+assert_true(s16_tmp == 1)
 
 s16_tmp = 1 / 1
-assert(s16_tmp == 1)
+assert_true(s16_tmp == 1)
 
 s16_tmp = 2 * 2
-assert(s16_tmp == 4)
+assert_true(s16_tmp == 4)
 
 s16_tmp = 4 / 2
-assert(s16_tmp == 2)
+assert_true(s16_tmp == 2)
 
 s16_tmp = 7 * 2
-assert(s16_tmp == 14)
+assert_true(s16_tmp == 14)
 
 s16_tmp = 14 / 2
-assert(s16_tmp == 7)
+assert_true(s16_tmp == 7)
 
 s16_tmp = 4 ^ 4
-assert(s16_tmp == 256)
+assert_true(s16_tmp == 256)
 
 s16_tmp = 63 % 4
-assert(s16_tmp == 3)
+assert_true(s16_tmp == 3)
 
 s16_tmp = 2
-assert(s16_tmp < 3)
+assert_true(s16_tmp < 3)
 
 s16_tmp = 3
-assert(s16_tmp > 2)
+assert_true(s16_tmp > 2)
 
 s16_tmp = 3
-assert(s16_tmp >= 2)
+assert_true(s16_tmp >= 2)
 
 s16_tmp = 2
-assert(s16_tmp <= 3)
+assert_true(s16_tmp <= 3)
 
 s16_tmp = -2 * -2
-assert(s16_tmp == 4)
+assert_true(s16_tmp == 4)
 
 s16_tmp = -2 / -2
-assert(s16_tmp == 1)
+assert_true(s16_tmp == 1)
 
-const s16 minus10 = -10
-const s16 minus50 = -50
-const s16 minus5 = -5
+s16_tmp = -50 / -10
+assert_true(s16_tmp == 5)
 
-s16_tmp = minus50 / minus10
-assert(s16_tmp == 5)
+s16_tmp = -50 / 10
+assert_true(s16_tmp == -5)
 
-s16_tmp = minus50 / 10
-assert(s16_tmp == minus5)
-
-s16_tmp = 50 / minus10
-assert(s16_tmp == minus5)
+s16_tmp = 50 / -10
+assert_true(s16_tmp == -5)
 
 s16_tmp = 147 * 147
-assert(s16_tmp == 21609)
+assert_true(s16_tmp == 21609)
 
 s16_tmp = 9 ^ 4
-assert(s16_tmp == 6561)
+assert_true(s16_tmp == 6561)
 
-const s16 minus9 = -9
-const s16 minus729 = -729
+s16_tmp = -9 ^ 4
+assert_true(s16_tmp == 6561)
 
-s16_tmp = minus9  ^ 4
-assert(s16_tmp == 6561)
-
-s16_tmp = minus9  ^ 3
-assert(s16_tmp == minus729)
+s16_tmp = -9 ^ 3
+assert_true(s16_tmp == -729)
 
 
 //u32 tests
@@ -183,61 +177,61 @@ current_type = "u32"
 sub_test_num = 0
 
 u32_tmp = 1 + 1
-assert(u32_tmp == 2)
+assert_true(u32_tmp == 2)
 
 u32_tmp = 1 - 1
-assert(u32_tmp == 0)
+assert_true(u32_tmp == 0)
 
 u32_tmp = 1 >> 1
-assert(u32_tmp == 0)
+assert_true(u32_tmp == 0)
 
 u32_tmp = 1 << 1
-assert(u32_tmp == 2)
+assert_true(u32_tmp == 2)
 
 u32_tmp = 1 * 1
-assert(u32_tmp == 1)
+assert_true(u32_tmp == 1)
 
 u32_tmp = 1 / 1
-assert(u32_tmp == 1)
+assert_true(u32_tmp == 1)
 
 u32_tmp = 2 * 2
-assert(u32_tmp == 4)
+assert_true(u32_tmp == 4)
 
 u32_tmp = 4 / 2
-assert(u32_tmp == 2)
+assert_true(u32_tmp == 2)
 
 u32_tmp = 7 * 2
-assert(u32_tmp == 14)
+assert_true(u32_tmp == 14)
 
 u32_tmp = 14 / 2
-assert(u32_tmp == 7)
+assert_true(u32_tmp == 7)
 
 u32_tmp = 4 ^ 4
-assert(u32_tmp == 256)
+assert_true(u32_tmp == 256)
 
 u32_tmp = 63 % 4
-assert(u32_tmp == 3)
+assert_true(u32_tmp == 3)
 
 u32_tmp = 2
-assert(u32_tmp < 3)
+assert_true(u32_tmp < 3)
 
 u32_tmp = 3
-assert(u32_tmp > 2)
+assert_true(u32_tmp > 2)
 
 u32_tmp = 3
-assert(u32_tmp >= 2)
+assert_true(u32_tmp >= 2)
 
 u32_tmp = 2
-assert(u32_tmp <= 3)
+assert_true(u32_tmp <= 3)
 
 u32_tmp = 250 * 147
-assert(u32_tmp == 36750)
+assert_true(u32_tmp == 36750)
 
 u32_tmp = 9 ^ 5
-assert(u32_tmp == 59049)
+assert_true(u32_tmp == 59049)
 
 u32_tmp = 0xffffffff + 1
-assert(u32_tmp == 0)
+assert_true(u32_tmp == 0)
 
 
 // s32 tests
@@ -245,86 +239,79 @@ current_type = "s32"
 sub_test_num = 0
 
 s32_tmp = 1 + 1
-assert(s32_tmp == 2)
+assert_true(s32_tmp == 2)
 
 s32_tmp = 1 - 1
-assert(s32_tmp == 0)
+assert_true(s32_tmp == 0)
 
 s32_tmp = 1 >> 1
-assert(s32_tmp == 0)
+assert_true(s32_tmp == 0)
 
 s32_tmp = 1 << 1
-assert(s32_tmp == 2)
+assert_true(s32_tmp == 2)
 
 s32_tmp = 1 * 1
-assert(s32_tmp == 1)
+assert_true(s32_tmp == 1)
 
 s32_tmp = 1 / 1
-assert(s32_tmp == 1)
+assert_true(s32_tmp == 1)
 
 s32_tmp = 2 * 2
-assert(s32_tmp == 4)
+assert_true(s32_tmp == 4)
 
 s32_tmp = 4 / 2
-assert(s32_tmp == 2)
+assert_true(s32_tmp == 2)
 
 s32_tmp = 7 * 2
-assert(s32_tmp == 14)
+assert_true(s32_tmp == 14)
 
 s32_tmp = 14 / 2
-assert(s32_tmp == 7)
+assert_true(s32_tmp == 7)
 
 s32_tmp = 4 ^ 4
-assert(s32_tmp == 256)
+assert_true(s32_tmp == 256)
 
 s32_tmp = 63 % 4
-assert(s32_tmp == 3)
+assert_true(s32_tmp == 3)
 
 s32_tmp = 2
-assert(s32_tmp < 3)
+assert_true(s32_tmp < 3)
 
 s32_tmp = 3
-assert(s32_tmp > 2)
+assert_true(s32_tmp > 2)
 
 s32_tmp = 3
-assert(s32_tmp >= 2)
+assert_true(s32_tmp >= 2)
 
 s32_tmp = 2
-assert(s32_tmp <= 3)
+assert_true(s32_tmp <= 3)
 
 s32_tmp = -2 * -2
-assert(s32_tmp == 4)
+assert_true(s32_tmp == 4)
 
 s32_tmp = -2 / -2
-assert(s32_tmp == 1)
+assert_true(s32_tmp == 1)
 
-const s32 s32_minus10 =  -10
-const s32 s32_minus50 = -50
-const s32 s32_minus5 = -5
+s32_tmp = -50 / -10
+assert_true(s32_tmp == 5)
 
-s32_tmp = s32_minus50 / s32_minus10
-assert(s32_tmp == 5)
+s32_tmp = -50 / 10
+assert_true(s32_tmp == -5)
 
-s32_tmp = s32_minus50 / 10
-assert(s32_tmp == s32_minus5)
-
-s32_tmp = 50 / s32_minus10
-assert(s32_tmp == s32_minus5)
+s32_tmp = 50 / -10
+assert_true(s32_tmp == -5)
 
 s32_tmp = 147 * 147
-assert(s32_tmp == 21609)
+assert_true(s32_tmp == 21609)
 
 s32_tmp = 9 ^ 4
-assert(s32_tmp == 6561)
+assert_true(s32_tmp == 6561)
 
-const s32 s32_minus9 = -9
-const s32 s32_minus729 = -729
-s32_tmp = s32_minus9 ^ 4
-assert(s32_tmp == 6561)
+s32_tmp = -9 ^ 4
+assert_true(s32_tmp == 6561)
 
-s32_tmp = s32_minus9  ^ 3
-assert(s32_tmp == s32_minus729)
-
+s32_tmp = -9  ^ 3
+assert_true(s32_tmp == -729)
 
 // print summary
 sys.print_u16(tests_passed, 0, line)
