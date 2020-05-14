@@ -609,7 +609,7 @@ const libs = {
     "      err -= dy",
     "      x0 += sx ",
     "    ",
-    "    if e2 <= dy",
+    "    if e2 < dy",
     "      err += dx",
     "      y0 += sy"
   ],
