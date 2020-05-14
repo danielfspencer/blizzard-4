@@ -2109,7 +2109,7 @@ function translate(token, ctx_type) {
 
             // repeatedly shift the content of the buffer and write the result into the buffer
             while (num_places > 0) {
-              let [call_prefix, call_registers] = function_call(`sys.${ctx_type}_rshift`, [buffer_as_arg], operand_type, true)
+              let [call_prefix, call_registers] = function_call(`sys.${ctx_type}_rshift`, [buffer_as_arg], ctx_type, true)
               prefix.push(...call_prefix)
               for (let i = 0; i < data_type_size; i++) {
                 prefix.push(`write ${call_registers[i]} stack.${buffer[i]}`)
