@@ -37,7 +37,7 @@ Variables, arguments, constants and functions are all referred to by alphanumeri
 - must not be the name of a data type
 
 ### Reserved Keywords
-`if` `for` `while` `repeat` `struct` `def` `true` `false` `sys` `sys.odd` `sys.ov` `array` `return` `break` `continue` `include` `__root` `__global`
+`if` `for` `while` `repeat` `struct` `def` `true` `false` `sys` `return` `break` `continue` `include` `__root` `__global`  `__return`
 
 # Syntax
 Each line in a `b4` program must be one of the following:
@@ -410,8 +410,6 @@ def shift_right(u16 start = 6144, u16 end = 7167)
 | `<=` |  less than or equal to | `u16 s16 u32 s32` | `bool` |
 | `==` |  equal | `bool u16 s16 u32 s32` | `bool` |
 | `!=` |  not equal | `bool u16 s16 u32 s32` | `bool` |
-| `sys.odd` | true if number is odd | `u16 s16 u32 s32` | `bool` |
-| `sys.ov` | true if the last calculation<br> overflowed | `n/a` | `bool` |
 
 ## Inline assembly
 
