@@ -92,6 +92,20 @@ let bool overflow
 {write [alu.ov] &overflow}
 assert_true(overflow)
 
+assert_false(45000 > 45000)
+
+assert_false(45000 < 45000)
+
+assert_false(45000 != 45000)
+
+assert_true(5 < 65530)
+
+assert_false(5 > 65530)
+
+assert_true(65530 > 5)
+
+assert_false(65530 < 5)
+
 //s16 tests
 current_type = "s16"
 sub_test_num = 0
@@ -171,6 +185,27 @@ assert_true(s16_tmp == 6561)
 s16_tmp = -9 ^ 3
 assert_true(s16_tmp == -729)
 
+s16_tmp = 32760
+assert_false(s16_tmp > s16_tmp)
+
+assert_false(s16_tmp < s16_tmp)
+
+assert_false(s16_tmp != s16_tmp)
+
+assert_true(-32760 < s16_tmp)
+
+assert_false(-32760 > s16_tmp)
+
+assert_true(s16_tmp > -32760)
+
+assert_false(s16_tmp < -32760)
+
+s16_tmp = -2 >> 1
+assert_true(s16_tmp == -1)
+
+s16_tmp = 0b0101010101010101 << 1
+u16_tmp = 0b1010101010101010
+assert_true(s16_tmp == u16_tmp)
 
 //u32 tests
 current_type = "u32"
@@ -232,6 +267,27 @@ assert_true(u32_tmp == 59049)
 
 u32_tmp = 0xffffffff + 1
 assert_true(u32_tmp == 0)
+
+u32_tmp = 0b01010101010101010101010101010101 >> 1
+assert_true(u32_tmp == 0b00101010101010101010101010101010)
+
+u32_tmp = 0b10101010101010101010101010101010 << 1
+assert_true(u32_tmp == 0b01010101010101010101010101010100)
+
+u32_tmp = 4294967290
+assert_false(u32_tmp > u32_tmp)
+
+assert_false(u32_tmp < u32_tmp)
+
+assert_false(u32_tmp != u32_tmp)
+
+assert_true(5 < u32_tmp)
+
+assert_false(5 > u32_tmp)
+
+assert_true(u32_tmp > 5)
+
+assert_false(u32_tmp < 5)
 
 
 // s32 tests
@@ -313,8 +369,34 @@ assert_true(s32_tmp == 6561)
 s32_tmp = -9  ^ 3
 assert_true(s32_tmp == -729)
 
+u32_tmp = 0b01010101010101010101010101010101 >> 1
+s32_tmp = u32_tmp
+assert_true(s32_tmp == 0b00101010101010101010101010101010)
+
+u32_tmp = 0b10101010101010101010101010101010 << 1
+s32_tmp = u32_tmp
+assert_true(s32_tmp == 0b01010101010101010101010101010100)
+
+s32_tmp = -2147483646 >> 1
+assert_true(s32_tmp == -1073741823)
+
+s32_tmp = 2147483643
+assert_false(s32_tmp > s32_tmp)
+
+assert_false(s32_tmp < s32_tmp)
+
+assert_false(s32_tmp != s32_tmp)
+
+assert_true(-2147483643 < s32_tmp)
+
+assert_false(-2147483643 > s32_tmp)
+
+assert_true(s32_tmp > -2147483643)
+
+assert_false(s32_tmp < -2147483643)
+
 // print summary
 sys.print_u16(tests_passed, 0, line)
-sys.print_string("/",2, line)
-sys.print_u16(total_tests, 3, line)
-sys.print_string("passed",6, line)
+sys.print_string("/",3, line)
+sys.print_u16(total_tests, 4, line)
+sys.print_string("passed",8, line)
