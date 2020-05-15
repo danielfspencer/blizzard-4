@@ -388,14 +388,14 @@ function get_array_info(array_name) {
   }
 
   if (is_constant) {
-    response.base_addr = table_entry.base_addr
-    response.current_len = table_entry.current_len
-    response.max_len = table_entry.max_len
+    response.base_addr = table_entry.ram_addresses[0]
+    response.current_len = table_entry.ram_addresses[1]
+    response.max_len = table_entry.ram_addresses[2]
   } else {
     let addr_prefix = table_entry.addr_prefix
-    response.base_addr = `[${addr_prefix}${table_entry.base_addr}]`
-    response.current_len = `[${addr_prefix}${table_entry.current_len}]`
-    response.max_len = `[${addr_prefix}${table_entry.max_len}]`
+    response.base_addr = `[${addr_prefix}${table_entry.ram_addresses[0]}]`
+    response.current_len = `[${addr_prefix}${table_entry.ram_addresses[1]}]`
+    response.max_len = `[${addr_prefix}${table_entry.ram_addresses[2]}]`
   }
 
   return response
@@ -1107,9 +1107,11 @@ function translate(token, ctx_type) {
         data_type: "array",
         specific: {
           element_data_type: data_type,
-          base_addr: source_base_addr,
-          current_len: current_len,
-          max_len: max_len
+          ram_addresses: [
+            source_base_addr,
+            current_len,
+            max_len
+          ]
         }
       }
     } break
@@ -1139,8 +1141,13 @@ function translate(token, ctx_type) {
         prefix = "stack."
       }
 
-      let header_memory = allocator(3)
-      let array_memory = allocator(max_len * element_size)
+      let array_memory = allocator(max_len * element_size + 3)
+
+      // word | function
+      //    0 | absoulte_base_addr
+      //    1 | current_len
+      //    2 | max_len
+      //    3 | --- start of array items
 
       // add to symbol table
       state.symbol_table[scope][args.name] = {
@@ -1149,33 +1156,34 @@ function translate(token, ctx_type) {
         specific: {
           element_data_type: data_type,
           addr_prefix: prefix,
-          base_addr: header_memory[0],
-          current_len: header_memory[1],
-          max_len: header_memory[2],
-          array_mem: array_memory
+          ram_addresses: array_memory
         }
       }
 
-
       let absoulte_base_addr
       if (args.global) {
-        absoulte_base_addr = `ram.${array_memory[0]}`
+        absoulte_base_addr = `ram.${array_memory[3]}`
       } else {
-        let absoulte = stack_to_absolute(array_memory[0])
+        let absoulte = stack_to_absolute(array_memory[3])
         result.push(...absoulte.prefix)
         absoulte_base_addr = "[alu.+]"
       }
 
       // write the values to memory
-      result.push(`write ${absoulte_base_addr} ${prefix}${header_memory[0]}`)
-      result.push(`write ${current_len} ${prefix}${header_memory[1]}`)
-      result.push(`write ${max_len} ${prefix}${header_memory[2]}`)
+      if (max_len > 0) {
+        result.push(`write ${absoulte_base_addr} ${prefix}${array_memory[0]}`)
+      } else {
+        log.warn(`line ${token.line}:\nCreating zero-length array`)
+      }
+      result.push(`write ${current_len} ${prefix}${array_memory[1]}`)
+      result.push(`write ${max_len} ${prefix}${array_memory[2]}`)
 
-      let base_addr = `[${prefix}${header_memory[0]}]`
-
-      // call function to copy inital values to array
-      let [call_prefix, call_value, call_type] = function_call("sys.mem_copy", [`#${source_base_addr}#`, `#${base_addr}#`, `#${current_len * element_size}#`], "u16", true)
-      result.push(...call_prefix)
+      if (current_len > 0) {
+        let base_addr = `[${prefix}${array_memory[0]}]`
+        // call function to copy inital values to array
+        let [call_prefix, call_value, call_type] = function_call("sys.mem_copy", [`#${source_base_addr}#`, `#${base_addr}#`, `#${current_len * element_size}#`], "u16", true)
+        result.push(...call_prefix)
+      }
 
     } break
 
