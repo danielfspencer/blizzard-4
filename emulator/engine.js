@@ -56,7 +56,6 @@ function init_emulator() {
   debug = false
   is_running = false
   total_cycles = 0
-  total_spare_cycles = 0
   temp_cycles = 0
   actual_cycles_per_second = 0
   target_cycles_per_second = 0
@@ -428,9 +427,6 @@ function step_clock() {
     simulate_effect_of_write_bus_change()
   }
 
-  if ((write_bus + read_bus + data_bus) === 0) {
-    total_spare_cycles++
-  }
   total_cycles++
   temp_cycles++
 }
