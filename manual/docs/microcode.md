@@ -467,7 +467,7 @@
   </tr>
   <tr>
     <td>00001</td>
-    <td><div class="one">1</div></td>
+    <td>1</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -548,7 +548,7 @@
   </tr>
   <tr>
     <td>00101</td>
-    <td><div class="one">1</div></td>
+    <td>1</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -629,7 +629,7 @@
   </tr>
   <tr>
     <td>01001</td>
-    <td><div class="one">1</div></td>
+    <td>1</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -710,7 +710,7 @@
   </tr>
   <tr>
     <td>01101</td>
-    <td><div class="one">1</div></td>
+    <td>1</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -791,7 +791,7 @@
   </tr>
   <tr>
     <td>10001</td>
-    <td><div class="one">1</div></td>
+    <td>1</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -872,7 +872,7 @@
   </tr>
   <tr>
     <td>10101</td>
-    <td><div class="one">1</div></td>
+    <td>1</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
