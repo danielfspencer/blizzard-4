@@ -3,7 +3,6 @@
 let state = {}
 let show_log_messages = true
 let debug = false
-let token_dump = []
 
 // load the standard library and define the timer function
 let timer = () => performance.now()
@@ -26,8 +25,7 @@ onmessage = (event) => {
     case "compile":
       let result = ""
       try {
-        let as_array = message[1].split('\n')
-        result = compile(as_array, false)
+        result = compile(message[1].split('\n'), false)
       } catch (error) {
         if (error instanceof CompError) {
           log.error(error.toString())
@@ -35,7 +33,7 @@ onmessage = (event) => {
           throw error
         }
       } finally {
-        let ast = JSON.stringify(token_dump, null, 2)
+        let ast = JSON.stringify(state.ast, null, 2)
         postMessage(["result", result, ast])
       }
       break
@@ -86,7 +84,8 @@ function init_vars() {
     funcs: {},
     required: {},
     inner_structure_label: null,
-    labels: {__root: {if:0, for:0, while:0, str:0, expr_array:0}}
+    labels: {__root: {if:0, for:0, while:0, str:0, expr_array:0}},
+    ast: []
   }
 }
 
@@ -2948,7 +2947,7 @@ function compile(input, nested) {
     log.info(`↳ success, ${input.length} line(s) in ${Math.round(t1-t0)} ms`)
 
   if (!nested) {
-    token_dump = tokens
+    state.ast = tokens
   }
 
   //translate
