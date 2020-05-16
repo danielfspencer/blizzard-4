@@ -17,7 +17,7 @@
   border: 1px solid #C0C0C0;
   overflow-y: auto;
   overflow-x: hidden;
-  height: 302px;
+  height: 324px;
   width: 397px;
 }
 
@@ -46,15 +46,6 @@ form {
 #cmp {
   background-color: #607DB8;
   color: #fff;
-}
-
-#bench {
-  background-color: #717171;
-  color: #fff;
-  width: 150px;
-  float: right;
-  margin-top: 2px;
-  display: inline;
 }
 
 #name {

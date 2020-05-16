@@ -33,10 +33,6 @@ $( document ).ready( () => {
     compile()
   })
 
-  $("#bench").click( () => {
-    worker.postMessage(["bench",500])
-  })
-
   $("#auto").change(function() {
     realtime = this.checked
   })

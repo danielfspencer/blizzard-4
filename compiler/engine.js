@@ -42,18 +42,6 @@ onmessage = (event) => {
     case "debug":
       debug = message[1]
       break
-    case "bench":
-      try {
-        log.info(`${benchmark(message[1])} lines/second`)
-      } catch (error) {
-        if (error instanceof CompError) {
-          log.error("Benchmark could not be run because the standard library did not compile:")
-          log.error(error.toString())
-        } else {
-          throw error
-        }
-      }
-      break
   }
 }
 
@@ -104,35 +92,6 @@ function init_vars() {
 
 function pad(string, width) {
  return string.length >= width ? string : new Array(width - string.length + 1).join("0") + string
-}
-
-function benchmark(iterations) {
-  postMessage(["update",-1])
-
-  let lines = 0
-  for (let lib of Object.values(libs)) {
-    lines += lib.length
-  }
-
-  let total_time = 0
-  for (let i = 0; i < iterations; i++) {
-    init_vars()
-    let t0 = timer()
-    try {
-      show_log_messages = false
-      compile(["include *"], true)
-    } finally {
-      show_log_messages = true
-    }
-    let t1 = timer()
-    total_time += t1 - t0
-    if (Math.round((i+1) % (iterations/50)) === 0 ) {
-      postMessage(["update",(i+1)/iterations*100])
-    }
-  }
-
-  let avg_time = total_time / iterations
-  return Math.round(lines / (avg_time/1000))
 }
 
 function get_static_value(token, type, fail) {
