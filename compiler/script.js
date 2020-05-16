@@ -75,9 +75,6 @@ $( document ).ready( () => {
 
 function handleMsg(data) {
   switch(data[0]) {
-    case "update":
-      $("#progress").attr("value",data[1])
-      break
     case "result":
       compiling = false
       $("#out").val(data[1])

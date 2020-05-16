@@ -4,15 +4,6 @@
   width: 1500px;
 }
 
-.ram-bar {
-  height: 11px;
-  width: 95%;
-}
-
-.ram-bar, progress[role][aria-valuenow] {
-  background: #fafafa
-}
-
 #log {
   border: 1px solid #C0C0C0;
   overflow-y: auto;
@@ -65,29 +56,4 @@ form {
 
 #debug {
   margin-top: 5px;
-}
-
-progress, progress[role] {
-	appearance: none;
-	-moz-appearance: none;
-	-webkit-appearance: none;
-	border: none;
-	width: 400px;
-	height: 4px;
-}
-
-progress[value]::-webkit-progress-value {
-  background-color: #3787f0;
-}
-
-progress[value]::-moz-progress-bar {
-  background-color: #3787f0;
-}
-
-progress, progress[role][aria-valuenow] {
-  background: #b4cceb !important;
-}
-
-progress::-webkit-progress-bar {
-  background: #b4cceb;
 }

@@ -2940,11 +2940,6 @@ function compile(input, nested) {
           throw error
         }
       }
-
-      if (!nested && Math.round((i+1) % (input.length/100)) === 0 ) {
-        postMessage(["update",(((i+1)/input.length)*100)-50])
-      }
-
       prev_indent = Math.floor(input[i].search(/\S|$/)/2)
     }
 
@@ -2985,10 +2980,6 @@ function compile(input, nested) {
         } else {
           throw error
         }
-      }
-
-      if (!nested && Math.round((i+1) % (tokens.length/100)) === 0 ) {
-        postMessage(["update",(((i+1)/tokens.length)*100)+50])
       }
     }
     output += "stop 0 0"
