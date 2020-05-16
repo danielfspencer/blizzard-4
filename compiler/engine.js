@@ -1,6 +1,7 @@
 "use strict"
 
 let state = {}
+let show_log_messages = true
 let debug = false
 
 // load the standard library and define the timer function
@@ -50,7 +51,7 @@ const log = {
 }
 
 function send_log(message, level) {
-  if (level !== "error" && !state.show_log_messages || (level === "debug" && !debug)) {
+  if (level !== "error" && !show_log_messages || (level === "debug" && !debug)) {
     return
   }
 
@@ -75,7 +76,6 @@ function init_vars() {
   state = {
     scope: "__root",
     include_only_signatures_mode: false,
-    show_log_messages: true,
     symbol_table: {__root:{}, __global:{}},
     struct_definitions: {},
     frame_usage: {__root:[], __global:[]},
@@ -521,9 +521,9 @@ function load_lib(name) {
     if (name == "sys.signatures") {
       state.include_only_signatures_mode = true
     }
-    let old_log_status = state.show_log_messages
+    let old_log_status = show_log_messages
     try {
-      state.show_log_messages = false
+      show_log_messages = false
       compile(libs[name], true)
     } catch (error) {
       if (error instanceof CompError) { // if this is CompError with no line info
@@ -533,7 +533,7 @@ function load_lib(name) {
         throw error
       }
     } finally {
-      state.show_log_messages = old_log_status
+      show_log_messages = old_log_status
     }
   }
 }
