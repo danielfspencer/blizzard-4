@@ -1221,9 +1221,9 @@ function translate(token, ctx_type) {
 
       // get the value of the index expression
       let [index_prefix, index_value, index_type] = translate(args.index_expr, "u16")
-      if (index_type !== "u16") {
-        throw new CompError("Array indexes must be of type 'u16'")
-      }
+      assert_compatable_types(index_type, "u16", token.line, () => {
+        throw new CompError(`Array index expected type 'u16', got '${index_type}'`)
+      })
       result.push(...index_prefix)
 
       //evaluate the expression and put the result in a buffer area
@@ -1334,9 +1334,9 @@ function translate(token, ctx_type) {
 
         //evaluate the expression that gives the index
         let [index_prefix, index_value, index_type] = translate(index_expression, "u16")
-        if (index_type !== "u16") {
-          throw new CompError("Array indexes must be of type 'u16'")
-        }
+        assert_compatable_types(index_type, "u16", token.line, () => {
+          throw new CompError(`Array index expected type 'u16', got '${index_type}'`)
+        })
         result.push(...index_prefix)
 
         let [call_prefix,,] = function_call("sys.array_shift", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${array.current_len}#`], "u16", true)
@@ -2310,9 +2310,9 @@ function translate(token, ctx_type) {
 
       if (operation === "index") {
         let [index_prefix, index_value, index_type] = translate(args.expr, "u16")
-        if (index_type !== "u16") {
-          throw new CompError("Array indexes must be of type 'u16'")
-        }
+        assert_compatable_types(index_type, "u16", token.line, () => {
+          throw new CompError(`Array index expected type 'u16', got '${index_type}'`)
+        })
         prefix.push(...index_prefix)
 
 
