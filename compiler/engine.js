@@ -80,8 +80,8 @@ function init_vars() {
     struct_definitions: {},
     frame_usage: {__root:[], __global:[]},
     function_table: {},
-    consts: [],
-    funcs: {},
+    data: [],
+    code: {},
     required: {},
     inner_structure_label: null,
     labels: {__root: {if:0, for:0, while:0, str:0, expr_array:0}},
@@ -468,7 +468,7 @@ function get_temp_word() {
   }
 }
 
-function translate_body(tokens) {
+function translate_body(tokens, indent = true) {
   log.debug(`nested translate: ${tokens.length} token(s)`)
   let result = []
   if (tokens.length === 0) {
@@ -495,8 +495,11 @@ function translate_body(tokens) {
           log.warn(`line ${tokens[i].line}:\nDiscarding function's returned value of type '${function_type}'`)
         }
       }
-      for (let j = 0; j < command.length; j++ ) {
-        command[j] = `  ${command[j]}`
+
+      if (indent) {
+        for (let j = 0; j < command.length; j++ ) {
+          command[j] = `  ${command[j]}`
+        }
       }
       result.push(...command)
     }
@@ -1681,7 +1684,7 @@ function translate(token, ctx_type) {
 
       let id = `str_${gen_label("str")}`
 
-      state.consts.push(`${id}:`)
+      state.data.push(`${id}:`)
 
       for (let i = 0; i < string.length; i++) {
         let char = string[i]
@@ -1689,11 +1692,11 @@ function translate(token, ctx_type) {
         if (code < 32 || code > 127) {
           throw new CompError(`'${char}' is not a valid character`)
         }
-        state.consts.push(code)
+        state.data.push(code)
       }
 
       // string terminator
-      state.consts.push(0)
+      state.data.push(0)
 
       registers = [id]
       type = "str"
@@ -2200,7 +2203,7 @@ function translate(token, ctx_type) {
         }
         consts_to_add.push(...prefix_and_value[1])
       }
-      state.consts.push(...consts_to_add)
+      state.data.push(...consts_to_add)
 
       registers = [label, length, max_length, contained_type]
       type = "expr_array"
@@ -2677,8 +2680,8 @@ function translate(token, ctx_type) {
       // init output area for generated code
       let target
       if (is_full_definition) {
-        state.funcs[args.name] = []
-        target = state.funcs[args.name]
+        state.code[args.name] = []
+        target = state.code[args.name]
       } else {
         // if this is a function signature, don't generate any code
         target = []
@@ -2878,7 +2881,7 @@ function compile(input, nested) {
         continue
       }
       if (include_block_mode) {
-        state.consts.push(line)
+        state.data.push(line)
         continue
       }
 
@@ -2953,54 +2956,23 @@ function compile(input, nested) {
   //translate
     log.info("Translating...")
     t0 = timer()
-    let output = ""
-    let command = []
-    for (let i = 0; i < tokens.length; i++) {
-      if (tokens[i].type === "expression" && tokens[i].name !==  "function") {
-        throw new CompError("Unexpected expression", tokens[i].line)
-      }
+    let output = translate_body(tokens, false)
 
-      try {
-        command = translate(tokens[i])
-        if (tokens[i].name === "function") {
-          command = command[0] // if it is a function call (which are expressions) take only the prefix and bin the result register [[tokens],result] -> [tokens]
-          let function_type = state.function_table[tokens[i].arguments.name].data_type
-          if (function_type !== "none") {
-            log.warn(`line ${tokens[i].line}:\nDiscarding function's returned value of type '${function_type}'`)
-          }
-        }
-        if (command.length >= 1) {
-          output += command.join("\n")
-          output += "\n"
-        }
-      } catch (error) {
-        if (error instanceof CompError && error.line === undefined) { // if this is CompError with no line info
-          throw new CompError(error.message, tokens[i].line) // add the line number to it
-        } else {
-          throw error
-        }
-      }
-    }
-    output += "stop 0 0"
-
-    output = `write ${frame_size("__global")} ctl.sp\n${output}`
+    output.push("stop 0 0")
+    output.unshift(`write ${frame_size("__global")} ctl.sp`)
 
     t1 = timer()
     log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
 
-  //add state.consts
-    for (let i = 0; i < state.consts.length; i++) {
-      output += "\n" + state.consts[i]
-    }
+  //add state.data
+  output.push(...state.data)
 
   //add function defs
-    for (let item in state.funcs) {
-      for (let line of state.funcs[item]) {
-        output += "\n" + line
-      }
-    }
+  for (let scope in state.code) {
+    output.push(...state.code[scope])
+  }
 
-    output += "\n"
+  output.push("\n")
 
   //feedback
   if (!nested) {
@@ -3032,7 +3004,7 @@ function compile(input, nested) {
     }
   }
 
-  return output
+  return output.join("\n")
 }
 
 log.info(`Compiler thread started, ${Object.keys(libs).length} standard functions loaded`)
