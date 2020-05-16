@@ -1,23 +1,21 @@
 "use strict"
 
 let state = {}
-let show_log_messages = true
 let debug = false
 
 // load the standard library and define the timer function
 let timer = () => performance.now()
 importScripts('libraries.js')
 
-const min_frame_size = 2
-const max_frame_size = 2048
-const max_ram_size = 16384
-const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,none:0}
-const mixable_numeric_types = [["u16","s16"],["u32","s32"]]
-const reserved_keywords = [
+const MIN_FRAME_SIZE = 2
+const MAX_FRAME_SIZE = 2048
+const MAX_RAM_SIZE = 16384
+const DATA_TYPE_SIZE = { u16:1, s16:1, u32:2, s32:2, float:2, bool:1, str:1, array:4, none:0 }
+const MIXABLE_NUMERIC_TYPES = [["u16","s16"],["u32","s32"]]
+const RESERVED_KEYWORDS = [
   "if","for","while","repeat","struct","def","true","false","sys","return","break","continue","include","__root","__global", "__return"
 ]
-
-const return_instruction = "return [stack.0] [stack.1]"
+const RETURN_INSTRUCTION = "return [stack.0] [stack.1]"
 
 onmessage = (event) => {
   let message = event.data
@@ -51,7 +49,7 @@ const log = {
 }
 
 function send_log(message, level) {
-  if (level !== "error" && !show_log_messages || (level === "debug" && !debug)) {
+  if (level !== "error" && !state.show_log_messages || (level === "debug" && !debug)) {
     return
   }
 
@@ -76,13 +74,14 @@ function init_vars() {
   state = {
     scope: "__root",
     include_only_signatures_mode: false,
+    show_log_messages: true,
     symbol_table: {__root:{}, __global:{}},
     struct_definitions: {},
     frame_usage: {__root:[], __global:[]},
     function_table: {},
     data: [],
     code: {},
-    required: {},
+    required_libs: [],
     inner_structure_label: null,
     labels: {__root: {if:0, for:0, while:0, str:0, expr_array:0}},
     ast: []
@@ -149,7 +148,7 @@ function assert_compatable_types(type1, type2, line, custom_fail) {
   if (type1 === type2) {
     return
   } else {
-    for (let set of mixable_numeric_types) {
+    for (let set of MIXABLE_NUMERIC_TYPES) {
       if (set.includes(type1) && set.includes(type2)) {
         log.warn(`line ${line}:\nImplicit cast '${type1}' -> '${type2}'`)
         return
@@ -174,7 +173,7 @@ function assert_local_name_available(name) {
   const places = [
     Object.keys(state.symbol_table[state.scope]),
     Object.keys(state.function_table),
-    reserved_keywords
+    RESERVED_KEYWORDS
   ]
 
   for (let place of places) {
@@ -367,8 +366,8 @@ function alloc_stack(size) {
 
   for (let i = 0; i < size; i++) {
     let addr = base_addr + i
-    if (addr >= max_frame_size) {
-      throw new CompError(`Stack frame is out of memory, ${size} word(s) requested (only ${max_frame_size - base_addr} free)`)
+    if (addr >= MAX_FRAME_SIZE) {
+      throw new CompError(`Stack frame is out of memory, ${size} word(s) requested (only ${MAX_FRAME_SIZE - base_addr} free)`)
     }
     addrs.push(addr)
     state.frame_usage[state.scope].push(addr)
@@ -390,8 +389,8 @@ function alloc_global(size) {
 
   for (let i = 0; i < size; i++) {
     let addr = base_addr + i
-    if (addr >= max_ram_size) {
-      throw new CompError(`Out of memory, ${size} word(s) requested (only ${max_ram_size - base_addr} free)`)
+    if (addr >= MAX_RAM_SIZE) {
+      throw new CompError(`Out of memory, ${size} word(s) requested (only ${MAX_RAM_SIZE - base_addr} free)`)
     }
     addrs.push(addr)
     state.frame_usage.__global.push(addr)
@@ -413,7 +412,7 @@ function frame_size(scope) {
     if (scope === "__global") {
       return 0
     } else {
-      return min_frame_size
+      return MIN_FRAME_SIZE
     }
   } else {
     return frame_usage[frame_usage.length - 1] + 1
@@ -444,13 +443,13 @@ function assert_datatype_name_available(type) {
 }
 
 function is_data_type(type) {
-  return type in data_type_size || type in state.struct_definitions
+  return type in DATA_TYPE_SIZE || type in state.struct_definitions
 }
 
 function get_data_type_size(type) {
-  if (type in data_type_size) {
+  if (type in DATA_TYPE_SIZE) {
     // it's a built in data type
-    return data_type_size[type]
+    return DATA_TYPE_SIZE[type]
   } else if (type in state.struct_definitions) {
     // it's a struct
     return state.struct_definitions[type].size
@@ -515,17 +514,17 @@ function load_lib(name) {
   if (state.include_only_signatures_mode) {
     return
   }
-  if (name in state.required || name in state.function_table) {
+  if (state.required_libs.includes(name) || name in state.function_table) {
     log.debug("↳ already loaded")
   } else {
-    state.required[name] = ""
+    state.required_libs.push(name)
     log.debug("↳ compiling")
     if (name == "sys.signatures") {
       state.include_only_signatures_mode = true
     }
-    let old_log_status = show_log_messages
+    let old_log_status = state.show_log_messages
     try {
-      show_log_messages = false
+      state.show_log_messages = false
       compile(libs[name], true)
     } catch (error) {
       if (error instanceof CompError) { // if this is CompError with no line info
@@ -535,7 +534,7 @@ function load_lib(name) {
         throw error
       }
     } finally {
-      show_log_messages = old_log_status
+      state.show_log_messages = old_log_status
     }
   }
 }
@@ -1456,7 +1455,7 @@ function translate(token, ctx_type) {
 
         if (args.expr.name === "var_or_const" && args.expr.arguments.name == "__return") {
           // the __return special variable already points to the return_buffer so we don't need to copy
-          result.push(return_instruction)
+          result.push(RETURN_INSTRUCTION)
           break;
         }
 
@@ -1482,7 +1481,7 @@ function translate(token, ctx_type) {
       }
 
       // add the actual return instruction
-      result.push(return_instruction)
+      result.push(RETURN_INSTRUCTION)
     } break
 
     case "include": {
@@ -2800,8 +2799,8 @@ function translate(token, ctx_type) {
       log.debug(`namespace -> ${state.scope}`)
 
       // add return instruction unless it is already there
-      if (target[target.length -1] !== `  ${return_instruction}`) {
-        target.push(`  ${return_instruction}`)
+      if (target[target.length -1] !== `  ${RETURN_INSTRUCTION}`) {
+        target.push(`  ${RETURN_INSTRUCTION}`)
       }
     } break
 
@@ -2995,7 +2994,7 @@ function compile(input, nested) {
       log.warn(`${non_deallocated_vars} variable(s) are never deallocated`)
     }
 
-    log.info(`Standard library functions used: ${Object.keys(state.required).length}`)
+    log.info(`Standard library functions used: ${state.required_libs.length}`)
   }
 
   for (let [name, table_entry] of Object.entries(state.function_table)) {
