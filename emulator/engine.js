@@ -56,6 +56,7 @@ function init_emulator() {
   debug = false
   is_running = false
   total_cycles = 0
+  total_instructions = 0
   temp_cycles = 0
   actual_cycles_per_second = 0
   target_cycles_per_second = 0
@@ -792,6 +793,7 @@ const micro_instructions = {
       debug && console.debug("increment mode")
       control_mode++
       control_mode &= 1
+      total_instructions += 0.5
       micro_program_counter = 0
     },
     arg1_to_pc_uncond: () => {
