@@ -16,6 +16,7 @@ const RESERVED_KEYWORDS = [
   "if","for","while","repeat","struct","def","true","false","sys","return","break","continue","include","__root","__global", "__return"
 ]
 const RETURN_INSTRUCTION = "return [stack.0] [stack.1]"
+const STRUCTURE_INDENT = "  "
 
 onmessage = (event) => {
   let message = event.data
@@ -496,9 +497,7 @@ function translate_body(tokens, indent = true) {
       }
 
       if (indent) {
-        for (let j = 0; j < command.length; j++ ) {
-          command[j] = `  ${command[j]}`
-        }
+        command = command.map((line) => `${STRUCTURE_INDENT}${line}`)
       }
       result.push(...command)
     }
