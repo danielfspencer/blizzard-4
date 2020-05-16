@@ -1118,17 +1118,16 @@ function translate(token, ctx_type) {
         }
       }
 
-      let absoulte_base_addr
-      if (args.global) {
-        absoulte_base_addr = `ram.${array_memory[3]}`
-      } else {
-        let absoulte = stack_to_absolute(array_memory[3])
-        result.push(...absoulte.prefix)
-        absoulte_base_addr = "[alu.+]"
-      }
-
       // write the values to memory
       if (max_len > 0) {
+        let absoulte_base_addr
+        if (args.global) {
+          absoulte_base_addr = `ram.${array_memory[3]}`
+        } else {
+          let absoulte = stack_to_absolute(array_memory[3])
+          result.push(...absoulte.prefix)
+          absoulte_base_addr = "[alu.+]"
+        }
         result.push(`write ${absoulte_base_addr} ${prefix}${array_memory[0]}`)
       } else {
         log.warn(`line ${token.line}:\nCreating zero-length array`)
