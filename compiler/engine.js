@@ -72,7 +72,7 @@ function CompError(message, line) {
   }
 }
 
-function init_vars() {
+function init_state() {
   state = {
     scope: "__root",
     include_only_signatures_mode: false,
@@ -321,42 +321,41 @@ function get_array_info(array_name) {
   let global_table = state.symbol_table.__global
 
   let table_entry
-  let is_constant
   if (array_name in local_table) {
     // this is a local array
-    table_entry = local_table[array_name].specific
-    is_constant = local_table[array_name].type == "constant"
+    table_entry = local_table[array_name]
   } else if (array_name in global_table) {
     // this is a global array
-    table_entry = global_table[array_name].specific
-    is_constant = global_table[array_name].type == "constant"
+    table_entry = global_table[array_name]
   } else {
     throw new CompError(`Cannot find array named '${array_name}'`)
   }
 
-  let array_type = table_entry.element_data_type
-  let response =  {
-    array_type: array_type,
-    item_size: get_data_type_size(array_type),
+  let is_constant = table_entry.type == "constant"
+  let array_type = table_entry.specific.element_data_type
+  let base_addr = table_entry.specific.ram_addresses[0]
+  let current_len = table_entry.specific.ram_addresses[1]
+  let max_len = table_entry.specific.ram_addresses[2]
+
+  if (!is_constant) {
+    let addr_prefix = table_entry.specific.addr_prefix
+    base_addr = `[${addr_prefix}${base_addr}]`
+    current_len = `[${addr_prefix}${current_len}]`
+    max_len = `[${addr_prefix}${max_len}]`
+  }
+
+  return {
     assert_writeable: () => {
       if (is_constant) {
         throw new CompError(`Constant array '${array_name}' cannot be modified`)
       }
-    }
+    },
+    array_type: array_type,
+    item_size: get_data_type_size(array_type),
+    base_addr: base_addr,
+    current_len: current_len,
+    max_len: max_len
   }
-
-  if (is_constant) {
-    response.base_addr = table_entry.ram_addresses[0]
-    response.current_len = table_entry.ram_addresses[1]
-    response.max_len = table_entry.ram_addresses[2]
-  } else {
-    let addr_prefix = table_entry.addr_prefix
-    response.base_addr = `[${addr_prefix}${table_entry.ram_addresses[0]}]`
-    response.current_len = `[${addr_prefix}${table_entry.ram_addresses[1]}]`
-    response.max_len = `[${addr_prefix}${table_entry.ram_addresses[2]}]`
-  }
-
-  return response
 }
 
 function alloc_stack(size) {
@@ -469,38 +468,39 @@ function get_temp_word() {
 }
 
 function translate_body(tokens, indent = true) {
-  log.debug(`nested translate: ${tokens.length} token(s)`)
   let result = []
-  if (tokens.length === 0) {
-    return result
-  }
-  for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i].type === "expression" && tokens[i].name !==  "function" || typeof tokens[i] === undefined) {
-      throw new CompError("Unexpected expression", tokens[i].line)
-    } else {
-      let command
-      try {
-        command = translate(tokens[i])
-      } catch (error) {
-        if (error instanceof CompError && error.line === undefined) { // if this is CompError with no line info
-          throw new CompError(error.message, tokens[i].line) // add the line number to it
-        } else {
-          throw error
-        }
-      }
-      if (tokens[i].name === "function") {
-        command = command[0] // if it is a function call (which is an expression) take only the prefix and bin the result register [[tokens],result] -> [tokens]
-        let function_type = state.function_table[tokens[i].arguments.name].data_type
-        if (function_type !== "none") {
-          log.warn(`line ${tokens[i].line}:\nDiscarding function's returned value of type '${function_type}'`)
-        }
-      }
-
-      if (indent) {
-        command = command.map((line) => `${STRUCTURE_INDENT}${line}`)
-      }
-      result.push(...command)
+  for (let token of tokens) {
+    if (token.type === "expression" && token.name !== "function") {
+      throw new CompError("Unexpected expression", token.line)
     }
+
+    let output, instructions, data_type
+    try {
+      output = translate(token)
+    } catch (error) {
+      if (error instanceof CompError && error.line === undefined) { // if this is CompError with no line info
+        throw new CompError(error.message, token.line) // add the line number to it
+      } else {
+        throw error
+      }
+    }
+
+    // expressions return a different format to commands
+    if (token.type === "expression") {
+      instructions = output[0]
+      data_type = output[2]
+    } else {
+      instructions = output
+    }
+
+    if (token.name === "function" && data_type !== "none") {
+      log.warn(`line ${token.line}:\nDiscarding function's returned value of type '${data_type}'`)
+    }
+
+    if (indent) {
+      instructions = instructions.map((line) => STRUCTURE_INDENT + line)
+    }
+    result.push(...instructions)
   }
   return result
 }
@@ -2855,112 +2855,114 @@ function translate(token, ctx_type) {
 
 function compile(input, nested) {
   //init
-    !nested && init_vars()
-    if (input === "") {
-      throw new CompError("No input", 0)
-    }
+  if (!nested) {
+    init_state()
+  }
 
   //tokenise
-    log.info("Tokenising...")
-    let t0 = timer()
-    let tokens = []
-    let prev_type = ""
-    let prev_indent = 0
-    let curr_indent = 0
-    let token = {}
-    let targ = [tokens]
-    let expect_indent = false
-    let include_block_mode = false
-    for (let i = 0; i < input.length; i++) {
-      let line = input[i].trim()   // remove any trailing whitesapce
-      if (line === "" || line === "\n") { continue } // if it is a newline, skip it
-      if (line === "###") {
-        include_block_mode = ! include_block_mode
-        continue
-      }
-      if (include_block_mode) {
-        state.data.push(line)
-        continue
-      }
+  log.info("Tokenising...")
 
-      curr_indent = Math.floor(input[i].search(/\S|$/)/2)
+  if (input === "") {
+    throw new CompError("No input", 0)
+  }
 
-      if (input[i].search(/\S|$/) % 2 !==  0) {
-        throw new CompError("Indents must be 2 spaces", i + 1)
-      }
-
-      if (expect_indent && !(curr_indent > prev_indent)) {
-        throw new CompError("Expected indent", i + 1)
-      }
-
-      if (!expect_indent && (curr_indent > prev_indent)) {
-        throw new CompError("Unexpected indent", i + 1)
-      }
-
-      if (curr_indent > prev_indent) {
-        log.debug(`indent ↑ ${prev_indent} -> ${curr_indent}`)
-        expect_indent = false  //we've got an indent so no need to throw an error
-      } else if (curr_indent < prev_indent) {
-        log.debug(`indent ↓ ${prev_indent} -> ${curr_indent}`)
-        if (line.trim().startsWith("else")) {
-          for (let j = 0; j < (prev_indent - curr_indent)-1; j++) {
-            targ.pop()
-          }
-          log.debug("same target [if statement extension]")
-          expect_indent = true
-        } else {
-          for (let j = 0; j < (prev_indent - curr_indent); j++) {
-            targ.pop()             //set 'target' token to the previous one in the stack
-          }
-          if (targ[targ.length-1] instanceof Array) {
-            log.debug("new target ↓ _root_")
-          } else {
-            log.debug(`new target ↓ ${targ[targ.length-1].name}`)
-          }
-        }
-      }  // if no indnet, carry on passing into current target
-
-      try {
-        token = tokenise(line, i+1)
-        if (targ[targ.length-1] instanceof Array) { //if the target is an array it is the root 'tokens' list
-          targ[targ.length-1].push(token)
-        } else {                                    //else it is a structure
-          targ[targ.length-1].body.push(token)
-        }
-
-        if (token.type === "structure" && !(token.name in {"else":"","else if":""})) {     //when a structure header is parsed, set it to be target and expect indent
-          log.debug(`new target ↑ ${token.name}`)
-          expect_indent = true
-          targ.push(token)
-        }
-      } catch (error) {
-        if (error instanceof CompError) {        // if this is CompError and not a JS error
-          throw new CompError(error.message, i + 1)  // add the current line number
-        } else {
-          throw error
-        }
-      }
-      prev_indent = Math.floor(input[i].search(/\S|$/)/2)
+  let t0 = timer()
+  let tokens = []
+  let prev_indent = 0
+  let curr_indent = 0
+  let token = {}
+  let targ = [tokens]
+  let expect_indent = false
+  let include_block_mode = false
+  for (let i = 0; i < input.length; i++) {
+    let line = input[i].trim()   // remove any trailing whitesapce
+    if (line === "" || line === "\n") { continue } // if it is a newline, skip it
+    if (line === "###") {
+      include_block_mode = ! include_block_mode
+      continue
+    }
+    if (include_block_mode) {
+      state.data.push(line)
+      continue
     }
 
-    let t1 = timer()
+    curr_indent = Math.floor(input[i].search(/\S|$/)/2)
 
-    log.info(`↳ success, ${input.length} line(s) in ${Math.round(t1-t0)} ms`)
+    if (input[i].search(/\S|$/) % 2 !==  0) {
+      throw new CompError("Indents must be 2 spaces", i + 1)
+    }
+
+    if (expect_indent && !(curr_indent > prev_indent)) {
+      throw new CompError("Expected indent", i + 1)
+    }
+
+    if (!expect_indent && (curr_indent > prev_indent)) {
+      throw new CompError("Unexpected indent", i + 1)
+    }
+
+    if (curr_indent > prev_indent) {
+      log.debug(`indent ↑ ${prev_indent} -> ${curr_indent}`)
+      expect_indent = false  //we've got an indent so no need to throw an error
+    } else if (curr_indent < prev_indent) {
+      log.debug(`indent ↓ ${prev_indent} -> ${curr_indent}`)
+      if (line.trim().startsWith("else")) {
+        for (let j = 0; j < (prev_indent - curr_indent)-1; j++) {
+          targ.pop()
+        }
+        log.debug("same target [if statement extension]")
+        expect_indent = true
+      } else {
+        for (let j = 0; j < (prev_indent - curr_indent); j++) {
+          targ.pop()             //set 'target' token to the previous one in the stack
+        }
+        if (targ[targ.length-1] instanceof Array) {
+          log.debug("new target ↓ _root_")
+        } else {
+          log.debug(`new target ↓ ${targ[targ.length-1].name}`)
+        }
+      }
+    }  // if no indnet, carry on passing into current target
+
+    try {
+      token = tokenise(line, i+1)
+      if (targ[targ.length-1] instanceof Array) { //if the target is an array it is the root 'tokens' list
+        targ[targ.length-1].push(token)
+      } else {                                    //else it is a structure
+        targ[targ.length-1].body.push(token)
+      }
+
+      if (token.type === "structure" && !(token.name in {"else":"","else if":""})) {     //when a structure header is parsed, set it to be target and expect indent
+        log.debug(`new target ↑ ${token.name}`)
+        expect_indent = true
+        targ.push(token)
+      }
+    } catch (error) {
+      if (error instanceof CompError) {        // if this is CompError and not a JS error
+        throw new CompError(error.message, i + 1)  // add the current line number
+      } else {
+        throw error
+      }
+    }
+    prev_indent = Math.floor(input[i].search(/\S|$/)/2)
+  }
+
+  let t1 = timer()
+  log.info(`↳ success, ${input.length} line(s) in ${Math.round(t1-t0)} ms`)
 
   if (!nested) {
     state.ast = tokens
   }
 
   //translate
-    log.info("Translating...")
-    t0 = timer()
-    let output = translate_body(tokens, false)
+  log.info("Translating...")
+  t0 = timer()
 
-    output.push("stop 0 0")
-    output.unshift(`write ${frame_size("__global")} ctl.sp`)
+  let output = translate_body(tokens, false)
+  output.push("stop 0 0")
+  output.unshift(`write ${frame_size("__global")} ctl.sp`)
 
-    t1 = timer()
-    log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
+  t1 = timer()
+  log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
 
   //add state.data
   output.push(...state.data)
@@ -2969,8 +2971,6 @@ function compile(input, nested) {
   for (let scope in state.code) {
     output.push(...state.code[scope])
   }
-
-  output.push("\n")
 
   //feedback
   if (!nested) {
@@ -2993,13 +2993,13 @@ function compile(input, nested) {
       log.warn(`${non_deallocated_vars} variable(s) are never deallocated`)
     }
 
-    log.info(`Standard library functions used: ${state.required_libs.length}`)
-  }
-
-  for (let [name, table_entry] of Object.entries(state.function_table)) {
-    if (!table_entry.fully_defined) {
-      log.warn(`${name}() is not defined and must be linked at assemble time`)
+    for (let [name, table_entry] of Object.entries(state.function_table)) {
+      if (!table_entry.fully_defined) {
+        log.warn(`${name}() is not defined and must be linked at assemble time`)
+      }
     }
+
+    log.info(`Standard library functions used: ${state.required_libs.length}`)
   }
 
   return output.join("\n")
