@@ -2797,8 +2797,9 @@ function translate(token, ctx_type) {
       log.debug(`namespace -> ${state.scope}`)
 
       // add return instruction unless it is already there
-      if (target[target.length -1] !== `  ${RETURN_INSTRUCTION}`) {
-        target.push(`  ${RETURN_INSTRUCTION}`)
+      let instruction = STRUCTURE_INDENT + RETURN_INSTRUCTION
+      if (target[target.length -1] !== instruction) {
+        target.push(instruction)
       }
     } break
 
