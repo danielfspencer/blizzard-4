@@ -8,16 +8,16 @@ let debug = false
 let timer = () => performance.now()
 importScripts('libraries.js')
 
-const min_frame_size = 2
-const max_frame_size = 2048
-const max_ram_size = 16384
-const data_type_size = {u16:1,s16:1,u32:2,s32:2,float:2,bool:1,str:1,array:4,none:0}
-const mixable_numeric_types = [["u16","s16"],["u32","s32"]]
-const reserved_keywords = [
+const MIN_FRAME_SIZE = 2
+const MAX_FRAME_SIZE = 2048
+const MAX_RAM_SIZE = 16384
+const DATA_TYPE_SIZE = { u16:1, s16:1, u32:2, s32:2, float:2, bool:1, str:1, array:4, none:0 }
+const MIXABLE_NUMERIC_TYPES = [["u16","s16"],["u32","s32"]]
+const RESERVED_KEYWORDS = [
   "if","for","while","repeat","struct","def","true","false","sys","return","break","continue","include","__root","__global", "__return"
 ]
-
-const return_instruction = "return [stack.0] [stack.1]"
+const RETURN_INSTRUCTION = "return [stack.0] [stack.1]"
+const STRUCTURE_INDENT = "  "
 
 onmessage = (event) => {
   let message = event.data
@@ -72,7 +72,7 @@ function CompError(message, line) {
   }
 }
 
-function init_vars() {
+function init_state() {
   state = {
     scope: "__root",
     include_only_signatures_mode: false,
@@ -80,9 +80,9 @@ function init_vars() {
     struct_definitions: {},
     frame_usage: {__root:[], __global:[]},
     function_table: {},
-    consts: [],
-    funcs: {},
-    required: {},
+    data: [],
+    code: {},
+    required_libs: [],
     inner_structure_label: null,
     labels: {__root: {if:0, for:0, while:0, str:0, expr_array:0}},
     ast: []
@@ -149,7 +149,7 @@ function assert_compatable_types(type1, type2, line, custom_fail) {
   if (type1 === type2) {
     return
   } else {
-    for (let set of mixable_numeric_types) {
+    for (let set of MIXABLE_NUMERIC_TYPES) {
       if (set.includes(type1) && set.includes(type2)) {
         log.warn(`line ${line}:\nImplicit cast '${type1}' -> '${type2}'`)
         return
@@ -174,7 +174,7 @@ function assert_local_name_available(name) {
   const places = [
     Object.keys(state.symbol_table[state.scope]),
     Object.keys(state.function_table),
-    reserved_keywords
+    RESERVED_KEYWORDS
   ]
 
   for (let place of places) {
@@ -321,42 +321,41 @@ function get_array_info(array_name) {
   let global_table = state.symbol_table.__global
 
   let table_entry
-  let is_constant
   if (array_name in local_table) {
     // this is a local array
-    table_entry = local_table[array_name].specific
-    is_constant = local_table[array_name].type == "constant"
+    table_entry = local_table[array_name]
   } else if (array_name in global_table) {
     // this is a global array
-    table_entry = global_table[array_name].specific
-    is_constant = global_table[array_name].type == "constant"
+    table_entry = global_table[array_name]
   } else {
     throw new CompError(`Cannot find array named '${array_name}'`)
   }
 
-  let array_type = table_entry.element_data_type
-  let response =  {
-    array_type: array_type,
-    item_size: get_data_type_size(array_type),
+  let is_constant = table_entry.type == "constant"
+  let array_type = table_entry.specific.element_data_type
+  let base_addr = table_entry.specific.ram_addresses[0]
+  let current_len = table_entry.specific.ram_addresses[1]
+  let max_len = table_entry.specific.ram_addresses[2]
+
+  if (!is_constant) {
+    let addr_prefix = table_entry.specific.addr_prefix
+    base_addr = `[${addr_prefix}${base_addr}]`
+    current_len = `[${addr_prefix}${current_len}]`
+    max_len = `[${addr_prefix}${max_len}]`
+  }
+
+  return {
     assert_writeable: () => {
       if (is_constant) {
         throw new CompError(`Constant array '${array_name}' cannot be modified`)
       }
-    }
+    },
+    array_type: array_type,
+    item_size: get_data_type_size(array_type),
+    base_addr: base_addr,
+    current_len: current_len,
+    max_len: max_len
   }
-
-  if (is_constant) {
-    response.base_addr = table_entry.ram_addresses[0]
-    response.current_len = table_entry.ram_addresses[1]
-    response.max_len = table_entry.ram_addresses[2]
-  } else {
-    let addr_prefix = table_entry.addr_prefix
-    response.base_addr = `[${addr_prefix}${table_entry.ram_addresses[0]}]`
-    response.current_len = `[${addr_prefix}${table_entry.ram_addresses[1]}]`
-    response.max_len = `[${addr_prefix}${table_entry.ram_addresses[2]}]`
-  }
-
-  return response
 }
 
 function alloc_stack(size) {
@@ -367,8 +366,8 @@ function alloc_stack(size) {
 
   for (let i = 0; i < size; i++) {
     let addr = base_addr + i
-    if (addr >= max_frame_size) {
-      throw new CompError(`Stack frame is out of memory, ${size} word(s) requested (only ${max_frame_size - base_addr} free)`)
+    if (addr >= MAX_FRAME_SIZE) {
+      throw new CompError(`Stack frame is out of memory, ${size} word(s) requested (only ${MAX_FRAME_SIZE - base_addr} free)`)
     }
     addrs.push(addr)
     state.frame_usage[state.scope].push(addr)
@@ -390,8 +389,8 @@ function alloc_global(size) {
 
   for (let i = 0; i < size; i++) {
     let addr = base_addr + i
-    if (addr >= max_ram_size) {
-      throw new CompError(`Out of memory, ${size} word(s) requested (only ${max_ram_size - base_addr} free)`)
+    if (addr >= MAX_RAM_SIZE) {
+      throw new CompError(`Out of memory, ${size} word(s) requested (only ${MAX_RAM_SIZE - base_addr} free)`)
     }
     addrs.push(addr)
     state.frame_usage.__global.push(addr)
@@ -413,7 +412,7 @@ function frame_size(scope) {
     if (scope === "__global") {
       return 0
     } else {
-      return min_frame_size
+      return MIN_FRAME_SIZE
     }
   } else {
     return frame_usage[frame_usage.length - 1] + 1
@@ -444,13 +443,13 @@ function assert_datatype_name_available(type) {
 }
 
 function is_data_type(type) {
-  return type in data_type_size || type in state.struct_definitions
+  return type in DATA_TYPE_SIZE || type in state.struct_definitions
 }
 
 function get_data_type_size(type) {
-  if (type in data_type_size) {
+  if (type in DATA_TYPE_SIZE) {
     // it's a built in data type
-    return data_type_size[type]
+    return DATA_TYPE_SIZE[type]
   } else if (type in state.struct_definitions) {
     // it's a struct
     return state.struct_definitions[type].size
@@ -468,38 +467,40 @@ function get_temp_word() {
   }
 }
 
-function translate_body(tokens) {
-  log.debug(`nested translate: ${tokens.length} token(s)`)
+function translate_body(tokens, indent = true) {
   let result = []
-  if (tokens.length === 0) {
-    return result
-  }
-  for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i].type === "expression" && tokens[i].name !==  "function" || typeof tokens[i] === undefined) {
-      throw new CompError("Unexpected expression", tokens[i].line)
-    } else {
-      let command
-      try {
-        command = translate(tokens[i])
-      } catch (error) {
-        if (error instanceof CompError && error.line === undefined) { // if this is CompError with no line info
-          throw new CompError(error.message, tokens[i].line) // add the line number to it
-        } else {
-          throw error
-        }
-      }
-      if (tokens[i].name === "function") {
-        command = command[0] // if it is a function call (which is an expression) take only the prefix and bin the result register [[tokens],result] -> [tokens]
-        let function_type = state.function_table[tokens[i].arguments.name].data_type
-        if (function_type !== "none") {
-          log.warn(`line ${tokens[i].line}:\nDiscarding function's returned value of type '${function_type}'`)
-        }
-      }
-      for (let j = 0; j < command.length; j++ ) {
-        command[j] = `  ${command[j]}`
-      }
-      result.push(...command)
+  for (let token of tokens) {
+    if (token.type === "expression" && token.name !== "function") {
+      throw new CompError("Unexpected expression", token.line)
     }
+
+    let output, instructions, data_type
+    try {
+      output = translate(token)
+    } catch (error) {
+      if (error instanceof CompError && error.line === undefined) { // if this is CompError with no line info
+        throw new CompError(error.message, token.line) // add the line number to it
+      } else {
+        throw error
+      }
+    }
+
+    // expressions return a different format to commands
+    if (token.type === "expression") {
+      instructions = output[0]
+      data_type = output[2]
+    } else {
+      instructions = output
+    }
+
+    if (token.name === "function" && data_type !== "none") {
+      log.warn(`line ${token.line}:\nDiscarding function's returned value of type '${data_type}'`)
+    }
+
+    if (indent) {
+      instructions = instructions.map((line) => STRUCTURE_INDENT + line)
+    }
+    result.push(...instructions)
   }
   return result
 }
@@ -512,10 +513,10 @@ function load_lib(name) {
   if (state.include_only_signatures_mode) {
     return
   }
-  if (name in state.required || name in state.function_table) {
+  if (state.required_libs.includes(name) || name in state.function_table) {
     log.debug("↳ already loaded")
   } else {
-    state.required[name] = ""
+    state.required_libs.push(name)
     log.debug("↳ compiling")
     if (name == "sys.signatures") {
       state.include_only_signatures_mode = true
@@ -1452,7 +1453,7 @@ function translate(token, ctx_type) {
 
         if (args.expr.name === "var_or_const" && args.expr.arguments.name == "__return") {
           // the __return special variable already points to the return_buffer so we don't need to copy
-          result.push(return_instruction)
+          result.push(RETURN_INSTRUCTION)
           break;
         }
 
@@ -1478,7 +1479,7 @@ function translate(token, ctx_type) {
       }
 
       // add the actual return instruction
-      result.push(return_instruction)
+      result.push(RETURN_INSTRUCTION)
     } break
 
     case "include": {
@@ -1680,7 +1681,7 @@ function translate(token, ctx_type) {
 
       let id = `str_${gen_label("str")}`
 
-      state.consts.push(`${id}:`)
+      state.data.push(`${id}:`)
 
       for (let i = 0; i < string.length; i++) {
         let char = string[i]
@@ -1688,11 +1689,11 @@ function translate(token, ctx_type) {
         if (code < 32 || code > 127) {
           throw new CompError(`'${char}' is not a valid character`)
         }
-        state.consts.push(code)
+        state.data.push(code)
       }
 
       // string terminator
-      state.consts.push(0)
+      state.data.push(0)
 
       registers = [id]
       type = "str"
@@ -2199,7 +2200,7 @@ function translate(token, ctx_type) {
         }
         consts_to_add.push(...prefix_and_value[1])
       }
-      state.consts.push(...consts_to_add)
+      state.data.push(...consts_to_add)
 
       registers = [label, length, max_length, contained_type]
       type = "expr_array"
@@ -2676,8 +2677,8 @@ function translate(token, ctx_type) {
       // init output area for generated code
       let target
       if (is_full_definition) {
-        state.funcs[args.name] = []
-        target = state.funcs[args.name]
+        state.code[args.name] = []
+        target = state.code[args.name]
       } else {
         // if this is a function signature, don't generate any code
         target = []
@@ -2796,8 +2797,8 @@ function translate(token, ctx_type) {
       log.debug(`namespace -> ${state.scope}`)
 
       // add return instruction unless it is already there
-      if (target[target.length -1] !== `  ${return_instruction}`) {
-        target.push(`  ${return_instruction}`)
+      if (target[target.length -1] !== `  ${RETURN_INSTRUCTION}`) {
+        target.push(`  ${RETURN_INSTRUCTION}`)
       }
     } break
 
@@ -2853,153 +2854,122 @@ function translate(token, ctx_type) {
 
 function compile(input, nested) {
   //init
-    !nested && init_vars()
-    if (input === "") {
-      throw new CompError("No input", 0)
-    }
+  if (!nested) {
+    init_state()
+  }
 
   //tokenise
-    log.info("Tokenising...")
-    let t0 = timer()
-    let tokens = []
-    let prev_type = ""
-    let prev_indent = 0
-    let curr_indent = 0
-    let token = {}
-    let targ = [tokens]
-    let expect_indent = false
-    let include_block_mode = false
-    for (let i = 0; i < input.length; i++) {
-      let line = input[i].trim()   // remove any trailing whitesapce
-      if (line === "" || line === "\n") { continue } // if it is a newline, skip it
-      if (line === "###") {
-        include_block_mode = ! include_block_mode
-        continue
-      }
-      if (include_block_mode) {
-        state.consts.push(line)
-        continue
-      }
+  log.info("Tokenising...")
 
-      curr_indent = Math.floor(input[i].search(/\S|$/)/2)
+  if (input === "") {
+    throw new CompError("No input", 0)
+  }
 
-      if (input[i].search(/\S|$/) % 2 !==  0) {
-        throw new CompError("Indents must be 2 spaces", i + 1)
-      }
-
-      if (expect_indent && !(curr_indent > prev_indent)) {
-        throw new CompError("Expected indent", i + 1)
-      }
-
-      if (!expect_indent && (curr_indent > prev_indent)) {
-        throw new CompError("Unexpected indent", i + 1)
-      }
-
-      if (curr_indent > prev_indent) {
-        log.debug(`indent ↑ ${prev_indent} -> ${curr_indent}`)
-        expect_indent = false  //we've got an indent so no need to throw an error
-      } else if (curr_indent < prev_indent) {
-        log.debug(`indent ↓ ${prev_indent} -> ${curr_indent}`)
-        if (line.trim().startsWith("else")) {
-          for (let j = 0; j < (prev_indent - curr_indent)-1; j++) {
-            targ.pop()
-          }
-          log.debug("same target [if statement extension]")
-          expect_indent = true
-        } else {
-          for (let j = 0; j < (prev_indent - curr_indent); j++) {
-            targ.pop()             //set 'target' token to the previous one in the stack
-          }
-          if (targ[targ.length-1] instanceof Array) {
-            log.debug("new target ↓ _root_")
-          } else {
-            log.debug(`new target ↓ ${targ[targ.length-1].name}`)
-          }
-        }
-      }  // if no indnet, carry on passing into current target
-
-      try {
-        token = tokenise(line, i+1)
-        if (targ[targ.length-1] instanceof Array) { //if the target is an array it is the root 'tokens' list
-          targ[targ.length-1].push(token)
-        } else {                                    //else it is a structure
-          targ[targ.length-1].body.push(token)
-        }
-
-        if (token.type === "structure" && !(token.name in {"else":"","else if":""})) {     //when a structure header is parsed, set it to be target and expect indent
-          log.debug(`new target ↑ ${token.name}`)
-          expect_indent = true
-          targ.push(token)
-        }
-      } catch (error) {
-        if (error instanceof CompError) {        // if this is CompError and not a JS error
-          throw new CompError(error.message, i + 1)  // add the current line number
-        } else {
-          throw error
-        }
-      }
-      prev_indent = Math.floor(input[i].search(/\S|$/)/2)
+  let t0 = timer()
+  let tokens = []
+  let prev_indent = 0
+  let curr_indent = 0
+  let token = {}
+  let targ = [tokens]
+  let expect_indent = false
+  let include_block_mode = false
+  for (let i = 0; i < input.length; i++) {
+    let line = input[i].trim()   // remove any trailing whitesapce
+    if (line === "" || line === "\n") { continue } // if it is a newline, skip it
+    if (line === "###") {
+      include_block_mode = ! include_block_mode
+      continue
+    }
+    if (include_block_mode) {
+      state.data.push(line)
+      continue
     }
 
-    let t1 = timer()
+    curr_indent = Math.floor(input[i].search(/\S|$/)/2)
 
-    log.info(`↳ success, ${input.length} line(s) in ${Math.round(t1-t0)} ms`)
+    if (input[i].search(/\S|$/) % 2 !==  0) {
+      throw new CompError("Indents must be 2 spaces", i + 1)
+    }
+
+    if (expect_indent && !(curr_indent > prev_indent)) {
+      throw new CompError("Expected indent", i + 1)
+    }
+
+    if (!expect_indent && (curr_indent > prev_indent)) {
+      throw new CompError("Unexpected indent", i + 1)
+    }
+
+    if (curr_indent > prev_indent) {
+      log.debug(`indent ↑ ${prev_indent} -> ${curr_indent}`)
+      expect_indent = false  //we've got an indent so no need to throw an error
+    } else if (curr_indent < prev_indent) {
+      log.debug(`indent ↓ ${prev_indent} -> ${curr_indent}`)
+      if (line.trim().startsWith("else")) {
+        for (let j = 0; j < (prev_indent - curr_indent)-1; j++) {
+          targ.pop()
+        }
+        log.debug("same target [if statement extension]")
+        expect_indent = true
+      } else {
+        for (let j = 0; j < (prev_indent - curr_indent); j++) {
+          targ.pop()             //set 'target' token to the previous one in the stack
+        }
+        if (targ[targ.length-1] instanceof Array) {
+          log.debug("new target ↓ _root_")
+        } else {
+          log.debug(`new target ↓ ${targ[targ.length-1].name}`)
+        }
+      }
+    }  // if no indnet, carry on passing into current target
+
+    try {
+      token = tokenise(line, i+1)
+      if (targ[targ.length-1] instanceof Array) { //if the target is an array it is the root 'tokens' list
+        targ[targ.length-1].push(token)
+      } else {                                    //else it is a structure
+        targ[targ.length-1].body.push(token)
+      }
+
+      if (token.type === "structure" && !(token.name in {"else":"","else if":""})) {     //when a structure header is parsed, set it to be target and expect indent
+        log.debug(`new target ↑ ${token.name}`)
+        expect_indent = true
+        targ.push(token)
+      }
+    } catch (error) {
+      if (error instanceof CompError) {        // if this is CompError and not a JS error
+        throw new CompError(error.message, i + 1)  // add the current line number
+      } else {
+        throw error
+      }
+    }
+    prev_indent = Math.floor(input[i].search(/\S|$/)/2)
+  }
+
+  let t1 = timer()
+  log.info(`↳ success, ${input.length} line(s) in ${Math.round(t1-t0)} ms`)
 
   if (!nested) {
     state.ast = tokens
   }
 
   //translate
-    log.info("Translating...")
-    t0 = timer()
-    let output = ""
-    let command = []
-    for (let i = 0; i < tokens.length; i++) {
-      if (tokens[i].type === "expression" && tokens[i].name !==  "function") {
-        throw new CompError("Unexpected expression", tokens[i].line)
-      }
+  log.info("Translating...")
+  t0 = timer()
 
-      try {
-        command = translate(tokens[i])
-        if (tokens[i].name === "function") {
-          command = command[0] // if it is a function call (which are expressions) take only the prefix and bin the result register [[tokens],result] -> [tokens]
-          let function_type = state.function_table[tokens[i].arguments.name].data_type
-          if (function_type !== "none") {
-            log.warn(`line ${tokens[i].line}:\nDiscarding function's returned value of type '${function_type}'`)
-          }
-        }
-        if (command.length >= 1) {
-          output += command.join("\n")
-          output += "\n"
-        }
-      } catch (error) {
-        if (error instanceof CompError && error.line === undefined) { // if this is CompError with no line info
-          throw new CompError(error.message, tokens[i].line) // add the line number to it
-        } else {
-          throw error
-        }
-      }
-    }
-    output += "stop 0 0"
+  let output = translate_body(tokens, false)
+  output.push("stop 0 0")
+  output.unshift(`write ${frame_size("__global")} ctl.sp`)
 
-    output = `write ${frame_size("__global")} ctl.sp\n${output}`
+  t1 = timer()
+  log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
 
-    t1 = timer()
-    log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
-
-  //add state.consts
-    for (let i = 0; i < state.consts.length; i++) {
-      output += "\n" + state.consts[i]
-    }
+  //add state.data
+  output.push(...state.data)
 
   //add function defs
-    for (let item in state.funcs) {
-      for (let line of state.funcs[item]) {
-        output += "\n" + line
-      }
-    }
-
-    output += "\n"
+  for (let scope in state.code) {
+    output.push(...state.code[scope])
+  }
 
   //feedback
   if (!nested) {
@@ -3022,16 +2992,16 @@ function compile(input, nested) {
       log.warn(`${non_deallocated_vars} variable(s) are never deallocated`)
     }
 
-    log.info(`Standard library functions used: ${Object.keys(state.required).length}`)
-  }
-
-  for (let [name, table_entry] of Object.entries(state.function_table)) {
-    if (!table_entry.fully_defined) {
-      log.warn(`${name}() is not defined and must be linked at assemble time`)
+    for (let [name, table_entry] of Object.entries(state.function_table)) {
+      if (!table_entry.fully_defined) {
+        log.warn(`${name}() is not defined and must be linked at assemble time`)
+      }
     }
+
+    log.info(`Standard library functions used: ${state.required_libs.length}`)
   }
 
-  return output
+  return output.join("\n")
 }
 
 log.info(`Compiler thread started, ${Object.keys(libs).length} standard functions loaded`)
