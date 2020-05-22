@@ -2964,13 +2964,13 @@ function compile(input, nested) {
   t1 = timer()
   log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
 
-  //add state.data
-  output.push(...state.data)
-
   //add function defs
   for (let scope in state.code) {
     output.push(...state.code[scope])
   }
+
+  //add state.data
+  output.push(...state.data)
 
   //feedback
   if (!nested) {
