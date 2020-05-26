@@ -4,7 +4,7 @@ $( document ).ready( () => {
   $.ajaxSetup({ cache: false }) // do not cache requests to check for latest version!
 
   $( "#licence" ).click( () => {
-    windows.open("about/licence.html", 560, 800)
+    windows.open_external("https://www.gnu.org/licenses/gpl-3.0")
   })
 
   $( "#github" ).click( () => {
