@@ -4,8 +4,7 @@ let state = {}
 let show_log_messages = true
 let debug = false
 
-// load the standard library and define the timer function
-let timer = () => performance.now()
+// load the standard library
 importScripts('libraries.js')
 
 const MIN_FRAME_SIZE = 2
@@ -19,28 +18,37 @@ const RESERVED_KEYWORDS = [
 const RETURN_INSTRUCTION = "return [stack.0] [stack.1]"
 const STRUCTURE_INDENT = "  "
 
+// setup message handlers
 onmessage = (event) => {
   let message = event.data
   switch(message[0]) {
     case "compile":
-      let result = ""
-      try {
-        result = compile(message[1].split('\n'), false)
-      } catch (error) {
-        if (error instanceof CompError) {
-          log.error(error.toString())
-        } else {
-          throw error
-        }
-      } finally {
-        let ast = JSON.stringify(state.ast, null, 2)
-        postMessage(["result", result, ast])
-      }
+      let result = compile_wrapped(message[1])
+      postMessage(["result", result])
       break
     case "debug":
       debug = message[1]
       break
   }
+}
+
+function compile_wrapped(input) {
+  try {
+    return compile(input.split('\n'), false)
+  } catch (error) {
+    if (error instanceof CompError) {
+      log.error(error.toString())
+    } else {
+      throw error
+    }
+
+    return null
+  }
+}
+
+function get_ast() {
+  // used in stand-alone version
+  return state.ast
 }
 
 const log = {
@@ -2866,7 +2874,7 @@ function compile(input, nested) {
     throw new CompError("No input", 0)
   }
 
-  let t0 = timer()
+  let t0 = performance.now()
   let tokens = []
   let prev_indent = 0
   let curr_indent = 0
@@ -2946,7 +2954,7 @@ function compile(input, nested) {
     prev_indent = Math.floor(input[i].search(/\S|$/)/2)
   }
 
-  let t1 = timer()
+  let t1 = performance.now()
   log.info(`↳ success, ${input.length} line(s) in ${Math.round(t1-t0)} ms`)
 
   if (!nested) {
@@ -2955,13 +2963,13 @@ function compile(input, nested) {
 
   //translate
   log.info("Translating...")
-  t0 = timer()
+  t0 = performance.now()
 
   let output = translate_body(tokens, false)
   output.push("stop 0 0")
   output.unshift(`write ${frame_size("__global")} ctl.sp`)
 
-  t1 = timer()
+  t1 = performance.now()
   log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
 
   //add function defs

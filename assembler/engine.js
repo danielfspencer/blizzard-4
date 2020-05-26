@@ -4,23 +4,25 @@ onmessage = (event) => {
   let message = event.data
   switch(message[0]) {
     case "assemble":
-      let result = ""
-      try {
-        let as_array = message[1].split("\n")
-        result = assemble(as_array)
-      } catch (error) {
-        if (error instanceof AsmError) {
-          log.error(error.toString())
-        } else {
-          throw error
-        }
-      } finally {
-        postMessage(['result',result])
-      }
+      let result = assemble_wrapped(message[1])
+      postMessage(['result',result])
       break
     case "debug":
       debug = message[1]
       break
+  }
+}
+
+function assemble_wrapped(input) {
+  try {
+    return assemble(input.split("\n"))
+  } catch (error) {
+    if (error instanceof AsmError) {
+      log.error(error.toString())
+    } else {
+      throw error
+    }
+    return null
   }
 }
 
