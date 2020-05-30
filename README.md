@@ -13,7 +13,7 @@ Blizzard 4 is a RISC 16-bit computer. This web app contains an emulator, assembl
 To get the source for the latest released version, type:
 
 ```bash
-git clone -b gh-pages --depth=1 https://github.com/danielfspencer/blizzard-4
+git clone https://github.com/danielfspencer/blizzard-4
 ```
 
 Install the libraries required by Electron with:
