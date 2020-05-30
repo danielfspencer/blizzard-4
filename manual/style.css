@@ -62,7 +62,7 @@ th, td {
 }
 
 code {
-  font-family: monospace;
+  font-family: 'DejaVu Sans Mono';
 	padding: 3px 6px;
   background-color: #e1dede;
   display: inline-block;

@@ -5,13 +5,11 @@
 
 .item {
   white-space: pre-line;
-  font-family: robotomono;
+  font-family: 'DejaVu Sans Mono';
   font-size: 10pt;
   border-bottom: 1px solid grey;
-  padding-bottom: 4px;
-  padding-top: 4px;
-  padding-left: 4px;
-  margin-left: 0px;
+  padding: 5px 0 5px 5px;
+  margin: 0;
 }
 
 .debug {

@@ -11,9 +11,13 @@
 }
 
 @font-face {
-  font-family: 'robotomono';
-  src: url('fonts/Roboto-Mono-webfont.woff') format('woff');
-  font-weight: normal;
+  font-family: 'DejaVu Sans Mono';
+  src: url('fonts/DejaVuSansMono.woff') format('woff');
+}
+
+textarea {
+  font-family: 'DejaVu Sans Mono' !important;
+  font-size: 14px !important;
 }
 
 textarea:focus {
