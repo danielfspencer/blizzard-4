@@ -6,7 +6,7 @@
 
 | Absolute<br>Address | Internal<br>Address | Description |	Mnemonic | Read/Write | Width<br>(bits) |
 | --- | --- | --- | --- | --- | --- |
-| 2	| 2	| RAM addressing mode	| `ctl.addrmode` | R/W |	14
+| 2	| 2	| stack pointer	| `ctl.sp` | R/W |	14
 | 3	| 3	| 32-bit timer (lower 16 bits) | `timer.low`	| R |	16
 | 4 | 4	| 32-bit timer (upper 16 bits) | `timer.high` | R | 16
 | 8 | 8 | Operand 1 Register | `alu.1` | W | 16 |

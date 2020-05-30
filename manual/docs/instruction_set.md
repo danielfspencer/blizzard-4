@@ -33,7 +33,7 @@ Each instruction consists of one *command word*  followed by 2 *argument words*.
 #### Command word
 <table>
   <tr>
-    <td>Bit</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td><td>16</td>
+    <td>Bit</td><td>15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td>
   </tr><tr>
     <td>Function</td><td colspan="3">Opcode</td>
     <td colspan="2">Addr.<br>Mode</td>
@@ -44,7 +44,7 @@ Each instruction consists of one *command word*  followed by 2 *argument words*.
 #### Argument word
 <table>
   <tr>
-    <td>Bit</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td><td>16</td>
+    <td>Bit</td><td>15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td>
   </tr><tr>
     <td>Function</td>
     <td colspan="16">Address / data</td>
