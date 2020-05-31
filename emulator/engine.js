@@ -2,18 +2,6 @@ init_memory()
 init_rom()
 init_emulator()
 
-function benchmark() {
-  rom[0] = 0b1000000000000000
-  rom[1] = 0b1010101010101010
-  rom[2] = 0b0101010101010101
-  rom[3] = 0b0100000000000000
-  console.time("time")
-  is_running = true
-  run_batch(5000000)
-  is_running = false
-  console.timeEnd("time")
-}
-
 function init_memory() {
   //system buses
   write_bus = 0
