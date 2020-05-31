@@ -45,6 +45,7 @@ function init_emulator() {
   is_running = false
   total_cycles = 0
   total_instructions = 0
+  max_stack_pointer = 0
   temp_cycles = 0
   actual_cycles_per_second = 0
   target_cycles_per_second = 0
@@ -592,6 +593,9 @@ function simulate_effect_of_write_bus_change() {
         switch (address) {
           case 2:
             stack_pointer = data_bus & 0b11111111111111
+            if (stack_pointer > max_stack_pointer) {
+              max_stack_pointer = stack_pointer
+            }
             break
           case 3:
             reset_timer()
