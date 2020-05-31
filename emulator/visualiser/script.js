@@ -90,6 +90,11 @@ function draw_screen_updates() {
   ram_changes_buffer = []
 }
 
+function clear_screen() {
+  let [red, green, blue] = pixel_off_colours
+  canvas_context.fillStyle = `rgb(${red}, ${green}, ${blue})`
+  canvas_context.fillRect(0, 0, 512, 512)
+}
 
 function set_theme(name) {
   $.ajax({

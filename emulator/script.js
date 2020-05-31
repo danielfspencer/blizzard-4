@@ -41,7 +41,13 @@ $(document).ready(() => {
   $("#reset").click(() => {
     worker.postMessage(["reset"])
     worker.postMessage(["set_clock", $("#clock-target").val()])
-    setTimeout(clear_screen, 150)
+    setTimeout(() => {
+      clear_screen()
+      let store = parent.interface.window_ref_store
+      if (store.visualiser !== undefined) {
+        store.visualiser.clear_screen()
+      }
+    }, 150)
     send_user_input()
   })
 
