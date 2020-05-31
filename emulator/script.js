@@ -160,8 +160,8 @@ function set_rom([string, shouldRun, clock_speed]) {
 function send_user_input(event){
   let inputs = [$("#usr1_input").val(), $("#usr2_input").val(), $("#usr3_input").val()]
   let sanitised_inputs = []
-  for (let i = 0; i < inputs.length; i++) {
-    let integer = parseInt(inputs[i])
+  for (const input of inputs) {
+    let integer = parseInt(input)
     if (integer > 65535) {
       integer = 65535
     } else if (integer < 0) {
@@ -385,8 +385,7 @@ function draw_front_panel() {
 function draw_screen_updates() {
   let img_data = canvas_context.createImageData(16, 1)
 
-  while (vram_changes_buffer.length > 0) {
-    let [address, word] = vram_changes_buffer.pop()
+  for (const [address, word] of vram_changes_buffer) {
     let y = Math.floor(address / 8)
     let x = (address % 8) * 16
 
@@ -404,6 +403,8 @@ function draw_screen_updates() {
     }
     canvas_context.putImageData(img_data, x, y)
   }
+
+  vram_changes_buffer = []
 }
 
 function on_key_event(event, mode) {

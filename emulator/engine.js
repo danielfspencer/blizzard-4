@@ -291,7 +291,7 @@ function send_vram_changes() {
   //the existance of a key is much faster than array.includes()
 
   let vram_changes_buffer = []
-  for (let address in vram_addresses_changed) {
+  for (const address in vram_addresses_changed) {
     let data = vram[address]
     vram_changes_buffer.push([address,data])
   }
@@ -302,7 +302,7 @@ function send_vram_changes() {
 
 function send_ram_changes() {
   let ram_changes_buffer = []
-  for (let address in ram_addresses_changed) {
+  for (const address in ram_addresses_changed) {
     let data = ram[address]
     ram_changes_buffer.push([address,data])
   }
