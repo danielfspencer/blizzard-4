@@ -67,8 +67,8 @@ const opDefs = {
 
 const defs = {
   "ctl.sp" : 2,
-  "timer.low" : 3,
-  "timer.high" : 4,
+  "timer.high" : 3,
+  "timer.low" : 4,
   "alu.1" : 8,
   "alu.2" : 9,
   "alu.+" : 10,
