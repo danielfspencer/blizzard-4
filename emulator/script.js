@@ -1,11 +1,3 @@
-const strip_names = [
-  "alu1_leds", "alu2_leds", "alu_write_leds", "alu_read_leds", "read_bus_leds", "write_bus_leds",
-  "data_bus_leds", "out1_leds", "out2_leds", "out3_leds", "arg1_leds", "arg2_leds", "arg3_leds",
-  "pc_leds", "ram_addr_leds", "rom_addr_leds", "opcode_leds", "cmd_word_1st_part_leds",
-  "proc_mode_leds", "micro_program_counter", "ram_read_leds", "ram_write_leds", "stack_pointer_leds",
-  "rom_read_leds", "rom_write_leds", "inp1_leds", "inp2_leds", "inp3_leds"
-]
-
 let worker
 let canvas_context
 let led_strips = {}
@@ -29,9 +21,9 @@ $(document).ready(() => {
   document.addEventListener("keydown", e => on_key_event(e, "keydown"))
   document.addEventListener("keyup", e => on_key_event(e, "keyup"))
 
-  for (let name of strip_names) {
-    led_strips[name] = get_led_references(name)
-  }
+  $(".led_row").each((idx, element) => {
+    led_strips[element.id] = get_led_references(element)
+  })
 
   $("#start").click(() => {
     send_user_input()
@@ -231,9 +223,7 @@ function clear_screen() {
   canvas_context.fillRect(0, 0, 128, 128)
 }
 
-function get_led_references(id) {
-  let element = document.getElementById(id)
-
+function get_led_references(element) {
   let references = {
     leds: Array.prototype.slice.call(element.children),
     value: 0,
