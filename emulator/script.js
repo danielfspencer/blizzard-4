@@ -11,7 +11,7 @@ $(document).ready(() => {
   parent.interface.funcs.add_button(gen_button("stats.svg", "statistics"), open_stats)
 
   let canvas = document.getElementById("screen")
-  canvas_context = canvas.getContext("2d", { alpha: false })
+  canvas_context = canvas.getContext("2d")
 
   tools.storage.get_key("emulator-display-colour", set_screen_theme, "green-grey")
 
