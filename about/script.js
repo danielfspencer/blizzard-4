@@ -17,14 +17,14 @@ $( document ).ready( () => {
 
   $( "#close" ).click(() => window.close())
 
-  $.getJSON("../manifest.json")
+  $.getJSON("../package.json")
     .done( data => {
-      version = data.version_name
+      version = data.version
       $("#version-name").html(version)
 
-      $.getJSON("https://danielfspencer.github.io/blizzard-4/manifest.json")
+      $.getJSON("https://danielfspencer.github.io/blizzard-4/package.json")
         .done( data => {
-          let latest_version = data.version_name
+          let latest_version = data.version
           if (version !== latest_version) {
             $("#version-status").html(` (version ${latest_version} available)`)
           } else {

@@ -63,8 +63,8 @@ $(document).ready(() => {
     toggle_menu()
   })
 
-  $.getJSON("manifest.json").done((data) => {
-    $("#version").html(`Version / ${data.version_name}`)
+  $.getJSON("package.json").done((data) => {
+    $("#version").html(`Version / ${data.version}`)
   })
 
   window.onkeydown = (event) => {
