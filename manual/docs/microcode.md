@@ -30,7 +30,7 @@
   </tr>
   <tr>
     <td>0</td>
-    <td rowspan="8">[immediate][immediate]</td>
+    <td rowspan="8">[immediate]<br>[immediate]</td>
     <td>fetch</td>
     <td><div class="one">1</div></td>
     <td>0</td>
@@ -127,7 +127,7 @@
   </tr>
   <tr>
     <td>01000</td>
-    <td rowspan="8">[immediate][direct]</td>
+    <td rowspan="8">[immediate]<br>[direct]</td>
     <td>fetch</td>
     <td><div class="one">1</div></td>
     <td>0</td>
@@ -224,7 +224,7 @@
   </tr>
   <tr>
     <td>10000</td>
-    <td rowspan="8">[direct][immediate]</td>
+    <td rowspan="8">[direct]<br>[immediate]</td>
     <td>fetch</td>
     <td><div class="one">1</div></td>
     <td>0</td>
@@ -321,7 +321,7 @@
   </tr>
   <tr>
     <td>11000</td>
-    <td rowspan="8">[direct][direct]</td>
+    <td rowspan="8">[direct]<br>[direct]</td>
     <td>fetch</td>
     <td><div class="one">1</div></td>
     <td>0</td>
@@ -421,7 +421,7 @@
 ### Execute controller
 <table>
   <tr>
-    <td rowspan="2">Address<sub>2</sub> (opcode followed by &micro;PC)</td>
+    <td rowspan="2">Address<sub>2</sub><br> (opcode followed by &micro;PC)</td>
     <td rowspan="2">Instruction</td>
     <td rowspan="2">&micro;PC value</td>
     <td colspan="16">&micro; instruction</td>
