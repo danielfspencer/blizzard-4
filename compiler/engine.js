@@ -471,7 +471,7 @@ function get_temp_word() {
   return {
     addr: addr[0],
     label: `stack.${addr[0]}`,
-    free: () => free_stack([addr])
+    free: () => free_stack(addr)
   }
 }
 
