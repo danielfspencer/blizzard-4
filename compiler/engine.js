@@ -2646,16 +2646,11 @@ function translate(token, ctx_type) {
     } break
 
     case "repeat": {
-      let [prefix, value, type] = translate(args.expr, "u16")
-
-      let times_to_repeat = parseInt(value[0])
-
-      if (times_to_repeat < 0) {
-        throw new CompError("Number of times to repeat must be a positive number")
-      }
+      let times_to_repeat = get_static_value(args.expr, "u16", () => {
+        throw new CompError("Number of times to repeat must be static & of type 'u16'")
+      })
 
       let body = translate_body(token.body)
-      prefix = []
 
       while (times_to_repeat > 0) {
         result.push(...body)
