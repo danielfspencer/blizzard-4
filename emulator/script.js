@@ -8,7 +8,7 @@ let vram_changes_buffer = []
 $(document).ready(() => {
   parent.interface.funcs.clear_buttons()
   parent.interface.funcs.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
-  parent.interface.funcs.add_button(gen_button("stats.svg", "statistics"), open_stats)
+  // parent.interface.funcs.add_button(gen_button("stats.svg", "statistics"), open_stats)
 
   let canvas = document.getElementById("screen")
   canvas_context = canvas.getContext("2d")
@@ -124,14 +124,14 @@ function open_visualiser() {
   }
 }
 
-function open_stats() {
-  let store = parent.interface.window_ref_store
-  if (store.stats === undefined || store.stats.parent === null) {
-    windows.open('emulator/stats/stats.html', 400, 136 + 24, ref => {
-      store.stats = ref
-    })
-  }
-}
+// function open_stats() {
+//   let store = parent.interface.window_ref_store
+//   if (store.stats === undefined || store.stats.parent === null) {
+//     windows.open('emulator/stats/stats.html', 400, 136 + 24, ref => {
+//       store.stats = ref
+//     })
+//   }
+// }
 
 function set_screen_theme(theme) {
   let mapping = {
