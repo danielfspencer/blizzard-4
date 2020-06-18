@@ -10,7 +10,7 @@ importScripts('libraries.js')
 const MIN_FRAME_SIZE = 2
 const MAX_FRAME_SIZE = 2048
 const MAX_RAM_SIZE = 16384
-const DATA_TYPE_SIZE = { u16:1, s16:1, u32:2, s32:2, float:2, bool:1, str:1, array:4, none:0 }
+const DATA_TYPE_SIZE = { u16:1, s16:1, u32:2, s32:2, bool:1, str:1, array:3, none:0 }
 const MIXABLE_NUMERIC_TYPES = [["u16","s16"],["u32","s32"]]
 const RESERVED_KEYWORDS = [
   "if","for","while","repeat","struct","def","true","false","sys","return","break","continue","include","__root","__global", "__return"
