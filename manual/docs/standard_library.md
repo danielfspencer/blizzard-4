@@ -96,4 +96,6 @@ sys.**print_s32**(s32 num, u16 x = 0, u16 y = 0, bool print_all_places = false)
 
 sys.**kbd.scancode_to_charcode**(u16 scancode, bool shifted = false) -> u16
 
+sys.**kbd.get_charcode**() -> u16
+
 sys.**get_lib_version**() -> str
