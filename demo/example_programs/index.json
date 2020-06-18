@@ -4,6 +4,11 @@
     "desc":"Early prototype demonstrating a space-invaders style game. Use the ← left and right → arrow keys to move the cannon. Press the ↑ up arrow key to fire. This game currently has no victory condition.",
     "clock_speed": 100000
   },
+  "kernel": {
+    "name":"Cooperative Multitasking Kernel",
+    "desc":"A simple kernel allows 16 programs to run concurrently. Each program simply displays an increasing counter alongside its PID. All LEDs in out#3 are lit when in kernel mode, visualising the time spent in the kernel.",
+    "clock_speed": 100000
+  },
   "ping_pong": {
     "name": "Ping Pong",
     "desc": "A classic ping pong game. Player 1 uses keys A & D to move the paddle. Player 2 uses keys J & L to move the paddle. Optionally, one or both of the players can be computer controlled. Select the game mode by pressing number 1, 2 or 3 on the title screen.",

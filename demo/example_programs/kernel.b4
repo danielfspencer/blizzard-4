@@ -1,0 +1,92 @@
+struct k_process
+  u16 pc
+  u16 sp
+
+const u16 STACK_BASE = 2048
+const u16 STACK_SIZE = 128
+global u16 MAX_STACK_ADDR = 16384 - STACK_SIZE
+
+const u16 MAX_PROCESSES = 16
+global u16 current_process_id = 0
+global array process_table = (k_process, MAX_PROCESSES)[]
+
+global u16 k_pc = 32768
+global u16 k_sp = 0
+
+sig new_process(u16 pc, u16 sp)
+sig schedule_process()
+sig main()
+
+main()
+
+def main()
+  for let u16 i = 0; i < 16; i++
+    let u16 offset = STACK_SIZE * i
+    new_process(#func_program_main#, STACK_BASE + offset)
+
+  while true
+    schedule_process()
+
+def panic(str error)
+  sys.vram.clear()
+  sys.print_string("- kernel panic -")
+  sys.print_string(error, 0, 1)
+  {stop 0 0}
+
+def new_process(u16 pc, u16 sp)
+  if process_table.len() == MAX_PROCESSES
+    panic("too many tasks")
+
+  if sp > MAX_STACK_ADDR
+    panic("not enough RAM")
+
+  let k_process process = <pc, sp>
+  process_table.append(process)
+
+def schedule_process()
+  // save kernel state
+  {write [stack.0] &k_pc}
+  {write [stack.1] &k_sp}
+
+  // find next process
+  current_process_id++
+  if current_process_id >= process_table.len()
+    current_process_id = 0
+
+  // restore its state and enter program
+  let k_process process = process_table[current_process_id]
+
+  // enter program by overwriting PC/SP of caller and returning
+  {write $process[0] stack.0}
+  {write $process[1] stack.1}
+  {write 0 io.out3}
+  return
+
+def kernel.get_pid() -> u16
+  return current_process_id
+
+def kernel.yield()
+  {write 0xffff io.out3}
+
+  // save state of process
+  // stack.0 - holds caller's PC
+  // stack.1 - holds caller's SP
+  process_table[current_process_id] = <#[stack.0]#,#[stack.1]#>
+
+  // enter kernel by overwriting PC/SP of caller and returning
+  {write $k_pc stack.0}
+  {write $k_sp stack.1}
+  return
+
+///////////////////////////////////
+
+def program_main()
+  let u16 pid = kernel.get_pid()
+  let u16 count = 0
+
+  sys.print_string("pid-", 0, pid)
+  sys.print_u16(pid, 4, pid)
+  while true
+    sys.print_u16(count, 10, pid)
+    count++
+    kernel.yield()
