@@ -231,7 +231,7 @@ function buffer_if_needed(address) {
 
 function gen_label(type) {
   let id = state.labels[state.scope][type]++
-  return `${state.scope}_${id}`
+  return `${id}_${state.scope}`
 }
 
 function write_operands(expr1, expr2, type) {
