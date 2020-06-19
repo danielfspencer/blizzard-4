@@ -1,0 +1,552 @@
+include sys.consts
+
+struct vec3
+  s16 x
+  s16 y
+  s16 z
+
+struct vec2
+  u16 x
+  u16 y
+
+const s16 ORIGIN_X = 57
+const s16 ORIGIN_Y = 60
+
+const u16 FRAME_STORE_ADDR = 38912
+const u16 FRAME_SIZE = 1024
+const u16 MAX_FRAME_NUM = 25
+
+const array SINE_VALUES = (s16,32)[0,3,6,9,12,15,18,20,23,25,27,28,30,31,31,32,32,32,31,31,30,28,27,25,23,20,18,15,12,9,6,3]
+
+global array vertices = (vec3)[]
+global array triangles = (vec3)[]
+
+def fast_copy(u16 origin_addr, u16 target_addr, u16 length)
+  let u16 base_addr = origin_addr
+  origin_addr += length
+  target_addr += length
+
+  while origin_addr > base_addr
+    {write 1 alu.2}
+    repeat 4
+      {write $origin_addr alu.1}
+      {write [alu.-] &origin_addr}
+      {write $target_addr alu.1}
+      {write [alu.-] &target_addr}
+      {copy $origin_addr $target_addr}
+
+def sin(s16 theta) -> s16
+  // mult by value & shift in here
+  theta = theta & 63
+
+  __return = SINE_VALUES[theta & 31]
+
+  if theta > 32
+    __return = 0 - __return
+
+  return __return
+
+def cos(s16 theta) -> s16
+  return sin(16 - theta)
+
+def rotateY(vec3 input, s16 theta) -> vec3
+  // rotation about y-axis
+  let s16 sin_val = sin(theta)
+  let s16 cos_val = cos(theta)
+
+  let s16 tmp
+  let s16 tmp1
+
+  tmp = input.x * cos_val
+  tmp1 = input.z * sin_val
+  tmp = tmp >> 5
+  tmp1 = tmp1 >> 5
+  __return.x = tmp + tmp1
+
+  tmp = input.z * cos_val
+  tmp1 = input.x * sin_val
+  tmp = tmp >> 5
+  tmp1 = tmp1 >> 5
+  __return.z = tmp - tmp1
+
+  __return.y = input.y
+  return __return
+
+def rotateX(vec3 input, s16 theta) -> vec3
+  // rotation about x-axis
+  let s16 sin_val = sin(theta)
+  let s16 cos_val = cos(theta)
+
+  let s16 tmp
+  let s16 tmp1
+
+  tmp = input.y * cos_val
+  tmp1 = input.z * sin_val
+  tmp = tmp >> 5
+  tmp1 = tmp1 >> 5
+  __return.y = tmp - tmp1
+
+  tmp = input.y * sin_val
+  tmp1 = input.z * cos_val
+  tmp = tmp >> 5
+  tmp1 = tmp1 >> 5
+  __return.z = tmp + tmp1
+
+  __return.x = input.x
+  return __return
+
+def translate(vec3 input, vec3 offset) -> vec3
+  // translation in 3D
+  __return.x = input.x + offset.x
+  __return.y = input.y + offset.y
+  __return.z = input.z - offset.z
+  return __return
+
+def is_anti_clockwise(vec2 v0, vec2 v1, vec2 v2) -> bool
+  v1.x = v1.x - v0.x
+  v2.y = v2.y - v0.y
+
+  v1.y = v1.y - v0.y
+  v2.x = v2.x - v0.x
+
+  let s16 tmp1 = v1.x * v2.y
+  let s16 tmp2 = v1.y * v2.x
+
+  return tmp1 <= tmp2
+
+def project(vec3 input, s16 resize) -> vec2
+  // perspective projection
+  input.x = input.x * resize
+  input.y = input.y * resize
+  input.x = input.x / input.z
+  input.y = input.y / input.z
+  __return.x = ORIGIN_X - input.x
+  __return.y = ORIGIN_Y + input.y
+  return __return
+
+def load_model(u16 address)
+  let u16 vertex_count = *address
+  address++
+  let u16 triangle_count = *address
+  address++
+
+  {write $address &vertices[0]}
+  {write $vertex_count &vertices[1]}
+
+  let u16 tmp = vertex_count * 3
+  address += tmp
+
+  {write $address &triangles[0]}
+  {write $triangle_count &triangles[1]}
+
+def draw(u16 frame_num)
+  let u16 triangle_count = 0
+
+  for let u16 i = 0; i < triangles.len(); i++
+    let vec3 triangle = triangles[i]
+    let vec3 v0 = vertices[triangle.x - 1]
+    let vec3 v1 = vertices[triangle.y - 1]
+    let vec3 v2 = vertices[triangle.z - 1]
+
+    v0 = rotateY(v0, 7)
+    v1 = rotateY(v1, 7)
+    v2 = rotateY(v2, 7)
+
+    v0 = rotateX(v0, frame_num - 7)
+    v1 = rotateX(v1, frame_num - 7)
+    v2 = rotateX(v2, frame_num - 7)
+
+    let vec3 camera_transform = <0,0,580>
+    v0 = translate(v0, camera_transform)
+    v1 = translate(v1, camera_transform)
+    v2 = translate(v2, camera_transform)
+
+    let vec2 p0 = project(v0, 139)
+    let vec2 p1 = project(v1, 139)
+    let vec2 p2 = project(v2, 139)
+
+    if is_anti_clockwise(p0, p1, p2)
+      sys.vram.draw_line(p0.x, p0.y, p1.x, p1.y)
+      sys.vram.draw_line(p1.x, p1.y, p2.x, p2.y)
+      sys.vram.draw_line(p2.x, p2.y, p0.x, p0.y)
+      triangle_count++
+
+  // sys.print_string("t", 13, 15)
+  // sys.print_u16(triangle_count, 14, 15)
+
+def draw_hud(u16 frame_num)
+  let u16 progress = 128 / MAX_FRAME_NUM
+  progress *= frame_num
+  sys.vram.draw_line(0,127,progress,127)
+
+def main()
+  load_model(#f117.obj#)
+
+  // draw(0)
+  // {stop 0 0}
+
+  let u16 frame
+  let u16 dest_offset
+
+  for frame = 0; frame < MAX_FRAME_NUM; frame++
+    draw_hud(frame)
+    draw(frame)
+    dest_offset = FRAME_SIZE * frame
+    fast_copy(SYS_VRAM_ADDR, FRAME_STORE_ADDR + dest_offset, FRAME_SIZE)
+    sys.vram.clear()
+
+  while true
+    for frame = 0; frame < MAX_FRAME_NUM; frame++
+      dest_offset = FRAME_SIZE * frame
+      fast_copy(FRAME_STORE_ADDR + dest_offset, SYS_VRAM_ADDR, FRAME_SIZE)
+
+    for frame = MAX_FRAME_NUM - 2; frame > 0; frame--
+      dest_offset = 1024 * frame
+      fast_copy(FRAME_STORE_ADDR + dest_offset, SYS_VRAM_ADDR, FRAME_SIZE)
+
+main()
+
+###
+// f117.obj (72 triangles, 40 vertices)
+f117.obj:
+40
+72
+// vertices
+50
+40
+65327
+14
+65532
+65452
+69
+65521
+65454
+60
+65518
+147
+65468
+65521
+65454
+65522
+65532
+65452
+65489
+42
+65343
+65487
+40
+65327
+65384
+65518
+65384
+65468
+65529
+65511
+0
+65524
+65378
+47
+7
+124
+34
+17
+45
+24
+7
+147
+52
+12
+70
+68
+65528
+45
+68
+65529
+65511
+65492
+41
+65323
+47
+42
+65343
+65497
+65521
+171
+65475
+65518
+147
+65499
+65518
+198
+65488
+7
+124
+65502
+17
+45
+65484
+12
+70
+0
+34
+139
+65512
+7
+147
+65519
+65518
+241
+17
+65518
+241
+65489
+39
+65313
+45
+41
+65323
+48
+39
+65313
+37
+65518
+198
+65352
+65518
+65416
+152
+65518
+65384
+39
+65521
+171
+0
+65518
+278
+0
+5
+196
+184
+65518
+65416
+65468
+65528
+45
+// triangles
+6
+7
+8
+5
+9
+10
+11
+19
+31
+23
+24
+25
+21
+27
+23
+26
+27
+22
+19
+2
+1
+20
+21
+22
+10
+34
+40
+28
+29
+26
+11
+30
+18
+12
+13
+14
+17
+39
+35
+10
+25
+24
+17
+35
+3
+33
+36
+14
+33
+4
+36
+37
+29
+38
+25
+10
+40
+11
+8
+6
+38
+28
+37
+32
+11
+31
+8
+18
+30
+31
+1
+32
+29
+37
+28
+21
+5
+4
+4
+14
+36
+11
+13
+17
+22
+28
+26
+28
+38
+29
+16
+15
+4
+26
+29
+33
+7
+11
+18
+34
+21
+40
+16
+4
+39
+11
+1
+32
+11
+2
+19
+23
+27
+24
+21
+20
+27
+26
+24
+27
+27
+20
+22
+10
+9
+34
+12
+15
+13
+17
+16
+39
+26
+11
+24
+11
+5
+10
+24
+11
+10
+14
+13
+26
+26
+33
+14
+40
+21
+25
+21
+23
+25
+11
+30
+8
+8
+7
+18
+31
+19
+1
+34
+9
+5
+5
+11
+3
+3
+35
+39
+4
+33
+22
+33
+29
+22
+22
+29
+28
+3
+39
+4
+21
+34
+5
+5
+3
+4
+22
+21
+4
+4
+12
+14
+17
+3
+11
+11
+26
+13
+13
+15
+17
+17
+15
+16
+15
+12
+4
+7
+6
+11
+11
+2
+1
+###
