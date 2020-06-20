@@ -1,8 +1,18 @@
 ![Screenshot of emulator](/assets/screenshots/emulator.png?raw=true)
 
-<img src="/assets/screenshots/ping_pong.gif?raw=true" height="300" align="right">
+<table><tr>
+  <td width="25%"><img src="/assets/screenshots/space_invaders.gif?raw=true"></td>
+  <td width="25%"><img src="/assets/screenshots/3d_render.gif?raw=true"></td>
+  <td width="25%"><img src="/assets/screenshots/snake.gif?raw=true"></td>
+  <td width="25%"><img src="/assets/screenshots/ping_pong.gif?raw=true"></td>
+</tr><tr>
+  <td align="center"><b>Space Invaders</b></td>
+  <td align="center"><b>3D Renderer</b></td>
+  <td align="center"><b>Snake</b></td>
+  <td align="center"><b>Ping Pong</b></td>
+</tr></table>
 
-Blizzard 4 is a RISC 16-bit computer. This web app contains an emulator, assembler, compiler and a set of example programs for the computer.
+Blizzard 4 is a RISC 16-bit computer designed for simple implementation in hardware. This web app contains an emulator, assembler, compiler and a set of example programs for the computer.
 
 ### Ways to use
 * [Online (no install required)](https://danielfspencer.github.io/blizzard-4/)
