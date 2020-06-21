@@ -13,7 +13,7 @@ $(document).ready(() => {
   let canvas = document.getElementById("screen")
   canvas_context = canvas.getContext("2d")
 
-  tools.storage.get_key("emulator-display-colour", set_screen_theme, "green-grey")
+  tools.storage.get_key("emulator-display-colour", set_screen_theme, "white-grey")
 
   worker = new Worker("engine.js")
   worker.onmessage = e => handle_message(e.data)
