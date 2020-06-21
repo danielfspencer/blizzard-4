@@ -98,7 +98,7 @@ function assemble(input, success, fail) {
   assembler.onmessage = (msg) => {
     let data = msg.data
     if (data[0] === 'result') {
-      if (data[1] === '') {
+      if (data[1] === null) {
         fail()
       } else {
         success(data[1])
