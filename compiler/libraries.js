@@ -1554,7 +1554,7 @@ const libs = {
   ],
   "sys.get_lib_version":[
     "def sys.get_lib_version() -> str",
-    "  return \"0.47.0-beta.1\"",
+    "  return \"0.47.0\"",
   ],
   "sys.signatures": [
     "sig sys.u16_multiply(u16 a, u16 b) -> u16",
