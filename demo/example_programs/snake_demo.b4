@@ -1,36 +1,123 @@
-let array x_coords = (u16,490)[10,11,12]
-let array y_coords = (u16,490)[10,10,10]
+include sys.consts
 
-let u16 head_x = x_coords[0]
-let u16 head_y = y_coords[0]
+// 0 - north
+// 1 - east
+// 2 - south
+// 3 - west
+const u16 START_DIRECTION = 1
+const u16 START_X = 15
+const u16 START_Y = 15
 
-let u16 direction = 1
+const u16 MAX_LENGTH = 500
+const u16 START_LENGTH = 10
+const u16 GROWTH_RATE = 5
 
-let u16 key_code
+const u16 MIN_Y = 9
+const u16 MAX_Y = 127
+const u16 MIN_X = 0
+const u16 MAX_X = 127
 
-def get_keypress() -> u16
-  include sys.consts
-  let u16 scancode = *SYS_KEYBOARD_ADDR
-  let u16 char_code = 0
+const u16 FOOD_SIZE = 4
+const u16 START_LIVES = 4
 
-  while scancode > 0
-    if scancode == 0xAA
-      //pass
-    else if scancode == 0xF0
-      scancode = *SYS_KEYBOARD_ADDR
-    else if scancode == 0xE0
-      //pass
-    else
-      char_code = sys.kbd.scancode_to_charcode(scancode)
-      return char_code
-    scancode = *SYS_KEYBOARD_ADDR
+sig draw_food()
+sig draw_hud()
 
-  return char_code
+global u16 lives = START_LIVES
 
-let u16 head = 120
-let u16 tail = 0
+def init_state()
+  global u16 food_x
+  global u16 food_y
+
+  global u16 score = 0
+
+  global array x_coords = (u16,MAX_LENGTH)[]
+  global array y_coords = (u16,MAX_LENGTH)[]
+
+  global u16 head_x = START_X
+  global u16 head_y = START_Y
+
+  global u16 direction = START_DIRECTION
+  global u16 head_idx = START_LENGTH
+  global u16 tail_idx = 0
+
+  global u16 target_length = START_LENGTH
+  global u16 current_length = START_LENGTH
+
+  sys.mem_copy(#snake_header_bar#, SYS_VRAM_ADDR, 54)
+  draw_hud()
+  draw_food()
+
+def draw_food()
+  // generate pseudorandom position
+  food_x = *SYS_TIMER_ADDR
+  food_x += 20
+  food_x *= food_x
+  food_y = *SYS_TIMER_ADDR
+  food_y += 25
+  food_y *= food_y
+
+  // limit to play area
+  let u16 horiz_range = MAX_X - MIN_X
+  horiz_range -= FOOD_SIZE
+  let u16 vert_range = MAX_Y - MIN_Y
+  vert_range -= FOOD_SIZE
+  food_x = food_x % horiz_range
+  food_y = food_y % vert_range
+  food_x += MIN_X
+  food_y += MIN_Y
+
+  // draw a square at the position
+  sys.vram.draw_square(food_x, food_y, FOOD_SIZE)
+
+def erase_food()
+  // erase the square
+  sys.vram.draw_square(food_x, food_y, FOOD_SIZE, false)
+
+def is_in_range(u16 a, u16 b, u16 thresh) -> bool
+  let u16 diff
+  if a > b
+    diff = a - b
+  else
+    diff = b - a
+
+  return diff < thresh
+
+def draw_hud()
+  sys.print_u16(score, 4)
+  sys.print_u16(lives, 12, 0)
+
+def draw_line(u16 y, u16 data)
+  // draws horizontal lines very fast
+  y *= 8
+  y += SYS_VRAM_ADDR
+
+  for let u16 i = 0; i < 8; i++
+    {write $data $y}
+    y++
+
+def game_over()
+  // draws lines above and below the text, also blanking the background
+  draw_line(53, 0)
+  draw_line(54, 0xffff)
+
+  for let u16 i = 55; i < 65; i++
+    draw_line(i, 0)
+
+  draw_line(65, 0xffff)
+  draw_line(66, 0)
+
+  sys.print_string("GAME OVER", 4, 7)
+  {stop 0 0}
+
+def wait_cycles(u16 cycles)
+  while cycles > 0
+    cycles--
+
+init_state()
+
 while true
-  key_code = get_keypress()
+  let u16 key_code = sys.kbd.get_charcode()
   if key_code == 29
     if direction != 2
       direction = 0
@@ -45,31 +132,128 @@ while true
       direction = 3
 
   if direction == 0
-    head_y--
+    if head_y > MIN_Y
+      head_y--
+    else
+      head_y = MAX_Y
   else if direction == 1
-    head_x++
+    if head_x < MAX_X
+      head_x++
+    else
+      head_x = MIN_X
   else if direction == 2
-    head_y++
+    if head_y < MAX_Y
+      head_y++
+    else
+      head_y = MIN_Y
   else if direction == 3
-    head_x--
+    if head_x > MIN_X
+      head_x--
+    else
+      head_x = MAX_X
 
+  let bool hit_food = false
+  if is_in_range(head_x, food_x, FOOD_SIZE)
+    hit_food = is_in_range(head_y, food_y, FOOD_SIZE)
 
-  if head < 489
-    head++
-  else
-    head = 0
-  x_coords[head] = head_x
-  y_coords[head] = head_y
+  if hit_food
+    // increase score, move food & lengthen snake
+    score += current_length
+    target_length += GROWTH_RATE
+    erase_food()
+    draw_hud()
+    draw_food()
+  else if sys.vram.get_pixel(head_x, head_y)
+    // if the snake has hit itself -
+    if lives > 0
+      // subtract a life, wait, then reset
+      lives--
+      wait_cycles(4000)
+      sys.vram.clear()
+      init_state()
+      // skip rest of game loop
+      continue
+    else
+      // or end the game if on 0 lives
+      game_over()
 
+  head_idx++
+  // constrain value to [0, MAX_LENGTH - 1]
+  if head_idx == MAX_LENGTH
+    head_idx = 0
+
+  // store & draw new position of head
+  x_coords[head_idx] = head_x
+  y_coords[head_idx] = head_y
   sys.vram.set_pixel(head_x,head_y)
 
-  if key_code != 8
-    let u16 temp_x = x_coords[tail]
-    let u16 temp_y = y_coords[tail]
+  if target_length == current_length
+    // erase old tail position
+    sys.vram.set_pixel(x_coords[tail_idx], y_coords[tail_idx], false)
 
-    if tail < 489
-      tail++
-    else
-      tail = 0
+    // set new tail to next pixel of snake
+    tail_idx++
+    // constrain value to [0, MAX_LENGTH - 1]
+    if tail_idx == MAX_LENGTH
+      tail_idx = 0
+  else
+    // not erasing the tail means the snake grows by 1
+    current_length++
 
-    sys.vram.set_pixel(temp_x,temp_y,false)
+###
+snake_header_bar:
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0011101110000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000001111000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0010101010110000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000001001000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0010101010100000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000001001000
+0b0000000000000000
+0b0000000000000000
+0b0000000000001111
+0b0010101010100000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000001111000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000001
+0b0010101010100000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000001
+0b1110111011100000
+###

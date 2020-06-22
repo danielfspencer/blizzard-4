@@ -116,7 +116,7 @@ while true
     if ball_x < 1
       ball_dx = 0 - ball_dx
 
-    if ball_y > 127
+    if ball_y > 126
       top_score++
       sys.print_u16(top_score,0,6)
       ball_x = 63
@@ -132,7 +132,7 @@ while true
       ball_dx = 0
       ball_dy = -2
 
-    if ball_y < 7
+    if ball_y < 8
       if ball_x > top_low_bound
         if ball_x < top_high_bound
           ball_dy = 0 - ball_dy

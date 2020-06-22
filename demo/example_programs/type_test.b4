@@ -1,28 +1,3 @@
-global bool shift = false
-
-def get_keypress() -> u16
-  include sys.consts
-  let u16 scancode = *SYS_KEYBOARD_ADDR
-  let u16 char_code = 0
-
-  while scancode > 0
-    if scancode == 0xAA
-      //pass
-    else if scancode == 0xF0
-      scancode = *SYS_KEYBOARD_ADDR
-      if scancode == 0x12
-        shift = false
-    else if scancode == 0xE0
-      //pass
-    else if scancode == 0x12
-      shift = true
-    else
-      char_code = sys.kbd.scancode_to_charcode(scancode,shift)
-      return char_code
-    scancode = *SYS_KEYBOARD_ADDR
-
-  return char_code
-
 let u16 x = 0
 let u16 y = 0
 let u16 code
@@ -30,7 +5,7 @@ let bool draw_cursor = true
 sys.vram.render_char(128,x,y)
 
 while true
-  code = get_keypress()
+  code = sys.kbd.get_charcode()
 
   if code == 0
     if draw_cursor

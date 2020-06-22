@@ -2,7 +2,7 @@ let counter = 0
 
 $(document).ready( () => {
   canvas = document.getElementById("memory")
-  canvas_context = canvas.getContext("2d", { alpha: false })
+  canvas_context = canvas.getContext("2d")
 
   $( "#close" ).click(() => window.close())
   pixel_on_colours = [255,255,255]
@@ -74,22 +74,24 @@ function draw_word_img(word, x, y, img_data) {
 }
 
 function draw_screen_updates() {
-  let img_data = canvas_context.createImageData(16,1)
+  // let img_data = canvas_context.createImageData(16,1)
 
-  for (let j = 0; j < ram_changes_buffer.length; j++) {
-    let item = ram_changes_buffer[j]
-    let address = item[0]
-    let word = item[1]
+  for (const [address, word] of ram_changes_buffer) {
     let x = (address >> 9) * 16
     let y = (address & 511)
 
-    // draw_word_fill(word, x, y)
-    draw_word_img(word, x, y, img_data)
+    draw_word_fill(word, x, y)
+    // draw_word_img(word, x, y, img_data)
   }
 
   ram_changes_buffer = []
 }
 
+function clear_screen() {
+  let [red, green, blue] = pixel_off_colours
+  canvas_context.fillStyle = `rgb(${red}, ${green}, ${blue})`
+  canvas_context.fillRect(0, 0, 512, 512)
+}
 
 function set_theme(name) {
   $.ajax({

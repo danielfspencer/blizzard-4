@@ -1,9 +1,9 @@
 const libs = {
   "sys.consts": [
-    "const u16 SYS_ROM_ADDR = 32768",
-    "const u16 SYS_VRAM_ADDR = 6144",
-    "const u16 SYS_KEYBOARD_ADDR = 4102",
-    "const u16 SYS_TIMER_ADDR = 3"
+    "const u16 SYS_ROM_ADDR = #rom.0#",
+    "const u16 SYS_VRAM_ADDR = #vram.0#",
+    "const u16 SYS_KEYBOARD_ADDR = #io.kbd#",
+    "const u16 SYS_TIMER_ADDR = #timer.high#"
   ],
   "sys.u16_multiply": [
     "def sys.u16_multiply(u16 a, u16 b) -> u16",
@@ -437,11 +437,10 @@ const libs = {
     "",
     "  char_code -= 32",
     "  ",
-    "  let u16 char_pointer",
+    "  let u16 char_pointer = #sys.vram.glyphs#",
     "  let u16 char_offset = char_code << 2",
     "  char_offset += char_code",
     "  char_offset += char_code",
-    "  {write sys.vram.glyphs &char_pointer}",
     "  char_pointer += char_offset",
     "",
     "  let u16 vram_pointer = 6152",
@@ -513,12 +512,13 @@ const libs = {
   ],
   "sys.vram.draw_square": [
     "def sys.vram.draw_square(u16 x, u16 y, u16 length, bool data = true)",
+    "  length--",
     "  let u16 x_offset = x+length",
     "  let u16 y_offset = y+length",
+    "  length++",
     "  let u16 counter = 0",
     "  let u16 x_current",
     "  let u16 y_current",
-    "  length++",
     "  while counter < length",
     "    x_current = x + counter",
     "    y_current = y + counter",
@@ -766,11 +766,9 @@ const libs = {
     "  if scancode == 0",
     "    return 0",
     "",
-    "  let u16 table_addr",
+    "  let u16 table_addr = #sys.kbd.scancode_charcode_table#",
     "  let u16 word",
     "  let u16 charcode",
-    "",
-    "  {write sys.kbd.scancode_charcode_table &table_addr}",
     "",
     "  table_addr += scancode",
     "  word = *table_addr",
@@ -781,6 +779,33 @@ const libs = {
     "    charcode = word & 0x00ff",
     "",
     "  return charcode"
+  ],
+  "sys.kbd.get_charcode": [
+    "def sys.kbd.get_charcode() -> u16",
+    "  include sys.consts",
+    "  include sys.kbd.shift_state",
+    "  let u16 scancode = *SYS_KEYBOARD_ADDR",
+    "",
+    "  while scancode > 0",
+    "    if scancode == 0xAA",
+    "      //pass",
+    "    else if scancode == 0xF0",
+    "      scancode = *SYS_KEYBOARD_ADDR",
+    "      if scancode == 0x12",
+    "        SYS_KBD_SHIFT = false",
+    "    else if scancode == 0xE0",
+    "      //pass",
+    "    else if scancode == 0x12",
+    "      SYS_KBD_SHIFT = true",
+    "    else",
+    "      return sys.kbd.scancode_to_charcode(scancode, SYS_KBD_SHIFT)",
+    "",
+    "    scancode = *SYS_KEYBOARD_ADDR",
+    "",
+    "  return 0"
+  ],
+  "sys.kbd.shift_state": [
+    "global bool SYS_KBD_SHIFT = false"
   ],
   "sys.vram.glyphs": [
     "###",
@@ -1529,7 +1554,7 @@ const libs = {
   ],
   "sys.get_lib_version":[
     "def sys.get_lib_version() -> str",
-    "  return \"0.47.0-beta.1\"",
+    "  return \"0.47.0\"",
   ],
   "sys.signatures": [
     "sig sys.u16_multiply(u16 a, u16 b) -> u16",
@@ -1582,6 +1607,7 @@ const libs = {
     "sig sys.print_u32(u32 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
     "sig sys.print_s32(s32 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
     "sig sys.kbd.scancode_to_charcode(u16 scancode, bool shifted = false) -> u16",
+    "sig sys.kbd.get_charcode() -> u16",
     "sig sys.get_lib_version() -> str"
   ]
 }

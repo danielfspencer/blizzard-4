@@ -1,11 +1,3 @@
-const strip_names = [
-  "alu1_leds", "alu2_leds", "alu_write_leds", "alu_read_leds", "read_bus_leds", "write_bus_leds",
-  "data_bus_leds", "out1_leds", "out2_leds", "out3_leds", "arg1_leds", "arg2_leds", "arg3_leds",
-  "pc_leds", "ram_addr_leds", "rom_addr_leds", "opcode_leds", "cmd_word_1st_part_leds",
-  "proc_mode_leds", "micro_program_counter", "ram_read_leds", "ram_write_leds", "stack_pointer_leds",
-  "rom_read_leds", "rom_write_leds", "inp1_leds", "inp2_leds", "inp3_leds"
-]
-
 let worker
 let canvas_context
 let led_strips = {}
@@ -16,12 +8,12 @@ let vram_changes_buffer = []
 $(document).ready(() => {
   parent.interface.funcs.clear_buttons()
   parent.interface.funcs.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
-  parent.interface.funcs.add_button(gen_button("stats.svg", "statistics"), open_stats)
+  // parent.interface.funcs.add_button(gen_button("stats.svg", "statistics"), open_stats)
 
   let canvas = document.getElementById("screen")
-  canvas_context = canvas.getContext("2d", { alpha: false })
+  canvas_context = canvas.getContext("2d")
 
-  tools.storage.get_key("emulator-display-colour", set_screen_theme, "green-grey")
+  tools.storage.get_key("emulator-display-colour", set_screen_theme, "white-grey")
 
   worker = new Worker("engine.js")
   worker.onmessage = e => handle_message(e.data)
@@ -29,9 +21,9 @@ $(document).ready(() => {
   document.addEventListener("keydown", e => on_key_event(e, "keydown"))
   document.addEventListener("keyup", e => on_key_event(e, "keyup"))
 
-  for (let name of strip_names) {
-    led_strips[name] = get_led_references(name)
-  }
+  $(".led_row").each((idx, element) => {
+    led_strips[element.id] = get_led_references(element)
+  })
 
   $("#start").click(() => {
     send_user_input()
@@ -41,7 +33,13 @@ $(document).ready(() => {
   $("#reset").click(() => {
     worker.postMessage(["reset"])
     worker.postMessage(["set_clock", $("#clock-target").val()])
-    setTimeout(clear_screen, 150)
+    setTimeout(() => {
+      clear_screen()
+      let store = parent.interface.window_ref_store
+      if (store.visualiser !== undefined) {
+        store.visualiser.clear_screen()
+      }
+    }, 150)
     send_user_input()
   })
 
@@ -126,14 +124,14 @@ function open_visualiser() {
   }
 }
 
-function open_stats() {
-  let store = parent.interface.window_ref_store
-  if (store.stats === undefined || store.stats.parent === null) {
-    windows.open('emulator/stats/stats.html', 400, 136 + 24, ref => {
-      store.stats = ref
-    })
-  }
-}
+// function open_stats() {
+//   let store = parent.interface.window_ref_store
+//   if (store.stats === undefined || store.stats.parent === null) {
+//     windows.open('emulator/stats/stats.html', 400, 136 + 24, ref => {
+//       store.stats = ref
+//     })
+//   }
+// }
 
 function set_screen_theme(theme) {
   let mapping = {
@@ -162,8 +160,8 @@ function set_rom([string, shouldRun, clock_speed]) {
 function send_user_input(event){
   let inputs = [$("#usr1_input").val(), $("#usr2_input").val(), $("#usr3_input").val()]
   let sanitised_inputs = []
-  for (let i = 0; i < inputs.length; i++) {
-    let integer = parseInt(inputs[i])
+  for (const input of inputs) {
+    let integer = parseInt(input)
     if (integer > 65535) {
       integer = 65535
     } else if (integer < 0) {
@@ -225,9 +223,7 @@ function clear_screen() {
   canvas_context.fillRect(0, 0, 128, 128)
 }
 
-function get_led_references(id) {
-  let element = document.getElementById(id)
-
+function get_led_references(element) {
   let references = {
     leds: Array.prototype.slice.call(element.children),
     value: 0,
@@ -389,8 +385,7 @@ function draw_front_panel() {
 function draw_screen_updates() {
   let img_data = canvas_context.createImageData(16, 1)
 
-  while (vram_changes_buffer.length > 0) {
-    let [address, word] = vram_changes_buffer.pop()
+  for (const [address, word] of vram_changes_buffer) {
     let y = Math.floor(address / 8)
     let x = (address % 8) * 16
 
@@ -408,6 +403,8 @@ function draw_screen_updates() {
     }
     canvas_context.putImageData(img_data, x, y)
   }
+
+  vram_changes_buffer = []
 }
 
 function on_key_event(event, mode) {

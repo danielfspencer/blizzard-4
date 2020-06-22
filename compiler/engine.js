@@ -10,7 +10,7 @@ importScripts('libraries.js')
 const MIN_FRAME_SIZE = 2
 const MAX_FRAME_SIZE = 2048
 const MAX_RAM_SIZE = 16384
-const DATA_TYPE_SIZE = { u16:1, s16:1, u32:2, s32:2, float:2, bool:1, str:1, array:4, none:0 }
+const DATA_TYPE_SIZE = { u16:1, s16:1, u32:2, s32:2, bool:1, str:1, array:3, none:0 }
 const MIXABLE_NUMERIC_TYPES = [["u16","s16"],["u32","s32"]]
 const RESERVED_KEYWORDS = [
   "if","for","while","repeat","struct","def","true","false","sys","return","break","continue","include","__root","__global", "__return"
@@ -231,7 +231,7 @@ function buffer_if_needed(address) {
 
 function gen_label(type) {
   let id = state.labels[state.scope][type]++
-  return `${state.scope}_${id}`
+  return `${id}_${state.scope}`
 }
 
 function write_operands(expr1, expr2, type) {
@@ -471,7 +471,7 @@ function get_temp_word() {
   return {
     addr: addr[0],
     label: `stack.${addr[0]}`,
-    free: () => free_stack([addr])
+    free: () => free_stack(addr)
   }
 }
 
@@ -2646,16 +2646,11 @@ function translate(token, ctx_type) {
     } break
 
     case "repeat": {
-      let [prefix, value, type] = translate(args.expr, "u16")
-
-      let times_to_repeat = parseInt(value[0])
-
-      if (times_to_repeat < 0) {
-        throw new CompError("Number of times to repeat must be a positive number")
-      }
+      let times_to_repeat = get_static_value(args.expr, "u16", () => {
+        throw new CompError("Number of times to repeat must be static & of type 'u16'")
+      })
 
       let body = translate_body(token.body)
-      prefix = []
 
       while (times_to_repeat > 0) {
         result.push(...body)

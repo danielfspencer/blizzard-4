@@ -2,18 +2,6 @@ init_memory()
 init_rom()
 init_emulator()
 
-function benchmark() {
-  rom[0] = 0b1000000000000000
-  rom[1] = 0b1010101010101010
-  rom[2] = 0b0101010101010101
-  rom[3] = 0b0100000000000000
-  console.time("time")
-  is_running = true
-  run_batch(5000000)
-  is_running = false
-  console.timeEnd("time")
-}
-
 function init_memory() {
   //system buses
   write_bus = 0
@@ -57,6 +45,7 @@ function init_emulator() {
   is_running = false
   total_cycles = 0
   total_instructions = 0
+  max_stack_pointer = 0
   temp_cycles = 0
   actual_cycles_per_second = 0
   target_cycles_per_second = 0
@@ -291,7 +280,7 @@ function send_vram_changes() {
   //the existance of a key is much faster than array.includes()
 
   let vram_changes_buffer = []
-  for (let address in vram_addresses_changed) {
+  for (const address in vram_addresses_changed) {
     let data = vram[address]
     vram_changes_buffer.push([address,data])
   }
@@ -302,7 +291,7 @@ function send_vram_changes() {
 
 function send_ram_changes() {
   let ram_changes_buffer = []
-  for (let address in ram_addresses_changed) {
+  for (const address in ram_addresses_changed) {
     let data = ram[address]
     ram_changes_buffer.push([address,data])
   }
@@ -604,6 +593,9 @@ function simulate_effect_of_write_bus_change() {
         switch (address) {
           case 2:
             stack_pointer = data_bus & 0b11111111111111
+            if (stack_pointer > max_stack_pointer) {
+              max_stack_pointer = stack_pointer
+            }
             break
           case 3:
             reset_timer()

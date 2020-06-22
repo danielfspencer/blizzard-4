@@ -75,7 +75,7 @@ function assemble(input, success, fail) {
 function handle_message(msg, success, fail) {
   let data = msg.data
   if (data[0] === 'result') {
-    if (data[1] === '') {
+    if (data[1] === null) {
       fail()
     } else {
       success(data[1])
