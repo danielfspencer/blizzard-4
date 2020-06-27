@@ -77,5 +77,43 @@ const tools = {
         localStorage.clear()
       }
     }
+  },
+  pages: {
+    switch: (target, data) => {
+      console.log(target)
+      if (data) {
+        parent.postMessage([target, data], '*')
+      } else {
+        parent.postMessage([target, null], '*')
+      }
+    }
+  },
+  headless: {
+    assemble: (input) => {
+      return new Promise((resolve, reject) => {
+        let worker = new Worker('../assembler/engine.js')
+        worker.onerror = () => reject(input)
+        worker.onmessage = (msg) => tools.headless.handle_msg(msg, resolve, worker.onerror)
+        worker.postMessage(['assemble', input])
+      })
+    },
+    compile: (input) => {
+      return new Promise((resolve, reject) => {
+        let worker = new Worker('../compiler/engine.js')
+        worker.onerror = () => reject(input)
+        worker.onmessage = (msg) => tools.headless.handle_msg(msg, resolve, worker.onerror)
+        worker.postMessage(['compile', input])
+      })
+    },
+    handle_msg: (msg, resolve, reject) => {
+      let data = msg.data
+      if (data[0] === 'result') {
+        if (data[1] === null) {
+          reject()
+        } else {
+          resolve(data[1])
+        }
+      }
+    }
   }
 }

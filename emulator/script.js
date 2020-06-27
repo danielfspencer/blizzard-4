@@ -6,10 +6,6 @@ let updates_running = false
 let vram_changes_buffer = []
 
 $(document).ready(() => {
-  parent.interface.funcs.clear_buttons()
-  parent.interface.funcs.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
-  // parent.interface.funcs.add_button(gen_button("stats.svg", "statistics"), open_stats)
-
   let canvas = document.getElementById("screen")
   canvas_context = canvas.getContext("2d")
 
@@ -67,8 +63,10 @@ $(document).ready(() => {
 
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock", 100000])
-  parent.interface.funcs.input_data = set_rom
-  parent.interface.funcs.child_page_loaded()
+
+  parent.interface.child_page_loaded()
+  parent.interface.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
+  // parent.interface.add_button(gen_button("stats.svg", "statistics"), open_stats)
 })
 
 function handle_message(message) {
@@ -146,13 +144,15 @@ function set_screen_theme(theme) {
   clear_screen()
 }
 
-function set_rom([string, shouldRun, clock_speed]) {
-  if (clock_speed !== undefined) {
-    $("#clock-target").val(clock_speed)
-    worker.postMessage(["set_clock", clock_speed])
+function inter_page_message_handler(message) {
+  worker.postMessage(["set_rom", message.binary])
+
+  if (message.clock_speed) {
+    $("#clock-target").val(message.clock_speed)
+    worker.postMessage(["set_clock", message.clock_speed])
   }
-  worker.postMessage(["set_rom", string])
-  if (shouldRun) {
+
+  if (message.autostart) {
     worker.postMessage(["start"])
   }
 }
