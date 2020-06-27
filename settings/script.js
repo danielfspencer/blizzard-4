@@ -9,7 +9,7 @@ $( document ).ready( () => {
 
   tools.storage.get_key("emulator-display-colour", (val) => {
     $("#emulator-display-colour").val(val)
-  } ,"green-grey")
+  } ,"white-grey")
 
   $( "#close" ).click(() => window.close())
 
