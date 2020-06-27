@@ -1,7 +1,7 @@
 $( document ).ready( () => {
   tools.storage.get_key("starting-page", (val) => {
     $("#starting-page").val(val)
-  } ,"dem")
+  } ,"demo")
 
   tools.storage.get_key("theme", (val) => {
     $("#theme").val(val)

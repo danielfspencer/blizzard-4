@@ -6,7 +6,7 @@ $( document ).ready( () => {
 
   $("#load_in").change((event) => {
     tools.files.load(event, (data) => {
-      $('#in').val(data);
+      $('#in').val(data)
     })
   })
 
@@ -29,9 +29,7 @@ $( document ).ready( () => {
     }
   })
 
-  $("#cmp").click( () => {
-    compile()
-  })
+  $("#compile").click(compile)
 
   $("#auto").change(function() {
     realtime = this.checked
@@ -41,15 +39,24 @@ $( document ).ready( () => {
     worker.postMessage(["debug",this.checked])
   })
 
-  $("#assemble").click( () => {
-    parent.postMessage(["menu-item-asm",$("#out").val()],"*")
-  })
+  $("#assemble").click(() =>
+    tools.pages.switch("assembler", $("#out").val())
+  )
 
-  $("#run").click( () => {
+  $("#run").click(() => {
     let asm = $("#out").val()
-    assemble(asm, (bin) => {
-      switch_emu(bin)
-    }, () => switch_asm(asm))
+    
+    tools.headless.assemble(asm)
+    .catch(() => {
+      tools.pages.switch("assembler", asm)
+      throw new SyntaxError
+    })
+    .then((bin) =>
+      tools.pages.switch("emulator", {
+        binary: bin,
+        autostart: true
+      })
+    )
   })
 
   $("#in").on( "keyup", (event) => {
@@ -69,9 +76,13 @@ $( document ).ready( () => {
     log("error",msg)
   }
 
-  parent.interface.funcs.input_data = set_input
-  parent.interface.funcs.child_page_loaded()
+  parent.interface.child_page_loaded()
 })
+
+function inter_page_message_handler(message) {
+  $("#in").val(message)
+  compile()
+}
 
 function handleMsg(data) {
   switch(data[0]) {
@@ -93,36 +104,8 @@ function compile() {
   }
 }
 
-function assemble(input, success, fail) {
-  let assembler = new Worker('../assembler/engine.js')
-  assembler.onmessage = (msg) => {
-    let data = msg.data
-    if (data[0] === 'result') {
-      if (data[1] === null) {
-        fail()
-      } else {
-        success(data[1])
-      }
-    }
-  }
-  assembler.postMessage(['assemble',input])
-}
-
-function switch_emu(input) {
-  parent.postMessage(["menu-item-emu", input, true],"*")
-}
-
-function switch_asm(input) {
-  parent.postMessage(["menu-item-asm", input],"*")
-}
-
 function log(level,msg) {
   let html = `<div class='item ${level}'><img class='img' src='../assets/icons/${level}.svg'/><src>${msg}</src></div>`
   $("#log").append(html)
   $("#log").scrollTop($("#log")[0].scrollHeight - $("#log").height())
-}
-
-function set_input(string) {
-  $("#in").val(string)
-  compile()
 }

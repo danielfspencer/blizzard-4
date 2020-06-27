@@ -1,21 +1,27 @@
 let assembling = false
 
-$( document ).ready( () => { //connect all the butons to their actions!
+$( document ).ready( () => {
   $("#load_in").change((event) => {
     tools.files.load(event, (data) => {
-      $('#in').val(data);
+      $('#in').val(data)
     })
   })
 
-  $("#cmp").click(assemble)
+  $("#assemble").click(assemble)
 
-  $("#load").click( () => {
-    parent.postMessage(["menu-item-emu",$("#out").val()],"*")
-  })
+  $("#load").click(() =>
+    tools.pages.switch("emulator", {
+      binary: $("#out").val(),
+      autostart: false
+    })
+  )
 
-  $("#run").click( () => {
-    parent.postMessage(["menu-item-emu",$("#out").val(),true],"*")
-  })
+  $("#run").click(() =>
+    tools.pages.switch("emulator", {
+      binary: $("#out").val(),
+      autostart: true
+    })
+  )
 
   $("#debug").change(function() {
     worker.postMessage(["debug",this.checked])
@@ -67,9 +73,13 @@ $( document ).ready( () => { //connect all the butons to their actions!
     log("error",msg)
   }
 
-  parent.interface.funcs.input_data = set_input
-  parent.interface.funcs.child_page_loaded()
+  parent.interface.child_page_loaded()
 })
+
+function inter_page_message_handler(message) {
+  $("#in").val(message)
+  assemble()
+}
 
 function handleMsg(data) {
   switch(data[0]) {
@@ -95,9 +105,4 @@ function log(level,msg) {
   let html = `<div class='item ${level}'><img class='img' src='../assets/icons/${level}.svg'/><src>${msg}</src></div>`
   $("#log").append(html)
   $("#log").scrollTop($("#log")[0].scrollHeight - $("#log").height())
-}
-
-function set_input(string) {
-  $("#in").val(string)
-  assemble()
 }

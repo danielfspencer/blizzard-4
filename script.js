@@ -1,23 +1,26 @@
+const DEFAULT_PAGE = "demo"
+
 var interface = {
-  data: null,
-  funcs: {
-    input_data: null,
-    child_page_loaded: () => {
-      // give the page a reference to the window management tools
-      window.frames[0].windows = windows
-      // if we have data waiting, call the function registered by the child page with the data
-      if (interface.data !== null) {
-        interface.funcs.input_data(interface.data)
-        interface.data = null
-      }
-    },
-    add_button: (html, func) => {
-      // the button's id is "button-(the number of buttons present)"
-      let id = `button-${$("#button-container").children().length}`
-      $("#button-container").append(`<div class="button" id="${id}">${html}</div>`)
-      $(`#${id}`).click(func)
-    },
-    clear_buttons: () => $("#button-container").empty()
+  message: null,
+  child_page_loaded: () => {
+    // remove all the existing buttons
+    $("#button-container").empty()
+
+    // give the page a reference to the window management tools
+    let child = window.frames[0]
+    child.windows = windows
+
+    // if we have a message waiting, call the child's inter_page_message_handler
+    if (interface.message !== null) {
+      child.inter_page_message_handler(interface.message)
+      interface.message = null
+    }
+  },
+  add_button: (html, func) => {
+    // the button's id is "button-(the number of buttons present)"
+    let id = `button-${$("#button-container").children().length}`
+    $("#button-container").append(`<div class="button" id="${id}">${html}</div>`)
+    $(`#${id}`).click(func)
   },
   window_ref_store: {}
 }
@@ -28,7 +31,9 @@ var theme = {
 }
 
 $(document).ready(() => {
-  tools.storage.get_key("starting-page", page => menu(`menu-item-${page}`), "dem")
+  tools.storage.get_key("starting-page", load_page, DEFAULT_PAGE)
+
+  $("#content").on("load", set_toolbar_title)
 
   $(".material-design-hamburger").click(toggle_menu)
 
@@ -48,7 +53,7 @@ $(document).ready(() => {
     windows.open('settings/settings.html', 400, 450)
   })
 
-  $("#dim").click(() => { //or hide when user clicks off it
+  $("#dim").click(() => {
     toggle_hamburger()
     toggle_menu()
   })
@@ -57,11 +62,7 @@ $(document).ready(() => {
 
   $("#overflow-close").click(toggle_overflow_menu)
 
-  $("[id^=menu-item-]").click(function() { //report which tab user has selected
-    menu(this.id)
-    toggle_hamburger()
-    toggle_menu()
-  })
+  $("#menu-list li").click((item) => menu_item_clicked(item.currentTarget.id))
 
   $.getJSON("package.json").done((data) => {
     $("#version").html(`Version / ${data.version}`)
@@ -73,35 +74,37 @@ $(document).ready(() => {
     }
   }
 
+  window.addEventListener('message', child_to_parent_message_handler, false)
+
   materialDesignHamburger()
 })
 
-function menu(item) {  //called when a user selects a menu item
-  $("#button-container").empty()
-  $("[id^=menu-item-]").removeClass("active") //un-select all options
-  $("#"+item).addClass("active") // select the new one
-  switch(item.slice(-3)) { //change title and content accordingly
-  	case "asm":
-      $("#toolbar-title").html("Assembler")
-      $("#content").attr("src","assembler/assembler.html")
-      break
-  	case "cmp":
-      $("#toolbar-title").html("Compiler")
-      $("#content").attr("src","compiler/compiler.html")
-      break
-  	case "emu":
-      $("#toolbar-title").html("Emulator")
-      $("#content").attr("src","emulator/emulator.html")
-      break
-  	case "man":
-      $("#toolbar-title").html("Manual")
-      $("#content").attr("src","manual/manual.html")
-      break
-    case "dem":
-      $("#toolbar-title").html("Demo Programs")
-      $("#content").attr("src","demo/demo.html")
-      break
-	}
+function set_toolbar_title() {
+  // all page paths follow this format: "page_name/page_name.html"
+  let href = frames[0].location.pathname
+  let id = /\/\w+\/(\w+).html/.exec(href)[1]
+
+  $("#toolbar-title").text($(`#menu-list #${id}`).text())
+}
+
+function menu_item_clicked(id) {
+  load_page(id)
+  toggle_menu()
+  toggle_hamburger()
+}
+
+function load_page(id) {
+  if ($(`#menu-list #${id}`).length) {
+    // if the page exists, load it
+    $("#menu-list li").removeClass("active") //un-select all options
+    $(`#menu-list #${id}`).addClass("active") // select the new one
+    $("#content").attr("src", `${id}/${id}.html`)
+  } else {
+    // otherwise, reset preferences & load the default page
+    console.error(`No such page '${id}', switching to default '${DEFAULT_PAGE}'`)
+    tools.storage.clear()
+    load_page(DEFAULT_PAGE)
+  }
 }
 
 function set_theme(name) {
@@ -124,9 +127,10 @@ function inject_theme(target) {
   }
 }
 
-function handle_msg(event) {
-  interface.data = event.data.slice(1)
-  menu(event.data[0])
+function child_to_parent_message_handler(event) {
+  // store the message & switch to the new page
+  interface.message = event.data[1]
+  load_page(event.data[0])
 }
 
 function toggle_overflow_menu() {
@@ -138,5 +142,3 @@ function toggle_menu() {
   $("#menu").toggleClass("active")
   $("#dim").toggleClass("active")
 }
-
-window.addEventListener('message', handle_msg, false)
