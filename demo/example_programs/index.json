@@ -16,7 +16,7 @@
   },
   "3d_renderer": {
     "name":"3D Renderer",
-    "desc":"A trangle-based 3D renderer. Renders a 28-frame animation of an F-117 aircraft into memory and then plays it on a loop.",
+    "desc":"A triangle-based 3D renderer. Renders a 28-frame animation of an F-117 aircraft into memory and then plays it on a loop.",
     "clock_speed": 600000
   },
   "ping_pong": {
