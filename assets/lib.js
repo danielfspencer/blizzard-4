@@ -80,7 +80,6 @@ const tools = {
   },
   pages: {
     switch: (target, data) => {
-      console.log(target)
       if (data) {
         parent.postMessage([target, data], '*')
       } else {
