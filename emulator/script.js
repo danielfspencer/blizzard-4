@@ -150,8 +150,10 @@ function set_screen_theme(theme) {
     "green-black": [[58,181,58],[0,0,0]],
     "green-grey":  [[58,181,58],[21,21,21]]
   }
-  pixel_on_colours = mapping[theme][0]
-  pixel_off_colours = mapping[theme][1]
+  let [red_on, green_on, blue_on] = mapping[theme][0]
+  let [red_off, green_off, blue_off] = mapping[theme][1]
+  pixel_on_rule = `rgb(${red_on},${green_on},${blue_on})`
+  pixel_off_rule = `rgb(${red_off},${green_off},${blue_off})`
   clear_screen()
 }
 
@@ -229,8 +231,7 @@ function benchmark() {
 }
 
 function clear_screen() {
-  let [red, green, blue] = pixel_off_colours
-  canvas_context.fillStyle = `rgb(${red}, ${green}, ${blue})`
+  canvas_context.fillStyle = pixel_off_rule
   canvas_context.fillRect(0, 0, 128, 128)
 }
 
@@ -331,7 +332,7 @@ function draw_front_panel() {
   if (is_fullscreen) {
     return
   }
-  
+
   $("#clock-actual").val(front_panel_info.clock_speed)
 
   display_number_on_leds("alu1_leds", front_panel_info.alu_operands[0])
@@ -404,19 +405,17 @@ function draw_screen_updates() {
     let y = Math.floor(address / 8)
     let x = (address % 8) * 16
 
-    for (let i = 0; i < img_data.data.length; i += 4) {
-      let mask = 1 << (15 - (i/4))
+    for (let i = 0; i < 16; i ++) {
+      let mask = 1 << (15 - (i))
 
-      let [red, green, blue] = pixel_off_colours
-      if ((word & mask) !== 0) {
-        [red, green, blue] = pixel_on_colours
+      if ((word & mask) != 0) {
+        canvas_context.fillStyle = pixel_on_rule
+      } else {
+        canvas_context.fillStyle = pixel_off_rule
       }
-      img_data.data[i]     = red
-      img_data.data[i + 1] = green
-      img_data.data[i + 2] = blue
-      img_data.data[i + 3] = 255
+
+      canvas_context.fillRect(x+i, y, 1, 1)
     }
-    canvas_context.putImageData(img_data, x, y)
   }
 
   vram_changes_buffer = []
