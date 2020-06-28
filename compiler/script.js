@@ -1,25 +1,26 @@
+let worker
 let realtime = true
-let compiling = false
+let busy = false
 
-$( document ).ready( () => {
+$(document).ready(() => {
   $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
 
   $("#load_in").change((event) => {
     tools.files.load(event, (data) => {
-      $('#in').val(data)
+      $("#in").val(data)
     })
   })
 
-  $(document).delegate('#in', 'keydown', function(e) {
-    var keyCode = e.keyCode || e.which
+  $(document).delegate("#in", "keydown", (event) => {
+    let keyCode = event.keyCode || event.which
 
     if (keyCode == 9) {
-      e.preventDefault()
-      var start = $(this).get(0).selectionStart
-      var end = $(this).get(0).selectionEnd
-      $(this).val($(this).val().substring(0, start) + "  " + $(this).val().substring(end))
-      $(this).get(0).selectionStart =
-      $(this).get(0).selectionEnd = start + 2
+      event.preventDefault()
+      let start = $(event.target).get(0).selectionStart
+      let end = $(event.target).get(0).selectionEnd
+      $(event.target).val($(event.target).val().substring(0, start) + "  " + $(event.target).val().substring(end))
+      $(event.target).get(0).selectionStart =
+      $(event.target).get(0).selectionEnd = start + 2
     }
   })
 
@@ -31,12 +32,12 @@ $( document ).ready( () => {
 
   $("#compile").click(compile)
 
-  $("#auto").change(function() {
-    realtime = this.checked
+  $("#debug").change((event) => {
+    worker.postMessage(["debug", $(event.target).prop('checked')])
   })
 
-  $("#debug").change(function() {
-    worker.postMessage(["debug",this.checked])
+  $("#auto").change((event) => {
+    realtime = $(event.target).prop('checked')
   })
 
   $("#assemble").click(() =>
@@ -45,7 +46,7 @@ $( document ).ready( () => {
 
   $("#run").click(() => {
     let asm = $("#out").val()
-    
+
     tools.headless.assemble(asm)
     .catch(() => {
       tools.pages.switch("assembler", asm)
@@ -59,21 +60,17 @@ $( document ).ready( () => {
     )
   })
 
-  $("#in").on( "keyup", (event) => {
-    if (!realtime) {return}
-    if (![37,38,39,40].includes(event.keyCode)) {
+  $("#in").on("keyup", (event) => {
+    if (realtime && !NON_MODIFYING_KEYS.includes(event.code)) {
       compile()
     }
   })
 
   worker = new Worker("engine.js")
-  worker.onmessage = (e) => {
-    handleMsg(e.data)
-  }
-
-  worker.onerror = (e) => {
-    msg = "Internal compiler error, line " + e.lineno + ": <br>" + e.message
-    log("error",msg)
+  worker.onmessage = handle_message
+  worker.onerror = (error) => {
+    busy = false
+    log("error", `Internal compiler error, line ${error.lineno}:\n${error.message}`)
   }
 
   parent.interface.child_page_loaded()
@@ -85,10 +82,12 @@ function inter_page_message_handler(message) {
   compile()
 }
 
-function handleMsg(data) {
+function handle_message(message) {
+  let data = message.data
+
   switch(data[0]) {
     case "result":
-      compiling = false
+      busy = false
       $("#out").val(data[1])
       break
     case "log":
@@ -98,10 +97,10 @@ function handleMsg(data) {
 }
 
 function compile() {
-  if (!compiling) {
+  if (!busy) {
     $("#log").empty()
-    compiling = true
-    worker.postMessage(["compile",$("#in").val()])
+    busy = true
+    worker.postMessage(["compile", $("#in").val()])
   }
 }
 

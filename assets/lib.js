@@ -9,6 +9,28 @@
 //         set the key to have the given value
 //       - clear()
 //         unset all keys
+
+const NON_MODIFYING_KEYS = [
+  "ShiftLeft",
+  "ShiftRight",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ControlLeft",
+  "ControlRight",
+  "AltLeft",
+  "AltRight",
+  "MetaLeft",
+  "MetaRight",
+  "ContextMenu",
+  "CapsLock",
+  "Home",
+  "End",
+  "PageUp",
+  "PageDown"
+]
+
 const tools = {
   platform: () => {
     try {
