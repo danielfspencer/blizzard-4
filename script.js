@@ -15,12 +15,19 @@ var interface = {
       child.inter_page_message_handler(interface.message)
       interface.message = null
     }
+
+    // focus child
+    window.frames[0].focus()
   },
   add_button: (html, func) => {
     // the button's id is "button-(the number of buttons present)"
     let id = `button-${$("#button-container").children().length}`
     $("#button-container").append(`<div class="button" id="${id}">${html}</div>`)
-    $(`#${id}`).click(func)
+    $(`#${id}`).click(() => {
+      func()
+      // re-focus child
+      window.frames[0].focus()
+    })
   },
   window_ref_store: {}
 }

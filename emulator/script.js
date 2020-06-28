@@ -1,12 +1,14 @@
 let worker
+let canvas
 let canvas_context
+let is_fullscreen = false
 let led_strips = {}
 let front_panel_info = {}
 let updates_running = false
 let vram_changes_buffer = []
 
 $(document).ready(() => {
-  let canvas = document.getElementById("screen")
+  canvas = document.querySelector("#screen")
   canvas_context = canvas.getContext("2d")
 
   tools.storage.get_key("emulator-display-colour", set_screen_theme, "white-grey")
@@ -16,6 +18,9 @@ $(document).ready(() => {
 
   document.addEventListener("keydown", e => on_key_event(e, "keydown"))
   document.addEventListener("keyup", e => on_key_event(e, "keyup"))
+  document.addEventListener("fullscreenchange", () => {
+    is_fullscreen = document.fullscreenElement !== null
+  })
 
   $(".led_row").each((idx, element) => {
     led_strips[element.id] = get_led_references(element)
@@ -66,6 +71,7 @@ $(document).ready(() => {
 
   parent.interface.child_page_loaded()
   parent.interface.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
+  parent.interface.add_button(gen_button("fullscreen.svg", "fullscreen"), go_fullscreen)
   // parent.interface.add_button(gen_button("stats.svg", "statistics"), open_stats)
 })
 
@@ -120,6 +126,11 @@ function open_visualiser() {
       store.visualiser = ref
     })
   }
+}
+
+function go_fullscreen() {
+  canvas.requestFullscreen()
+  window.focus()
 }
 
 // function open_stats() {
@@ -317,6 +328,10 @@ function draw_all() {
 }
 
 function draw_front_panel() {
+  if (is_fullscreen) {
+    return
+  }
+  
   $("#clock-actual").val(front_panel_info.clock_speed)
 
   display_number_on_leds("alu1_leds", front_panel_info.alu_operands[0])
@@ -412,10 +427,14 @@ function on_key_event(event, mode) {
     return
   }
 
-  event.preventDefault()
-
   let key_name = event.code
   let scancodes = keycode_to_scancode[key_name]
+
+  if (is_fullscreen && key_name === "Escape") {
+    return
+  }
+
+  event.preventDefault()
 
   if (scancodes === undefined) {
     console.warn(`Can't find scancodes for key '${key_name}'`)
