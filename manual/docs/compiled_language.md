@@ -8,9 +8,9 @@ local scope:
 occupied by local variables and arguments
 
 global scope:
-occupied by function names and global variables
+occupied by function names, global variables and constants
 
-local variables/arguments can shadow global variables/constants, for example
+The local scope can shadow the global scope, for example:
 
 ```javascript
 global str my_string = "global"
@@ -365,7 +365,7 @@ Defines a new function. If the return data type is not specified, it defaults to
 def sys.u16_multiply(u16 a, u16 b) -> u16
   let u16 ans = 0
   while b > 0
-    if b sys.odd
+    if b
       ans += a  
     a = a <<
     b = b >>
@@ -402,8 +402,8 @@ def shift_right(u16 start = 6144, u16 end = 7167)
 | `&` | bit-wise AND | `bool u16 s16 u32 s32` | (same as input) |
 | `\|` | bit-wise OR | `bool u16 s16 u32 s32` | (same as input) |
 | `!` | bit-wise NOT | `bool u16 s16 u32 s32` | (same as input) |
-| `>>` |  bit-shift 1 bit right | `u16 s16 u32 s32` | (same as input) |
-| `<<` |  bit-shift 1 bit left | `u16 s16 u32 s32` | (same as input) |
+| `>>` |  arithmetic bit-shift 1 bit right | `u16 s16 u32 s32` | (same as input) |
+| `<<` |  arithmetic bit-shift 1 bit left | `u16 s16 u32 s32` | (same as input) |
 | `>` | greater than | `u16 s16 u32 s32` | `bool` |
 | `<` | less than | `u16 s16 u32 s32` | `bool` |
 | `>=` |  greater than or equal to | `u16 s16 u32 s32` | `bool` |
@@ -446,7 +446,7 @@ If the variable's data type is more than one word long, a (zero-based) index in 
 0b1111111111111111
 ###
 ```
-Multi-line blocks completely bypass the compiler and are included directly in the assembly output. This is useful for including raw data in a program.
+Multi-line blocks completely bypass the compiler and are included directly in the assembly output's constants section. This is useful for including raw data in a program.
 
 
 ## Data types
@@ -461,8 +461,6 @@ Multi-line blocks completely bypass the compiler and are included directly in th
 | `s16` | (see numerical types) |
 | `u32` | (see numerical types) |
 | `s32` | (see numerical types) |
-| `float` | *coming soon* |
-| `double` | *coming soon* |
 
 #### Numerical types
 

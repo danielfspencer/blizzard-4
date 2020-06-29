@@ -1,32 +1,40 @@
-let assembling = false
+let worker
+let realtime = true
+let busy = false
 
-$( document ).ready( () => { //connect all the butons to their actions!
+$(document).ready(() => {
+  $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
+
+  $(".lined").linedtextarea({selectedLine: 1, dec:false})
+
   $("#load_in").change((event) => {
     tools.files.load(event, (data) => {
-      $('#in').val(data);
+      $("#in").val(data)
     })
   })
 
-  $("#cmp").click(assemble)
+  $("#load").click(() =>
+    tools.pages.switch("emulator", {
+      binary: $("#out").val(),
+      autostart: false
+    })
+  )
 
-  $("#load").click( () => {
-    parent.postMessage(["menu-item-emu",$("#out").val()],"*")
+  $("#run").click(() =>
+    tools.pages.switch("emulator", {
+      binary: $("#out").val(),
+      autostart: true
+    })
+  )
+
+  $("#assemble").click(assemble)
+
+  $("#debug").change((event) => {
+    worker.postMessage(["debug", $(event.target).prop('checked')])
   })
 
-  $("#run").click( () => {
-    parent.postMessage(["menu-item-emu",$("#out").val(),true],"*")
-  })
-
-  $("#debug").change(function() {
-    worker.postMessage(["debug",this.checked])
-  })
-
-  $("#auto").change(function() {
-    if(this.checked) {
-      $("#in").on( "keyup", assemble)
-    } else {
-      $("#in").off()
-    }
+  $("#auto").change((event) => {
+    realtime = $(event.target).prop('checked')
   })
 
   $(document).on("keydown", (event) => {
@@ -35,46 +43,34 @@ $( document ).ready( () => { //connect all the butons to their actions!
     }
   })
 
-  $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
-
-  $(".lined").linedtextarea({selectedLine: 1, dec:false})
-
-  $("#in").on( "keyup", assemble)
-
-  $("#in").on("keydown", function (e) {
-    var keyCode = e.keyCode || e.which
-    if (keyCode === 9) {
-      e.preventDefault()
-      var start = this.selectionStart
-      var end = this.selectionEnd
-      var val = this.value
-      var selected = val.substring(start, end)
-      var re = /^/gm
-      var count = selected.match(re).length
-      this.value = val.substring(0, start) + selected.replace(re, '  ') + val.substring(end)
-      this.selectionStart = start
-      this.selectionEnd = end + count
+  $("#in").on("keyup", (event) => {
+    if (realtime && !NON_MODIFYING_KEYS.includes(event.code)) {
+      assemble()
     }
   })
 
   worker = new Worker("engine.js")
-  worker.onmessage = (e) => {
-    handleMsg(e.data)
+  worker.onmessage = handle_message
+  worker.onerror = (error) => {
+    busy = false
+    log("error", `Internal assembler error, line ${error.lineno}:\n${error.message}`)
   }
 
-  worker.onerror = (e) => {
-    msg = "Internal assembler error, line " + e.lineno + ":\n" + e.message
-    log("error",msg)
-  }
-
-  parent.interface.funcs.input_data = set_input
-  parent.interface.funcs.child_page_loaded()
+  parent.interface.child_page_loaded()
+  document.querySelector("#in").focus()
 })
 
-function handleMsg(data) {
+function inter_page_message_handler(message) {
+  $("#in").val(message)
+  assemble()
+}
+
+function handle_message(message) {
+  let data = message.data
+
   switch(data[0]) {
     case "result":
-      assembling = false
+      busy = false
       $("#out").val(data[1])
       break
     case "log":
@@ -84,10 +80,10 @@ function handleMsg(data) {
 }
 
 function assemble() {
-  if (!assembling) {
+  if (!busy) {
     $("#log").empty()
-    assembling = true
-    worker.postMessage(['assemble',$("#in").val()])
+    busy = true
+    worker.postMessage(["assemble", $("#in").val()])
   }
 }
 
@@ -95,9 +91,4 @@ function log(level,msg) {
   let html = `<div class='item ${level}'><img class='img' src='../assets/icons/${level}.svg'/><src>${msg}</src></div>`
   $("#log").append(html)
   $("#log").scrollTop($("#log")[0].scrollHeight - $("#log").height())
-}
-
-function set_input(string) {
-  $("#in").val(string)
-  assemble()
 }

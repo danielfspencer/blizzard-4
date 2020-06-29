@@ -1037,7 +1037,7 @@ function translate(token, ctx_type) {
         throw new CompError("Constants must be initialised")
       }
 
-      if (!(["str", "number", "inline_asm", "expr_array"].includes(args.expr.name))) {
+      if (!(["str", "number", "inline_asm", "expr_array", "struct_init"].includes(args.expr.name))) {
         throw new CompError("Constant must be static values")
       }
 

@@ -9,6 +9,28 @@
 //         set the key to have the given value
 //       - clear()
 //         unset all keys
+
+const NON_MODIFYING_KEYS = [
+  "ShiftLeft",
+  "ShiftRight",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ControlLeft",
+  "ControlRight",
+  "AltLeft",
+  "AltRight",
+  "MetaLeft",
+  "MetaRight",
+  "ContextMenu",
+  "CapsLock",
+  "Home",
+  "End",
+  "PageUp",
+  "PageDown"
+]
+
 const tools = {
   platform: () => {
     try {
@@ -75,6 +97,43 @@ const tools = {
         chrome.storage.local.clear()
       } else {
         localStorage.clear()
+      }
+    }
+  },
+  pages: {
+    switch: (target, data) => {
+      if (data) {
+        parent.postMessage([target, data], '*')
+      } else {
+        parent.postMessage([target, null], '*')
+      }
+    }
+  },
+  headless: {
+    assemble: (input) => {
+      return new Promise((resolve, reject) => {
+        let worker = new Worker('../assembler/engine.js')
+        worker.onerror = () => reject(input)
+        worker.onmessage = (msg) => tools.headless.handle_msg(msg, resolve, worker.onerror)
+        worker.postMessage(['assemble', input])
+      })
+    },
+    compile: (input) => {
+      return new Promise((resolve, reject) => {
+        let worker = new Worker('../compiler/engine.js')
+        worker.onerror = () => reject(input)
+        worker.onmessage = (msg) => tools.headless.handle_msg(msg, resolve, worker.onerror)
+        worker.postMessage(['compile', input])
+      })
+    },
+    handle_msg: (msg, resolve, reject) => {
+      let data = msg.data
+      if (data[0] === 'result') {
+        if (data[1] === null) {
+          reject()
+        } else {
+          resolve(data[1])
+        }
       }
     }
   }

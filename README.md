@@ -15,37 +15,38 @@
 Blizzard 4 is a RISC 16-bit computer designed for simple implementation in hardware. This web app contains an emulator, assembler, compiler and a set of example programs for the computer.
 
 ### Ways to use
-* [Online in web browser](https://danielfspencer.github.io/blizzard-4/) (no install required)
+* [Online in web browser](https://danielfspencer.github.io/blizzard-4/) (tested in Firefox and Chrome)
 * [Downloadable version](https://github.com/danielfspencer/blizzard-4/releases/latest) (pre-built portable binaries)
 * [Google Chrome App](https://chrome.google.com/webstore/detail/blizzard-4/objgfaegobaokaihpdlnaifgkmkbgbaf)
 
 ### Documentation
 The documentation is written in Markdown and can be [viewed here](/manual/docs/introduction.md). It is also available in-app under the "Manual" section in the sidebar.
 
-### Building as an Electron App
+### Building from source
 To get the source for the latest released version, type:
 
 ```bash
 git clone https://github.com/danielfspencer/blizzard-4
+cd blizzard-4
 ```
 
 Install the libraries required by Electron with:
 ```bash
-cd blizzard-4
 npm install
 ```
 
-Then use the following to build a portable binary for your current OS. The generated executable is found in the ```electron_dist/``` folder.
-
-```bash
-npm run dist
-```
-
-Optionally, you can just run the app with (this does not seem to work on Windows for some reason):
+Run the app with:
 
 ```bash
 npm start
 ```
+
+You can also build a portable binary for your current OS with the following command:
+
+```bash
+npm run dist
+```
+ The generated executable is found in the ```electron_dist/``` folder.
 
 ### License
 Code released under GNU General Public License v3.0.

@@ -9,7 +9,8 @@ app.on('ready', () => {
     webPreferences: {
       nativeWindowOpen: true,
       nodeIntegration: true,
-      nodeIntegrationInWorker: false
+      nodeIntegrationInWorker: false,
+      enableRemoteModule: true
     }
   })
   mainWindow.loadFile('index.html')

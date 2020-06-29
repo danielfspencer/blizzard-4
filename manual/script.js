@@ -7,9 +7,9 @@ let forward_history = []
 $( document ).ready( () => {
   render_page("docs/introduction.md")
 
-  parent.interface.funcs.clear_buttons()
-  parent.interface.funcs.add_button(gen_button("left-arrow.svg"), navigate_back)
-  parent.interface.funcs.add_button(gen_button("right-arrow.svg"), navigate_forward)
+  parent.interface.child_page_loaded()
+  parent.interface.add_button(gen_button("left-arrow.svg"), navigate_back)
+  parent.interface.add_button(gen_button("right-arrow.svg"), navigate_forward)
 })
 
 function gen_button(icon) {
@@ -36,12 +36,14 @@ function render_page(path) {
 
 function link_handler() {
   if (this.hash !== "") {
-    // this is just an anchor link to a header,
-    // so allow propagation as usual
+    // this is just an anchor link to a header, so allow propagation as usual
     return true
   }
 
-  render_page(`..${this.pathname}`)
+  // extract the "docs/page.md" path of the link URL as it may be prefixed on electron
+  let matches = /\/manual\/(.*)/.exec(this.pathname)
+  render_page(matches[1])
+
   forward_history = []
   return false // prevent default action
 }

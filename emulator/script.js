@@ -1,16 +1,14 @@
 let worker
+let canvas
 let canvas_context
+let is_fullscreen = false
 let led_strips = {}
 let front_panel_info = {}
 let updates_running = false
 let vram_changes_buffer = []
 
 $(document).ready(() => {
-  parent.interface.funcs.clear_buttons()
-  parent.interface.funcs.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
-  // parent.interface.funcs.add_button(gen_button("stats.svg", "statistics"), open_stats)
-
-  let canvas = document.getElementById("screen")
+  canvas = document.querySelector("#screen")
   canvas_context = canvas.getContext("2d")
 
   tools.storage.get_key("emulator-display-colour", set_screen_theme, "white-grey")
@@ -20,6 +18,9 @@ $(document).ready(() => {
 
   document.addEventListener("keydown", e => on_key_event(e, "keydown"))
   document.addEventListener("keyup", e => on_key_event(e, "keyup"))
+  document.addEventListener("fullscreenchange", () => {
+    is_fullscreen = document.fullscreenElement !== null
+  })
 
   $(".led_row").each((idx, element) => {
     led_strips[element.id] = get_led_references(element)
@@ -67,8 +68,11 @@ $(document).ready(() => {
 
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock", 100000])
-  parent.interface.funcs.input_data = set_rom
-  parent.interface.funcs.child_page_loaded()
+
+  parent.interface.child_page_loaded()
+  parent.interface.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
+  parent.interface.add_button(gen_button("fullscreen.svg", "fullscreen"), go_fullscreen)
+  // parent.interface.add_button(gen_button("stats.svg", "statistics"), open_stats)
 })
 
 function handle_message(message) {
@@ -124,6 +128,11 @@ function open_visualiser() {
   }
 }
 
+function go_fullscreen() {
+  canvas.requestFullscreen()
+  window.focus()
+}
+
 // function open_stats() {
 //   let store = parent.interface.window_ref_store
 //   if (store.stats === undefined || store.stats.parent === null) {
@@ -141,18 +150,22 @@ function set_screen_theme(theme) {
     "green-black": [[58,181,58],[0,0,0]],
     "green-grey":  [[58,181,58],[21,21,21]]
   }
-  pixel_on_colours = mapping[theme][0]
-  pixel_off_colours = mapping[theme][1]
+  let [red_on, green_on, blue_on] = mapping[theme][0]
+  let [red_off, green_off, blue_off] = mapping[theme][1]
+  pixel_on_rule = `rgb(${red_on},${green_on},${blue_on})`
+  pixel_off_rule = `rgb(${red_off},${green_off},${blue_off})`
   clear_screen()
 }
 
-function set_rom([string, shouldRun, clock_speed]) {
-  if (clock_speed !== undefined) {
-    $("#clock-target").val(clock_speed)
-    worker.postMessage(["set_clock", clock_speed])
+function inter_page_message_handler(message) {
+  worker.postMessage(["set_rom", message.binary])
+
+  if (message.clock_speed) {
+    $("#clock-target").val(message.clock_speed)
+    worker.postMessage(["set_clock", message.clock_speed])
   }
-  worker.postMessage(["set_rom", string])
-  if (shouldRun) {
+
+  if (message.autostart) {
     worker.postMessage(["start"])
   }
 }
@@ -218,8 +231,7 @@ function benchmark() {
 }
 
 function clear_screen() {
-  let [red, green, blue] = pixel_off_colours
-  canvas_context.fillStyle = `rgb(${red}, ${green}, ${blue})`
+  canvas_context.fillStyle = pixel_off_rule
   canvas_context.fillRect(0, 0, 128, 128)
 }
 
@@ -317,6 +329,10 @@ function draw_all() {
 }
 
 function draw_front_panel() {
+  if (is_fullscreen) {
+    return
+  }
+
   $("#clock-actual").val(front_panel_info.clock_speed)
 
   display_number_on_leds("alu1_leds", front_panel_info.alu_operands[0])
@@ -389,19 +405,17 @@ function draw_screen_updates() {
     let y = Math.floor(address / 8)
     let x = (address % 8) * 16
 
-    for (let i = 0; i < img_data.data.length; i += 4) {
-      let mask = 1 << (15 - (i/4))
+    for (let i = 0; i < 16; i ++) {
+      let mask = 1 << (15 - (i))
 
-      let [red, green, blue] = pixel_off_colours
-      if ((word & mask) !== 0) {
-        [red, green, blue] = pixel_on_colours
+      if ((word & mask) != 0) {
+        canvas_context.fillStyle = pixel_on_rule
+      } else {
+        canvas_context.fillStyle = pixel_off_rule
       }
-      img_data.data[i]     = red
-      img_data.data[i + 1] = green
-      img_data.data[i + 2] = blue
-      img_data.data[i + 3] = 255
+
+      canvas_context.fillRect(x+i, y, 1, 1)
     }
-    canvas_context.putImageData(img_data, x, y)
   }
 
   vram_changes_buffer = []
@@ -412,10 +426,14 @@ function on_key_event(event, mode) {
     return
   }
 
-  event.preventDefault()
-
   let key_name = event.code
   let scancodes = keycode_to_scancode[key_name]
+
+  if (is_fullscreen && key_name === "Escape") {
+    return
+  }
+
+  event.preventDefault()
 
   if (scancodes === undefined) {
     console.warn(`Can't find scancodes for key '${key_name}'`)
