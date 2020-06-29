@@ -242,9 +242,6 @@ onmessage = (event) => {
     case "write_protect_change":
       write_protect = message[1]
       break
-    case "benchmark":
-      benchmark()
-      break
     default:
       console.error(`Unknown command '${message[0]}'`)
       break
