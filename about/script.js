@@ -22,7 +22,7 @@ $( document ).ready( () => {
       version = data.version
       $("#version-name").html(version)
 
-      $.getJSON("https://danielfspencer.github.io/blizzard-4/package.json")
+      $.getJSON("https://blizzard-4.dspencer.io/package.json")
         .done( data => {
           let latest_version = data.version
           if (version !== latest_version) {
