@@ -142,6 +142,13 @@ const tools = {
       element.focus()
       element.setSelectionRange(0,0)
       element.scrollTop = 0
+    },
+    on_non_modifier_keypress: (element, callback) => {
+      element.addEventListener("keyup", (event) => {
+        if (!NON_MODIFYING_KEYS.includes(event.code)) {
+          callback()
+        }
+      })
     }
   }
 }

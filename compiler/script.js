@@ -1,8 +1,14 @@
 let worker
-let realtime = true
 let busy = false
 
 $(document).ready(() => {
+  worker = new Worker("engine.js")
+  worker.onmessage = handle_message
+  worker.onerror = (error) => {
+    busy = false
+    log("error", `Internal compiler error, line ${error.lineno}:\n${error.message}`)
+  }
+  
   $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
 
   $("#load_in").change((event) => {
@@ -36,10 +42,6 @@ $(document).ready(() => {
     worker.postMessage(["debug", $(event.target).prop('checked')])
   })
 
-  $("#auto").change((event) => {
-    realtime = $(event.target).prop('checked')
-  })
-
   $("#assemble").click(() =>
     tools.pages.switch("assembler", $("#out").val())
   )
@@ -60,18 +62,11 @@ $(document).ready(() => {
     )
   })
 
-  $("#in").on("keyup", (event) => {
-    if (realtime && !NON_MODIFYING_KEYS.includes(event.code)) {
+  tools.text_input.on_non_modifier_keypress(document.querySelector("#in"), () => {
+    if ($("#auto").prop('checked')) {
       compile()
     }
   })
-
-  worker = new Worker("engine.js")
-  worker.onmessage = handle_message
-  worker.onerror = (error) => {
-    busy = false
-    log("error", `Internal compiler error, line ${error.lineno}:\n${error.message}`)
-  }
 
   parent.interface.child_page_loaded()
   tools.text_input.focus_start(document.querySelector("#in"))
