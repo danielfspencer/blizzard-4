@@ -136,5 +136,12 @@ const tools = {
         }
       }
     }
+  },
+  text_input: {
+    focus_start: (element) => {
+      element.focus()
+      element.setSelectionRange(0,0)
+      element.scrollTop = 0
+    }
   }
 }

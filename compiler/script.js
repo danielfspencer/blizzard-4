@@ -74,7 +74,7 @@ $(document).ready(() => {
   }
 
   parent.interface.child_page_loaded()
-  document.querySelector("#in").focus()
+  tools.text_input.focus_start(document.querySelector("#in"))
 })
 
 function inter_page_message_handler(message) {
