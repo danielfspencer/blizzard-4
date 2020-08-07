@@ -8,7 +8,7 @@ $(document).ready(() => {
     busy = false
     log("error", `Internal compiler error, line ${error.lineno}:\n${error.message}`)
   }
-  
+
   $(".lined-dec").linedtextarea({selectedLine: 1, dec:true})
 
   $("#load_in").change((event) => {
@@ -68,14 +68,13 @@ $(document).ready(() => {
     }
   })
 
-  parent.interface.child_page_loaded()
+  parent.interface.child_page_loaded((message) => {
+    $("#in").val(message)
+    compile()
+  })
+  
   tools.text_input.focus_start(document.querySelector("#in"))
 })
-
-function inter_page_message_handler(message) {
-  $("#in").val(message)
-  compile()
-}
 
 function handle_message(message) {
   let data = message.data

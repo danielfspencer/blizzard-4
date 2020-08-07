@@ -69,7 +69,7 @@ $(document).ready(() => {
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock", 100000])
 
-  parent.interface.child_page_loaded()
+  parent.interface.child_page_loaded(inter_page_message_handler)
   parent.interface.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
   parent.interface.add_button(gen_button("fullscreen.svg", "fullscreen"), go_fullscreen)
   // parent.interface.add_button(gen_button("stats.svg", "statistics"), open_stats)

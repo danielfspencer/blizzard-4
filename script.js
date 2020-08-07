@@ -2,7 +2,7 @@ const DEFAULT_PAGE = "demo"
 
 var interface = {
   message: null,
-  child_page_loaded: () => {
+  child_page_loaded: (message_handler) => {
     // remove all the existing buttons
     $("#button-container").empty()
 
@@ -10,9 +10,9 @@ var interface = {
     let child = window.frames[0]
     child.windows = windows
 
-    // if we have a message waiting, call the child's inter_page_message_handler
-    if (interface.message !== null) {
-      child.inter_page_message_handler(interface.message)
+    // if we have a message waiting, call the child's message_handler
+    if (interface.message !== null && message_handler !== undefined) {
+      message_handler(interface.message)
       interface.message = null
     }
 

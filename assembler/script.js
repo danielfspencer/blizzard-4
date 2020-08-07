@@ -51,14 +51,13 @@ $(document).ready(() => {
     }
   })
 
-  parent.interface.child_page_loaded()
+  parent.interface.child_page_loaded((message) => {
+    $("#in").val(message)
+    assemble()
+  })
+
   tools.text_input.focus_start(document.querySelector("#in"))
 })
-
-function inter_page_message_handler(message) {
-  $("#in").val(message)
-  assemble()
-}
 
 function handle_message(message) {
   let data = message.data
