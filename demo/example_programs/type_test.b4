@@ -2,24 +2,24 @@ let u16 x = 0
 let u16 y = 0
 let u16 code
 let bool draw_cursor = true
-sys.vram.render_char(128,x,y)
+sys.vram.render_char(127,x,y)
 
 while true
   code = sys.kbd.get_charcode()
 
   if code == 0
     if draw_cursor
-      sys.vram.render_char(128,x,y)
+      sys.vram.render_char(127,x,y)
       draw_cursor = false
   else
     draw_cursor = true
 
-    if code == 8
+    if code == 10
       if y < 15
         sys.vram.render_char(32,x,y,false)
         x = 0
         y++
-    else if code == 1
+    else if code == 8
       let u16 temp = x + y
       if temp > 0
         sys.vram.render_char(32,x,y,false)
@@ -28,6 +28,8 @@ while true
         else
           x = 15
           y--
+    else if code == 127
+      //pass
     else
       sys.vram.render_char(code,x,y,false)
       x++

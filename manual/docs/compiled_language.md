@@ -454,13 +454,15 @@ Multi-line blocks completely bypass the compiler and are included directly in th
 | Name | Description |
 | ---- | ----------- |
 | `bool` | Holds only true or false |
-| `str` | Holds an immutable ASCII string |
+| `str` | Holds an immutable ASCII* string |
 | `array` | A collection of indexable values |
 | `none` | Dummy type for functions that<br> do not return a value |
 | `u16` | (see numerical types) |
 | `s16` | (see numerical types) |
 | `u32` | (see numerical types) |
 | `s32` | (see numerical types) |
+
+*see [charcode listing](/manual/docs/charcode.md) for more details.
 
 #### Numerical types
 
