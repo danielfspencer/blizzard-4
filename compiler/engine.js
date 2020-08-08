@@ -2369,7 +2369,7 @@ function translate(token, ctx_type) {
         let index_token = {name:"array_expression",type:"expression",arguments:{
           name: array_name,
           operation: "index",
-          expr: tokenise(`{${array.current_len}}`)
+          expr: tokenise(`#${array.current_len}#`)
           }
         }
         let [index_prefix, index_value, index_type] = translate(index_token)
