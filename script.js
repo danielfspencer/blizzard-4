@@ -75,14 +75,7 @@ $(document).ready(() => {
     $("#version").html(`Version / ${data.version}`)
   })
 
-  window.onkeydown = (event) => {
-    if (event.which === 123 && tools.platform() === "electron") {
-      electron.remote.BrowserWindow.getFocusedWindow().webContents.openDevTools()
-    }
-  }
-
   window.addEventListener('message', child_to_parent_message_handler, false)
-
   materialDesignHamburger()
 })
 

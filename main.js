@@ -1,6 +1,14 @@
 const {app, BrowserWindow} = require('electron')
-let mainWindow
+const context_menu = require('electron-context-menu')
 
+context_menu({
+  showInspectElement: true,
+  showSearchWithGoogle: false,
+  showCopyImage: false,
+  showLookUpSelection: false
+})
+
+let mainWindow
 app.on('ready', () => {
   mainWindow = new BrowserWindow({
     width: 1526,

@@ -30,6 +30,9 @@
       ]
     }
   },
+  "dependencies": {
+    "electron-context-menu": "^2.3.0"
+  },
   "devDependencies": {
     "electron": "^9.0.5",
     "electron-builder": "^22.7.0"
