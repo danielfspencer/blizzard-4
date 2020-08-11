@@ -439,15 +439,23 @@ If the variable's data type is more than one word long, a (zero-based) index in 
 
 
 #### Multi-line assembly mode
-```
-###
-// assembly goes here
-// supports multiple lines
-0b1111111111111111
-###
-```
 Multi-line blocks completely bypass the compiler and are included directly in the assembly output's constants section. This is useful for including raw data in a program.
 
+<table>
+  <tr><td><b><code>.b4</code> becomes -></b></td><td><b>assembly</b></td><tr>
+  <tr><td><code><pre>
+### optional_block_label:
+// arbitrary asm goes here
+write 0 alu.1
+0b1111111111111111
+###
+  </pre></code></td><td><code><pre>
+optional_block_label:
+  // arbitrary asm goes here
+  write 0 alu.1
+  0b1111111111111111
+  </pre></code></td></tr>
+</table>
 
 ## Data types
 

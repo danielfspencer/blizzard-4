@@ -206,9 +206,8 @@ def main()
 
 main()
 
-###
+### f117.obj:
 // f117.obj (72 triangles, 40 vertices)
-f117.obj:
 40
 72
 // vertices
