@@ -200,8 +200,7 @@ while true
     // not erasing the tail means the snake grows by 1
     current_length++
 
-###
-snake_header_bar:
+### snake_header_bar:
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000

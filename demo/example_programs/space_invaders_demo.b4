@@ -468,9 +468,8 @@ while true
   cycle++
   cycle2++
 
-###
+### space_invaders_cannon:
 // sprites are defined below
-space_invaders_cannon:
 0b0001100000011000
 0b0001100000011000
 0b0001100000011000
@@ -479,7 +478,9 @@ space_invaders_cannon:
 0b0111111001111110
 0b0111111001111110
 0b0111111001111110
-space_invaders_aliens:
+###
+
+### space_invaders_aliens:
 0b0001100000011000
 0b0011110000111100
 0b0111111001111110
@@ -553,7 +554,9 @@ space_invaders_aliens:
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
-space_invaders_title_screen:
+###
+
+### space_invaders_title_screen:
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000

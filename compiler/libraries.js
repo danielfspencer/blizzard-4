@@ -809,8 +809,7 @@ const libs = {
     "global bool SYS_KBD_SHIFT = false"
   ],
   "sys.vram.glyphs": [
-    "###",
-    "sys.vram.glyphs:",
+    "### sys.vram.glyphs:",
     "0b0000000000000000",
     "0b0000000000000000",
     "0b0000000000000000",
@@ -1409,8 +1408,7 @@ const libs = {
     "###"
   ],
   "sys.kbd.scancode_charcode_table": [
-    "###",
-    "sys.kbd.scancode_charcode_table:",
+    "### sys.kbd.scancode_charcode_table:",
     "0b0000000000000000",
     "0b0001011000010110",
     "0b0000000000000000",
@@ -1546,8 +1544,7 @@ const libs = {
     "###"
   ],
   "sys.vram.shifted_pixels": [
-    "###",
-    "sys.vram.shifted_pixels:",
+    "### sys.vram.shifted_pixels:",
     "0b1000000000000000",
     "0b0100000000000000",
     "0b0010000000000000",

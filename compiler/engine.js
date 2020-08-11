@@ -13,7 +13,7 @@ const MAX_RAM_SIZE = 16384
 const DATA_TYPE_SIZE = { u16:1, s16:1, u32:2, s32:2, bool:1, str:1, array:3, none:0 }
 const MIXABLE_NUMERIC_TYPES = [["u16","s16"],["u32","s32"]]
 const RESERVED_KEYWORDS = [
-  "if","for","while","repeat","struct","def","true","false","sys","return","break","continue","include","__root","__global", "__return"
+  "if","for","while","repeat","struct","def","true","false","sys","return","break","continue","include","__main","__global", "__return"
 ]
 const RETURN_INSTRUCTION = "return [stack.0] [stack.1]"
 const STRUCTURE_INDENT = "  "
@@ -82,17 +82,17 @@ function CompError(message, line) {
 
 function init_state() {
   state = {
-    scope: "__root",
+    scope: "__main",
     include_only_signatures_mode: false,
-    symbol_table: {__root:{}, __global:{}},
+    symbol_table: {__main:{}, __global:{}},
     struct_definitions: {},
-    frame_usage: {__root:[], __global:[]},
+    frame_usage: {__main:[], __global:[]},
     function_table: {},
     data: [],
     code: {},
     required_libs: [],
     inner_structure_label: null,
-    labels: {__root: {if:0, for:0, while:0, str:0, expr_array:0}},
+    labels: {__main: {if:0, for:0, while:0, str:0, expr_array:0}},
     ast: []
   }
 }
@@ -475,7 +475,7 @@ function get_temp_word() {
   }
 }
 
-function translate_body(tokens, indent = true) {
+function translate_body(tokens) {
   let result = []
   for (let token of tokens) {
     if (token.type === "expression" && token.name !== "function") {
@@ -505,9 +505,7 @@ function translate_body(tokens, indent = true) {
       log.warn(`line ${token.line}:\nDiscarding function's returned value of type '${data_type}'`)
     }
 
-    if (indent) {
-      instructions = instructions.map((line) => STRUCTURE_INDENT + line)
-    }
+    instructions = instructions.map((line) => STRUCTURE_INDENT + line)
     result.push(...instructions)
   }
   return result
@@ -1441,7 +1439,7 @@ function translate(token, ctx_type) {
     } break
 
     case "return": {     //return [optional expr]
-      if (state.scope === "__root") {
+      if (state.scope === "__main") {
         throw new CompError("Statement 'return' can only be used in functions")
       }
 
@@ -1689,7 +1687,7 @@ function translate(token, ctx_type) {
 
       let id = `str_${gen_label("str")}`
 
-      state.data.push(`${id}:`)
+      let output = [`${id}:`]
 
       for (let i = 0; i < string.length; i++) {
         let char = string[i]
@@ -1697,11 +1695,12 @@ function translate(token, ctx_type) {
         if (code < 32 || code > 127) {
           throw new CompError(`'${char}' is not a valid character`)
         }
-        state.data.push(code)
+        output.push(STRUCTURE_INDENT + code)
       }
 
       // string terminator
-      state.data.push(0)
+      output.push(STRUCTURE_INDENT + 0)
+      state.data.push(output)
 
       registers = [id]
       type = "str"
@@ -2200,15 +2199,15 @@ function translate(token, ctx_type) {
       let item_size = get_data_type_size(contained_type)
       let consts_to_add = [`${label}:`]
 
-      let prefix_and_value
       for (let item of args.exprs) {
-        prefix_and_value = translate(item,contained_type)
-        if (prefix_and_value[0].length !==  0 ) {
+        let [prefix, value] = translate(item,contained_type)
+        if (prefix.length !== 0) {
           throw new CompError("Expressions in an array decleration must be static")
         }
-        consts_to_add.push(...prefix_and_value[1])
+        value = value.map((line) => STRUCTURE_INDENT + line)
+        consts_to_add.push(...value)
       }
-      state.data.push(...consts_to_add)
+      state.data.push(consts_to_add)
 
       registers = [label, length, max_length, contained_type]
       type = "expr_array"
@@ -2877,15 +2876,27 @@ function compile(input, nested) {
   let targ = [tokens]
   let expect_indent = false
   let include_block_mode = false
+  let block_mode_lines
   for (let i = 0; i < input.length; i++) {
     let line = input[i].trim()   // remove any trailing whitesapce
     if (line === "" || line === "\n") { continue } // if it is a newline, skip it
-    if (line === "###") {
-      include_block_mode = ! include_block_mode
+
+    let matches = /###( .*)?$/.exec(line)
+    if (matches) {
+      if (include_block_mode) {
+        state.data.push(block_mode_lines)
+        include_block_mode = false
+      } else {
+        block_mode_lines = []
+        if (matches[1]) {
+          block_mode_lines.push(matches[1].trim())
+        }
+        include_block_mode = true
+      }
       continue
     }
     if (include_block_mode) {
-      state.data.push(line)
+      block_mode_lines.push(STRUCTURE_INDENT + line)
       continue
     }
 
@@ -2960,9 +2971,17 @@ function compile(input, nested) {
   log.info("Translating...")
   t0 = performance.now()
 
-  let output = translate_body(tokens, false)
+  let main = translate_body(tokens)
+
+  let output = []
+  output.push("write 0 ctl.sp")
+  output.push(`call func__main ${frame_size("__global")}`)
   output.push("stop 0 0")
-  output.unshift(`write ${frame_size("__global")} ctl.sp`)
+  output.push("")
+  output.push("func__main:")
+  output.push(...main)
+  output.push(STRUCTURE_INDENT + RETURN_INSTRUCTION)
+  output.push("")
 
   t1 = performance.now()
   log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
@@ -2970,10 +2989,14 @@ function compile(input, nested) {
   //add function defs
   for (let scope in state.code) {
     output.push(...state.code[scope])
+    output.push("")
   }
 
-  //add state.data
-  output.push(...state.data)
+  //add constants
+  for (let entry of state.data) {
+    output.push(...entry)
+    output.push("")
+  }
 
   //feedback
   if (!nested) {
