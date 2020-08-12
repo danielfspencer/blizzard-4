@@ -1,5 +1,6 @@
 const {app, BrowserWindow, ipcMain} = require('electron')
 const context_menu = require('electron-context-menu')
+const path = require('path')
 
 let mainWindow
 
@@ -15,6 +16,7 @@ app.on('ready', () => {
     width: 1526,
     height: 656,
     frame: false,
+    icon: path.join(__dirname, 'assets/icon_512.png'),
     webPreferences: {
       nativeWindowOpen: true,
       nodeIntegration: true,
