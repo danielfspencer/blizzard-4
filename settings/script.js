@@ -32,7 +32,6 @@ $( document ).ready( () => {
   $( "#platform" ).html( () => {
     switch (tools.platform()) {
       case "electron":   return "Electron App"
-      case "chrome_app": return "Chrome App"
       case "website":    return "Website"
       default:           return "Unknown"
     }

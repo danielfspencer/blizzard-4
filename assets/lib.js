@@ -1,4 +1,4 @@
-// platform(): returns one of "website/chrome_app/electron"
+// platform(): returns one of "website/electron"
 // files:
 //       - open(event, callback)
 //         given a file picker event, call the callback with the content of the file
@@ -33,16 +33,11 @@ const NON_MODIFYING_KEYS = [
 
 const tools = {
   platform: () => {
-    try {
-      var ref = chrome.storage.local
-      return 'chrome_app'
-    } catch (e) {}
-
     if (navigator.userAgent.toLowerCase().indexOf(' electron/') > -1) {
       return 'electron'
+    } else {
+      return 'website'
     }
-
-    return 'website'
   },
   files: {
     load: (event, callback) => {
@@ -61,43 +56,22 @@ const tools = {
   },
   storage: {
     get_key: (key, callback, default_value) => {
-      if (tools.platform() ==='chrome_app') {
-        chrome.storage.local.get([key], (items) => {
-          let result = items[key]
-          if (result === undefined) {
-            callback(default_value)
-          } else {
-            callback(result)
-          }
-        })
+      let result = localStorage.getItem(key)
+      if (result === null) {
+        callback(default_value)
       } else {
-        let result = localStorage.getItem(key)
-        if (result === null) {
-          callback(default_value)
-        } else {
-          try {
-            callback(JSON.parse(result))
-          } catch (e) {
-            callback(result)
-          }
+        try {
+          callback(JSON.parse(result))
+        } catch (e) {
+          callback(result)
         }
       }
     },
     set_key: (key, value) => {
-      if (tools.platform() ==='chrome_app') {
-        let obj = {}
-        obj[key] = value
-        chrome.storage.local.set(obj)
-      } else {
-        localStorage.setItem(key, JSON.stringify(value))
-      }
+      localStorage.setItem(key, JSON.stringify(value))
     },
     clear: () => {
-      if (tools.platform() ==='chrome_app') {
-        chrome.storage.local.clear()
-      } else {
-        localStorage.clear()
-      }
+      localStorage.clear()
     }
   },
   pages: {

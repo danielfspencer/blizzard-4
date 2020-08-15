@@ -10,13 +10,6 @@ const windows = {
       callback = () => {}
     }
     switch (tools.platform()) {
-      case "chrome_app": {
-        chrome.app.window.create(url, {
-          frame: "none",
-          resizable: false,
-          bounds: { width: width, height: height }
-        }, (ref) => { callback(ref.contentWindow) })
-        } break
       case "electron": {
         callback(window.open(`${__dirname}/${url}`, url, `height=${height},width=${width}`))
         } break
@@ -42,9 +35,6 @@ const windows = {
   close: () => { window.close() },
   minimise: () => {
     switch (tools.platform()) {
-      case "chrome_app":
-        chrome.app.window.current().minimize()
-        break
       case "electron":
         electron.ipcRenderer.send('window-management','minimise')
         break
@@ -55,14 +45,6 @@ const windows = {
   },
   maximise: () => {
     switch (tools.platform()) {
-      case "chrome_app":
-        let page = chrome.app.window.current()
-        if (page.isMaximized()) {
-          page.restore()
-        } else {
-          page.maximize()
-        }
-        break
       case "electron":
         electron.ipcRenderer.send('window-management','maximise')
         break

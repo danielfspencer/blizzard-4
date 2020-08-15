@@ -17,7 +17,6 @@ Blizzard 4 is a RISC 16-bit computer designed for simple implementation in hardw
 ### Ways to use
 * [Online in web browser](https://danielfspencer.github.io/blizzard-4/) (tested in Firefox and Chrome)
 * [Downloadable version](https://github.com/danielfspencer/blizzard-4/releases/latest) (pre-built portable binaries)
-* [Google Chrome App](https://chrome.google.com/webstore/detail/blizzard-4/objgfaegobaokaihpdlnaifgkmkbgbaf)
 
 ### Documentation
 The documentation is written in Markdown and can be [viewed here](/manual/docs/introduction.md). It is also available in-app under the "Manual" section in the sidebar.
