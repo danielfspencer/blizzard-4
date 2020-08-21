@@ -7,7 +7,7 @@
 | 000 | 0 | `stop` | none | stops the computer | 4 |
 | 001 | 1 | `return` | PC value, SP value | sets PC & SP to the given values | 4 |
 | 010 | 2 | `goto` | address, cond | sets PC to *address* if the LSB of *cond* is 0 | 4 |
-| 011 | 3 | `call` | address, frame size| sets PC to *address* & increments SP by *frame size* | 7 |
+| 011 | 3 | `call` | address, frame size| increments SP by *frame size*, stores PC and the previous SP to stack.0/1 respectively, then sets PC to *address*| 7 |
 | 100 | 4 | `write` | data, address | writes *data* to *address* | 4 |
 | 101 | 5 | `copy` | address, address | writes the data at the first address to the second address | 4 |
 
