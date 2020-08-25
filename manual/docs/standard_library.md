@@ -62,10 +62,6 @@ sys.**array_read**(u16 base_addr, u16 item_size, u16 index, u16 target_addr)
 
 sys.**array_shift**(u16 base_addr, u16 item_size, u16 index, u16 length)
 
-sys.**vram.or_word**(u16 word, u16 addr)
-
-sys.**vram.nand_word**(u16 word, u16 addr)
-
 sys.**vram.set_pixel**(u16 x, u16 y, bool data = true)
 
 sys.**vram.render_char**(u16 char_code, u16 x, u16 y, bool dont_render_spaces = true)

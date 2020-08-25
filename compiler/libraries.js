@@ -361,23 +361,6 @@ const libs = {
     "  length *= item_size",
     "  sys.mem_copy(start_addr, start_addr + item_size, length)",
   ],
-  "sys.vram.or_word": [
-    "def sys.vram.or_word(u16 word, u16 addr)",
-    "  include sys.consts",
-    "  addr += SYS_VRAM_ADDR",
-    "  {copy $addr alu.1}",
-    "  {copy &word alu.2}",
-    "  {write [alu.|] $addr}"
-  ],
-  "sys.vram.nand_word": [
-    "def sys.vram.nand_word(u16 word, u16 addr)",
-    "  include sys.consts",
-    "  addr += SYS_VRAM_ADDR",
-    "  {copy $addr alu.2}",
-    "  word = !word",
-    "  {copy &word alu.1}",
-    "  {write [alu.&] $addr}"
-  ],
   "sys.vram.set_pixel": [
     "def sys.vram.set_pixel(u16 x, u16 y, bool data = true)",
     "  include sys.consts",
@@ -1600,8 +1583,6 @@ const libs = {
     "sig sys.array_set(u16 base_addr, u16 item_size, u16 index, u16 item_addr)",
     "sig sys.array_read(u16 base_addr, u16 item_size, u16 index, u16 target_addr)",
     "sig sys.array_shift(u16 base_addr, u16 item_size, u16 index, u16 length)",
-    "sig sys.vram.or_word(u16 word, u16 addr)",
-    "sig sys.vram.nand_word(u16 word, u16 addr)",
     "sig sys.vram.set_pixel(u16 x, u16 y, bool data = true)",
     "sig sys.vram.get_pixel(u16 x, u16 y) -> bool",
     "sig sys.vram.render_char(u16 char_code, u16 x, u16 y, bool dont_render_spaces = true)",
