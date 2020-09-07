@@ -1,3 +1,4 @@
+.vscode
 .dropbox
 node_modules/
 electron_dist/
