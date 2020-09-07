@@ -38,7 +38,7 @@ var theme = {
 }
 
 $(document).ready(() => {
-  tools.storage.get_key("starting-page", load_page, DEFAULT_PAGE)
+  load_page(tools.storage.get_key("starting-page", DEFAULT_PAGE))
 
   $("#content").on("load", set_toolbar_title)
 
@@ -103,7 +103,7 @@ function load_page(id) {
     // otherwise, reset preferences & load the default page
     console.error(`No such page '${id}', switching to default '${DEFAULT_PAGE}'`)
     tools.storage.clear()
-    load_page(DEFAULT_PAGE)
+    location.reload()
   }
 }
 

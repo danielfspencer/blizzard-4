@@ -1,5 +1,5 @@
 if (parent.window == window) {
-  tools.storage.get_key('theme', set_theme, 'dark')
+  set_theme(tools.storage.get_key('theme', 'dark'))
 } else {
   parent.inject_theme(document)
 }

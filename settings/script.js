@@ -1,15 +1,9 @@
 $( document ).ready( () => {
-  tools.storage.get_key("starting-page", (val) => {
-    $("#starting-page").val(val)
-  } ,"demo")
+  $("#theme").val(tools.storage.get_key("theme", "dark"))
 
-  tools.storage.get_key("theme", (val) => {
-    $("#theme").val(val)
-  } ,"dark")
+  $("#starting-page").val(tools.storage.get_key("starting-page", "demo"))
 
-  tools.storage.get_key("emulator-display-colour", (val) => {
-    $("#emulator-display-colour").val(val)
-  } ,"white-grey")
+  $("#emulator-display-colour").val(tools.storage.get_key("emulator-display-colour", "white-grey"))
 
   $( "#close" ).click(() => window.close())
 

@@ -11,7 +11,7 @@ $(document).ready(() => {
   canvas = document.querySelector("#screen")
   canvas_context = canvas.getContext("2d")
 
-  tools.storage.get_key("emulator-display-colour", set_screen_theme, "white-grey")
+  set_screen_theme(tools.storage.get_key("emulator-display-colour", "white-grey"))
 
   worker = new Worker("engine.js")
   worker.onmessage = e => handle_message(e.data)
