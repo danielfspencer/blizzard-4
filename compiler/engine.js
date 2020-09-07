@@ -1509,7 +1509,7 @@ function translate(token, ctx_type) {
       if (state.inner_structure_label === null) {
         throw new CompError("'continue' can only be used in for/while loops")
       }
-      result.push(`goto ${state.inner_structure_label}_cond 0`)
+      result.push(`goto ${state.inner_structure_label}_start 0`)
     } break
 
     case "signature_def": {
@@ -2591,30 +2591,26 @@ function translate(token, ctx_type) {
 
     case "for": {
       let label = `for_${gen_label("for")}`
-      let init_result = translate(args.init)
-      result.push(...init_result)
+      let init_prefix = translate(args.init)
+      result.push(...init_prefix)
 
-      let expr_prefix_and_value = translate(args.expr, "bool")
-      let expr_prefix = expr_prefix_and_value[0]
-      let expr_value = expr_prefix_and_value[1][0]
-      if (expr_prefix_and_value[2] !==  "bool") {
-        throw new CompError(`Conditional expression expected type 'bool', got '${expr_prefix_and_value[2]}'`)
-      }
+      let [expr_prefix, expr_value, expr_type] = translate(args.expr, "bool")
+      assert_compatable_types("bool", expr_type, token.line, () => {
+        throw new CompError(`Conditional expression expected type 'bool', got '${expr_type}'`)
+      })
+
+      result.push([(`${label}_start:`)])
       result.push(...expr_prefix)
       result.push(`goto ${label}_end ${expr_value}`)
-      result.push([(`${label}_start:`)])
 
       let prev_state = state.inner_structure_label
       state.inner_structure_label = label
       result.push(...translate_body(token.body))
-      result.push(`${label}_cond:`)
       state.inner_structure_label = prev_state
 
-      let cmd_result = translate(args.cmd)
-      result.push(...cmd_result)
+      let cmd_prefix = translate(args.cmd)
+      result.push(...cmd_prefix)
 
-      result.push(...expr_prefix)
-      result.push(`goto ${label}_end ${expr_value}`)
       result.push(`goto ${label}_start 0`)
       result.push(`${label}_end:`)
     } break
@@ -2622,24 +2618,20 @@ function translate(token, ctx_type) {
     case "while": {
       let label = `while_${gen_label("while")}`
 
-      let prefix_and_value = translate(args.expr, "bool")
-      let prefix = prefix_and_value[0]
-      let value = prefix_and_value[1][0]
-      if (prefix_and_value[2] !==  "bool") {
-        throw new CompError(`Conditional expression expected type 'bool', got '${prefix_and_value[2]}'`)
-      }
+      let [prefix, value, type] = translate(args.expr)
+      assert_compatable_types(type, "bool", token.line, () => {
+        throw new CompError(`Conditional expression expected type 'bool', got '${type}'`)
+      })
+
+      result.push([(`${label}_start:`)])
       result.push(...prefix)
       result.push(`goto ${label}_end ${value}`)
-      result.push([(`${label}_start:`)])
 
       let prev_state = state.inner_structure_label
       state.inner_structure_label = label
       result.push(...translate_body(token.body))
-      result.push(`${label}_cond:`)
       state.inner_structure_label = prev_state
 
-      result.push(...prefix)
-      result.push(`goto ${label}_end ${value}`)
       result.push(`goto ${label}_start 0`)
       result.push(`${label}_end:`)
     } break
