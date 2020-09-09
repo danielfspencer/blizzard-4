@@ -293,20 +293,23 @@ function replace_var_references(words) {
     let value_operator = word.startsWith("$")
 
     if (addr_operator || value_operator) {
-      let name = word.substr(1) // remove the operator character
-      let index_regex = /\[(\d+)\]/.exec(name) // check for an index after the name
-      let index = 0
+      let name_and_index = word.substr(1) // remove the operator character
 
-      if (index_regex !== null) {
-        index = parseInt(index_regex[1])    // parse the index value
-        name = /(\w+)\[\d+\]/.exec(name)[1] // trim the name to exclude the index
+      let [, name, index_string] = /(\w+)(?:\[(\d+)\])?/.exec(name_and_index)
+      let token = {name:"var_or_const", type:"expression", arguments: { name: name }}
+
+      let [prefix, values, type] = translate(token)
+
+      let index
+      if (index_string === undefined) {
+        if (values.length > 1) {
+          throw new CompError(`Data type '${type}' is >1 word so index notation must be used`)
+        }
+        index = 0
+      } else {
+        index = parseInt(index_string)
       }
 
-      let token = {name:"var_or_const", type:"expression", arguments: {
-        name: name
-      }}
-
-      let [prefix, values] = translate(token)
       if (index >= values.length) {
         throw new CompError(`Cannot access word ${index + 1} of a ${values.length}-word data type`)
       }
