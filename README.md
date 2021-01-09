@@ -1,6 +1,6 @@
 <table><tr>
   <td colspan="4"><img src="/assets/screenshots/emulator.png?raw=true"></td>
-<tr></tr>
+</tr><tr>
   <td width="25%"><img src="/assets/screenshots/space_invaders.gif?raw=true"></td>
   <td width="25%"><img src="/assets/screenshots/3d_render.gif?raw=true"></td>
   <td width="25%"><img src="/assets/screenshots/snake.gif?raw=true"></td>
