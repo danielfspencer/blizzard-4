@@ -299,17 +299,13 @@ function send_ram_changes() {
 function vram_change(address, new_data) {
   activity_indicators.vram_write = 1
   vram[address] = new_data
-  if (vram_addresses_changed[address] === undefined) {
-    vram_addresses_changed[address] = true
-  }
+  vram_addresses_changed[address] = true
 }
 
 function ram_change(address, new_data) {
   activity_indicators.ram_write = 1
   ram[address] = new_data
-  if (ram_addresses_changed[address] === undefined) {
-    ram_addresses_changed[address] = true
-  }
+  ram_addresses_changed[address] = true
 }
 
 function get_timer_value() {
