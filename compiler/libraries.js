@@ -781,9 +781,9 @@ const libs = {
     "  return charcode"
   ],
   "sys.kbd.get_charcode": [
+    "global bool SYS_KBD_SHIFT = false",
     "def sys.kbd.get_charcode() -> u16",
     "  include sys.consts",
-    "  include sys.kbd.shift_state",
     "  let u16 scancode = *SYS_KEYBOARD_ADDR",
     "",
     "  while scancode > 0",
@@ -793,9 +793,13 @@ const libs = {
     "      scancode = *SYS_KEYBOARD_ADDR",
     "      if scancode == 0x12",
     "        SYS_KBD_SHIFT = false",
+    "      else if scancode == 0x59",
+    "        SYS_KBD_SHIFT = false",
     "    else if scancode == 0xE0",
     "      //pass",
     "    else if scancode == 0x12",
+    "      SYS_KBD_SHIFT = true",
+    "    else if scancode == 0x59",
     "      SYS_KBD_SHIFT = true",
     "    else",
     "      return sys.kbd.scancode_to_charcode(scancode, SYS_KBD_SHIFT)",
@@ -803,9 +807,6 @@ const libs = {
     "    scancode = *SYS_KEYBOARD_ADDR",
     "",
     "  return 0"
-  ],
-  "sys.kbd.shift_state": [
-    "global bool SYS_KBD_SHIFT = false"
   ],
   "sys.vram.glyphs": [
     "### sys.vram.glyphs:",
