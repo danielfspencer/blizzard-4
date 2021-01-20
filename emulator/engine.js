@@ -10,6 +10,7 @@ function init_memory() {
 
   //control unit registers
   program_counter = 32768  // 1st word of ROM
+  stack_pointer = 0
   micro_program_counter = 0
   command_word = 0
   control_mode = 0
@@ -17,7 +18,6 @@ function init_memory() {
 
   //memory spaces
   ram  = create_zeroed_array(1024 * 16) //16k x 16 bit (32KB)
-  stack_pointer = 0
   //rom is done separately
   vram = create_zeroed_array(1024 * 1) // 1k x 16 bit (2KB)
 
@@ -78,65 +78,73 @@ function init_activity_indicators() {
 
 //control unit microcode
 const load_fetch_microcode = [
-  [1,0,1,0,0,0,1,0],
+  [0,1,0,0,0,0,1,0],
+  [0,1,0,1,0,1,1,0],
+  [0,1,1,0,1,0,1,1],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0],
+  [0,1,0,0,0,0,1,0],
+  [0,1,0,1,0,1,1,0],
+  [0,1,1,1,1,0,0,0],
+  [1,0,1,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0],
+  [0,1,0,0,0,0,1,0],
+  [0,1,1,1,0,1,0,0],
   [1,0,0,1,0,0,1,0],
-  [1,0,0,0,1,0,1,1],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [1,0,1,0,0,0,1,0],
+  [0,1,1,0,1,0,1,1],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0],
+  [0,1,0,0,0,0,1,0],
+  [0,1,1,1,0,1,0,0],
   [1,0,0,1,0,0,1,0],
-  [1,0,0,0,0,1,0,0],
-  [0,1,0,0,1,0,1,1],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [1,0,1,0,0,0,1,0],
-  [1,0,0,0,0,1,0,0],
-  [0,1,0,1,0,0,1,0],
-  [1,0,0,0,1,0,1,1],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [1,0,1,0,0,0,1,0],
-  [1,0,0,0,0,1,0,0],
-  [0,1,0,1,0,0,1,0],
-  [1,0,0,0,0,1,0,0],
-  [0,1,0,0,1,0,1,1],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0]
+  [0,1,1,1,1,0,0,0],
+  [1,0,1,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0],
+  [1,1,0,0,0,0,0,0]
 ]
 
 const execute_microcode = [
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,1,0,0,0,0,1,0,0,0,0,0,1,0,1],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0],
-  [0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,1,0,1,0,0,0,0,1,0,0],
-  [0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+  [0,0,0,1,1,1,1,1],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,1,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,1,0,1,1,1,0,1],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,0,0,1,0,0],
+  [0,0,0,1,1,0,0,0],
+  [0,0,1,1,1,1,0,1],
+  [0,0,0,1,1,1,0,0],
+  [1,1,0,0,1,1,0,1],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [1,0,0,0,1,1,0,1],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,1,1],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,1,1],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0],
+  [0,0,0,1,1,1,0,0]
 ]
 
 onmessage = (event) => {
@@ -365,11 +373,10 @@ function get_padded_num(number,num_zeroes,base) {
 }
 
 function step_clock() {
-  debug && console.debug("---clock rising edge:")
   debug && console.debug(` ↳ control mode: ${control_mode.toString()}`)
 
-  debug && console.debug("---running read_clock microcode:")
-  //run contol unit commands that modify (directly or indirectly) the data bus
+  debug && console.debug("---running control clock microcode:")
+  // run contol unit commands that modify (directly or indirectly) the data bus
   if (control_mode === 0) {
     var instructions = get_load_fetch_microcode_instructions()
     run_load_fetch_microcode(instructions, true)
@@ -377,11 +384,6 @@ function step_clock() {
     var instructions = get_execute_microcode_instructions()
     run_execute_microcode(instructions, true)
   }
-
-  debug && console.debug("---new state:")
-  debug && console.debug(` ↳ read bus: ${read_bus}`)
-  debug && console.debug(` ↳ data bus: ${data_bus}`)
-  debug && console.debug(` ↳ write bus: ${write_bus}`)
 
   //simulate read bus if it has been used
   debug && console.debug(`simulating read bus with content: ${read_bus}`)
@@ -391,25 +393,19 @@ function step_clock() {
 
   micro_program_counter++
 
-  debug && console.debug("---running data bus-dependant microcode: ")
+  debug && console.debug("---running write clock microcode: ")
   //run control unit commands that depend (directly or indirectly) on the data bus
-  if (control_mode === 0) { //the control unit is in execute mode
+  if (control_mode === 0) {
     run_load_fetch_microcode(instructions, false)
   } else {
     run_execute_microcode(instructions, false)
   }
 
-  debug && console.debug("---new state:")
-  debug && console.debug(` ↳ read bus: ${read_bus}`)
-  debug && console.debug(` ↳ data bus: ${data_bus}`)
-  debug && console.debug(` ↳ write bus: ${write_bus}`)
-
-  //simulate write bus
-  debug && console.debug(`simulating write bus with content: ${write_bus}`)
   if (write_bus !== 0) {
     simulate_effect_of_write_bus_change()
   }
 
+  debug && console.debug("\n\n\n")
   total_cycles++
   temp_cycles++
 }
@@ -629,11 +625,14 @@ function simulate_effect_of_write_bus_change() {
 }
 
 function get_load_fetch_microcode_instructions() {
-  let addr_mode = (command_word & 0b1100000000000) >> 8
-  let address = addr_mode + micro_program_counter
+  let arg1_addr_mode = (command_word & 0b0000010000000000) > 0
+  let arg2_addr_mode = (command_word & 0b0000000010000000) > 0
+  let address = (arg1_addr_mode << 4) + (arg2_addr_mode << 3) + micro_program_counter
+
   let instructions = load_fetch_microcode[address]
 
   debug && console.debug(`load/fetch microcode[${get_padded_num(address,5,2)}]`)
+  debug && console.debug(`=${instructions}`)
 
   if (instructions === undefined) {
     halt_error("Invalid adddress for load/fetch microcode")
@@ -642,12 +641,12 @@ function get_load_fetch_microcode_instructions() {
 }
 
 function get_execute_microcode_instructions() {
-  //needs attention
-  let opcode = (command_word & 0b1110000000000000) >> 11
-  let address = opcode + micro_program_counter
+  let opcode = (command_word & 0b1110000000000000) >> 13
+  let address = (opcode << 2) + micro_program_counter
   let instructions = execute_microcode[address]
 
   debug && console.debug(`execute microcode[${get_padded_num(address,5,2)}]`)
+  debug && console.debug(`=${instructions}`)
 
   if (instructions === undefined) {
     halt_error("Invalid adddress for execute microcode")
@@ -655,145 +654,112 @@ function get_execute_microcode_instructions() {
   return instructions
 }
 
-function run_load_fetch_microcode(instructions, read_clock) {
-  debug && console.debug(`running instructions: ${JSON.stringify(instructions)}`)
-
-  if (read_clock) {
-    instructions[0] && micro_instructions.read_clock.pc_to_read_bus()
-    instructions[1] && micro_instructions.read_clock.arg3_to_read_bus()
+function run_load_fetch_microcode(instructions, control_clock) {
+  if (control_clock) {
+    // inverted for simpler wiring to active-low tristate buffer enable inputs
+    if (!instructions[0]) micro_instructions.fetch.pc_to_read_bus()
+    if (!instructions[1]) micro_instructions.fetch.arg3_to_read_bus()
   } else {
-    instructions[2] && micro_instructions.write_clock.data_bus_to_cmd_reg()
-    instructions[3] && micro_instructions.write_clock.data_bus_to_arg1()
-    instructions[4] && micro_instructions.write_clock.data_bus_to_arg2()
-    instructions[5] && micro_instructions.write_clock.data_bus_to_arg3()
-    instructions[6] && micro_instructions.neither.increment_pc()
-    instructions[7] && micro_instructions.neither.increment_mode()
+    if (instructions[6]) micro_instructions.fetch.increment_pc()
+    if (instructions[7]) micro_instructions.both.increment_mode()
+
+    // PC/SP relative addressing modes may add to the value first
+    let loading_arg1 = instructions[5]
+    let loading_arg2 = instructions[4]
+
+    let arg1_sp_rel = (command_word & 0b0001000000000000) > 0
+    let arg1_pc_rel = (command_word & 0b0000100000000000) > 0
+    let arg2_sp_rel = (command_word & 0b0000001000000000) > 0
+    let arg2_pc_rel = (command_word & 0b0000000100000000) > 0
+
+    // get bus value destination register
+    let dest_reg = (instructions[2] << 1) + instructions[3]
+    let bus_value = data_bus
+
+    // implement SP/PC rel. addressing based on addressing mode in command word
+    if (arg1_pc_rel && loading_arg1 || arg2_pc_rel && loading_arg2) {
+      bus_value = (bus_value + program_counter) & 0xffff
+    }
+
+    if (arg1_sp_rel && loading_arg1 || arg2_sp_rel && loading_arg2) {
+      bus_value = (bus_value + stack_pointer) & 0xffff
+    }
+
+    // store value from data bus into the correct register
+    micro_instructions.fetch.value_to_register(dest_reg, bus_value)
   }
 }
 
-function run_execute_microcode(instructions, read_clock) {
-  debug && console.debug(`running instructions: ${JSON.stringify(instructions)}`)
-
-  if (read_clock) {
-    instructions[0] && micro_instructions.read_clock.arg1_to_data_bus()
-    instructions[1] && micro_instructions.read_clock.arg1_to_read_bus()
-    instructions[2] && micro_instructions.read_clock.arg2_to_data_bus()
-    instructions[3] && micro_instructions.read_clock.arg3_to_data_bus()
-    instructions[4] && micro_instructions.read_clock.arg2_arg3_to_data_bus()
-    instructions[5] && micro_instructions.read_clock.stack_pointer_ref_to_read_bus()
-    instructions[6] && micro_instructions.read_clock.pc_to_data_bus()
+function run_execute_microcode(instructions, control_clock) {
+  if (control_clock) {
+    let dest_select = (instructions[0] << 1) + instructions[1]
+    micro_instructions.execute.arg1_to_dest(dest_select)
+    if (instructions[2]) micro_instructions.execute.arg1_to_pc_AND_arg2_to_sp()
+    // inverted for simpler wiring to active-low tristate buffer enable inputs
+    if (!instructions[3]) micro_instructions.execute.arg2_to_write_bus()
+    if (!instructions[4]) micro_instructions.execute.pc_to_data_bus()
+    if (!instructions[5]) micro_instructions.execute.sp_to_data_bus_AND_arg2_inc_to_write_bus()
+    if (instructions[6]) micro_instructions.execute.stop_clock()
   } else {
-    instructions[7]  && micro_instructions.write_clock.stack_pointer_ref_to_write_bus()
-    instructions[8]  && micro_instructions.write_clock.stack_word1_to_write_bus()
-    instructions[9]  && micro_instructions.write_clock.stack_word2_to_write_bus()
-    instructions[10] && micro_instructions.write_clock.arg2_to_write_bus()
-    instructions[11] && micro_instructions.write_clock.data_bus_to_arg3()
-    instructions[12] && micro_instructions.neither.arg1_to_pc_cond()
-    instructions[13] && micro_instructions.neither.arg1_to_pc_uncond()
-    instructions[14] && micro_instructions.neither.stop_clock()
-    instructions[15] && micro_instructions.neither.increment_mode()
+    if (instructions[7]) micro_instructions.both.increment_mode()
   }
 }
 
 const micro_instructions = {
-  read_clock: {
-    pc_to_read_bus: () => {
-      debug && console.debug("pc -> read bus")
-      read_bus = program_counter
-    },
-    arg3_to_read_bus: () => {
-      debug && console.debug("arg3 -> read bus")
-      read_bus = arg_regs[2]
-    },
-    arg1_to_data_bus: () => {
-      debug && console.debug("arg1 -> data bus")
-      data_bus = arg_regs[0]
-    },
-    arg1_to_read_bus: () => {
-      debug && console.debug("arg1 -> read bus")
-      read_bus = arg_regs[0]
-    },
-    arg2_to_data_bus: () => {
-      debug && console.debug("arg2 -> data bus")
-      data_bus = arg_regs[1]
-    },
-    arg3_to_data_bus: () => {
-      debug && console.debug("arg3 -> data bus")
-      data_bus = arg_regs[2]
-    },
-    arg2_arg3_to_data_bus: () => {
-      debug && console.debug("arg2 + arg3 -> data bus")
-      data_bus = arg_regs[1] + arg_regs[2]
-    },
-    stack_pointer_ref_to_read_bus: () => {
-      debug && console.debug("#ctl.sp -> read bus")
-      read_bus = 2
-    },
-    pc_to_data_bus: () => {
-      debug && console.debug("pc -> data bus")
-      data_bus = program_counter
-    },
-  },
-  write_clock: {
-    data_bus_to_cmd_reg: () => {
-      debug && console.debug("data bus -> command reg")
-      command_word = data_bus
-    },
-    data_bus_to_arg1: () => {
-      debug && console.debug("data bus -> arg1")
-      arg_regs[0] = data_bus
-    },
-    data_bus_to_arg2: () => {
-      debug && console.debug("data bus -> arg2")
-      arg_regs[1] = data_bus
-    },
-    data_bus_to_arg3: () => {
-      debug && console.debug("data bus -> arg3")
-      arg_regs[2] = data_bus
-    },
-    stack_pointer_ref_to_write_bus: () => {
-      debug && console.debug("#ctl.sp -> write bus")
-      write_bus = 2
-    },
-    stack_word1_to_write_bus: () => {
-      debug && console.debug("#stack.0 -> write bus")
-      write_bus = 2048
-    },
-    stack_word2_to_write_bus: () => {
-      debug && console.debug("#stack.1 -> write bus")
-      write_bus = 2049
-    },
-    arg2_to_write_bus: () => {
-      debug && console.debug("arg2 -> write bus")
-      write_bus = arg_regs[1]
-    }
-  },
-  neither: {
-    increment_pc: () => {
-      debug && console.debug("increment pc")
-      program_counter++
-      program_counter = program_counter & 0xffff
-    },
-    increment_mode: () => {
-      debug && console.debug("increment mode")
-      control_mode++
-      control_mode &= 1
-      total_instructions += 0.5
-      micro_program_counter = 0
-    },
-    arg1_to_pc_uncond: () => {
-      debug && console.debug("arg 1 -> pc")
-      program_counter = arg_regs[0]
-    },
-    arg1_to_pc_cond: () => {
-      debug && console.debug("arg 1 -> pc [if arg 2 LSB = 0]")
-      if ((arg_regs[1] & 1) == 0) {
-        program_counter = arg_regs[0]
+  execute: {
+    arg1_to_dest: (dest) => {
+      switch (dest) {
+        case 0: break;
+        case 1:
+          if ((arg_regs[1] & 1) == 0) { // (if arg 2 LSB = 0)
+            program_counter = arg_regs[0]
+          }; break;
+        case 2: read_bus = arg_regs[0]; break;
+        case 3: data_bus = arg_regs[0]; break;
       }
     },
+    arg1_to_pc_AND_arg2_to_sp: () => {
+      program_counter = arg_regs[0]
+      stack_pointer = arg_regs[1]
+    },
+    arg2_to_write_bus: () => {
+      write_bus = arg_regs[1]
+    },
+    pc_to_data_bus: () => {
+      data_bus = program_counter
+    },
+    sp_to_data_bus_AND_arg2_inc_to_write_bus: () => {
+      data_bus = stack_pointer
+      write_bus = arg_regs[1] + 1
+    },
     stop_clock: () => {
-      debug && console.debug("clock_stop")
       stop()
+    }
+  },
+  fetch: {
+    value_to_register: (dest, value) => {
+      switch (dest) {
+        case 0: command_word = value; break;
+        case 1: arg_regs[0] = value; break;
+        case 2: arg_regs[1] = value; break;
+        case 3: arg_regs[2] = value; break;
+      }
+    },
+    arg3_to_read_bus: () => {
+      read_bus = arg_regs[2]
+    },
+    pc_to_read_bus: () => {
+      read_bus = program_counter
+    },
+    increment_pc: () => {
+      program_counter = (program_counter + 1) & 0xffff
+    },
+  },
+  both: {
+    increment_mode: () => {
+      control_mode = (control_mode + 1) & 1
+      total_instructions += 0.5
+      micro_program_counter = 0
     }
   }
 }
