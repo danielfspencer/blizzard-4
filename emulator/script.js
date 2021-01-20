@@ -122,7 +122,9 @@ function gen_button(icon, text) {
 function open_visualiser() {
   let store = parent.interface.window_ref_store
   if (store.visualiser === undefined || store.visualiser.parent === null) {
-    windows.open('emulator/visualiser/visualiser.html', 512, 512 + 24, ref => {
+    let width = 512
+    let height = 512 + tools.style.get_scrollbar_width() + 24 // (header bar size)
+    windows.open('emulator/visualiser/visualiser.html', width, height, ref => {
       store.visualiser = ref
     })
   }

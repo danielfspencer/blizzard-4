@@ -1,7 +1,17 @@
 #memory {
-  width: 512px;
-  height: 512px;
   background: #000;
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
+}
+
+body {
+  overflow-x: auto;
+}
+
+#statusbar {
+  position: fixed;
+}
+
+#main {
+  margin-top: 24px;
 }
