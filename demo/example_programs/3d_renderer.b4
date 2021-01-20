@@ -21,20 +21,6 @@ const array SINE_VALUES = (s16,32)[0,3,6,9,12,15,18,20,23,25,27,28,30,31,31,32,3
 global array vertices = (vec3)[]
 global array triangles = (vec3)[]
 
-def fast_copy(u16 origin_addr, u16 target_addr, u16 length)
-  let u16 base_addr = origin_addr
-  origin_addr += length
-  target_addr += length
-
-  while origin_addr > base_addr
-    {write 1 alu.2}
-    repeat 4
-      {write $origin_addr alu.1}
-      {write [alu.-] &origin_addr}
-      {write $target_addr alu.1}
-      {write [alu.-] &target_addr}
-      {copy $origin_addr $target_addr}
-
 def sin(s16 theta) -> s16
   // mult by value & shift in here
   theta = theta & 63
@@ -192,23 +178,22 @@ def main()
     draw_hud(frame)
     draw(frame)
     dest_offset = FRAME_SIZE * frame
-    fast_copy(SYS_VRAM_ADDR, FRAME_STORE_ADDR + dest_offset, FRAME_SIZE)
+    sys.mem_copy_fast(SYS_VRAM_ADDR, FRAME_STORE_ADDR + dest_offset, FRAME_SIZE)
     sys.vram.clear()
 
   while true
     for frame = 0; frame < MAX_FRAME_NUM; frame++
       dest_offset = FRAME_SIZE * frame
-      fast_copy(FRAME_STORE_ADDR + dest_offset, SYS_VRAM_ADDR, FRAME_SIZE)
+      sys.mem_copy_fast(FRAME_STORE_ADDR + dest_offset, SYS_VRAM_ADDR, FRAME_SIZE)
 
     for frame = MAX_FRAME_NUM - 2; frame > 0; frame--
       dest_offset = 1024 * frame
-      fast_copy(FRAME_STORE_ADDR + dest_offset, SYS_VRAM_ADDR, FRAME_SIZE)
+      sys.mem_copy_fast(FRAME_STORE_ADDR + dest_offset, SYS_VRAM_ADDR, FRAME_SIZE)
 
 main()
 
-###
+### f117.obj:
 // f117.obj (72 triangles, 40 vertices)
-f117.obj:
 40
 72
 // vertices

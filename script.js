@@ -2,7 +2,7 @@ const DEFAULT_PAGE = "demo"
 
 var interface = {
   message: null,
-  child_page_loaded: () => {
+  child_page_loaded: (message_handler) => {
     // remove all the existing buttons
     $("#button-container").empty()
 
@@ -10,9 +10,9 @@ var interface = {
     let child = window.frames[0]
     child.windows = windows
 
-    // if we have a message waiting, call the child's inter_page_message_handler
-    if (interface.message !== null) {
-      child.inter_page_message_handler(interface.message)
+    // if we have a message waiting, call the child's message_handler
+    if (interface.message !== null && message_handler !== undefined) {
+      message_handler(interface.message)
       interface.message = null
     }
 
@@ -38,7 +38,7 @@ var theme = {
 }
 
 $(document).ready(() => {
-  tools.storage.get_key("starting-page", load_page, DEFAULT_PAGE)
+  load_page(tools.storage.get_key("starting-page", DEFAULT_PAGE))
 
   $("#content").on("load", set_toolbar_title)
 
@@ -75,14 +75,7 @@ $(document).ready(() => {
     $("#version").html(`Version / ${data.version}`)
   })
 
-  window.onkeydown = (event) => {
-    if (event.which === 123 && tools.platform() === "electron") {
-      electron.remote.BrowserWindow.getFocusedWindow().webContents.openDevTools()
-    }
-  }
-
   window.addEventListener('message', child_to_parent_message_handler, false)
-
   materialDesignHamburger()
 })
 
@@ -110,7 +103,7 @@ function load_page(id) {
     // otherwise, reset preferences & load the default page
     console.error(`No such page '${id}', switching to default '${DEFAULT_PAGE}'`)
     tools.storage.clear()
-    load_page(DEFAULT_PAGE)
+    location.reload()
   }
 }
 

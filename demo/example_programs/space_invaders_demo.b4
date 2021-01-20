@@ -357,8 +357,10 @@ def erase_invader(u16 x, u16 y)
   free tmp
 
   // erase the invader (TODO make this faster & better)
+  let u16 abs_addr = SYS_VRAM_ADDR + vram_addr
   for let u16 i = 0; i < 64; i += 8
-    sys.vram.nand_word(0xffff, vram_addr + i)
+    *abs_addr = 0
+    abs_addr += 8
 
   // score is 10 for bottom row, 20 for middle and 30 for top
   let u16 tmp = 3 - y
@@ -468,9 +470,8 @@ while true
   cycle++
   cycle2++
 
-###
+### space_invaders_cannon:
 // sprites are defined below
-space_invaders_cannon:
 0b0001100000011000
 0b0001100000011000
 0b0001100000011000
@@ -479,7 +480,9 @@ space_invaders_cannon:
 0b0111111001111110
 0b0111111001111110
 0b0111111001111110
-space_invaders_aliens:
+###
+
+### space_invaders_aliens:
 0b0001100000011000
 0b0011110000111100
 0b0111111001111110
@@ -553,7 +556,9 @@ space_invaders_aliens:
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
-space_invaders_title_screen:
+###
+
+### space_invaders_title_screen:
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000

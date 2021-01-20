@@ -1,6 +1,6 @@
 <table><tr>
   <td colspan="4"><img src="/assets/screenshots/emulator.png?raw=true"></td>
-<tr></tr>
+</tr><tr>
   <td width="25%"><img src="/assets/screenshots/space_invaders.gif?raw=true"></td>
   <td width="25%"><img src="/assets/screenshots/3d_render.gif?raw=true"></td>
   <td width="25%"><img src="/assets/screenshots/snake.gif?raw=true"></td>
@@ -17,7 +17,6 @@ Blizzard 4 is a RISC 16-bit computer designed for simple implementation in hardw
 ### Ways to use
 * [Online in web browser](https://danielfspencer.github.io/blizzard-4/) (tested in Firefox and Chrome)
 * [Downloadable version](https://github.com/danielfspencer/blizzard-4/releases/latest) (pre-built portable binaries)
-* [Google Chrome App](https://chrome.google.com/webstore/detail/blizzard-4/objgfaegobaokaihpdlnaifgkmkbgbaf)
 
 ### Documentation
 The documentation is written in Markdown and can be [viewed here](/manual/docs/introduction.md). It is also available in-app under the "Manual" section in the sidebar.

@@ -11,7 +11,7 @@ $(document).ready(() => {
   canvas = document.querySelector("#screen")
   canvas_context = canvas.getContext("2d")
 
-  tools.storage.get_key("emulator-display-colour", set_screen_theme, "white-grey")
+  set_screen_theme(tools.storage.get_key("emulator-display-colour", "white-grey"))
 
   worker = new Worker("engine.js")
   worker.onmessage = e => handle_message(e.data)
@@ -69,7 +69,7 @@ $(document).ready(() => {
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock", 100000])
 
-  parent.interface.child_page_loaded()
+  parent.interface.child_page_loaded(inter_page_message_handler)
   parent.interface.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
   parent.interface.add_button(gen_button("fullscreen.svg", "fullscreen"), go_fullscreen)
   // parent.interface.add_button(gen_button("stats.svg", "statistics"), open_stats)
