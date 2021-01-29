@@ -2979,7 +2979,7 @@ function compile(input, nested) {
   output.push("")
 
   t1 = performance.now()
-  log.info(`↳ success, ${tokens.length} tokens(s) in ${Math.round(t1-t0)} ms`)
+  log.info(`↳ success, ${tokens.length} token(s) in ${Math.round(t1-t0)} ms`)
 
   //add function defs
   for (let scope in state.code) {
