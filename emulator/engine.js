@@ -1,5 +1,4 @@
 init_memory()
-init_rom()
 init_emulator()
 
 function init_memory() {
@@ -9,7 +8,7 @@ function init_memory() {
   read_bus = 0
 
   //control unit registers
-  program_counter = 32768  // 1st word of ROM
+  program_counter = 0x4000  // 1st word of RAM
   stack_pointer = 0
   micro_program_counter = 0
   command_word = 0
@@ -28,11 +27,6 @@ function init_memory() {
   alu_operands = [0,0]
   user_input = [0,0]
   user_output = [0,0,0]
-}
-
-function init_rom() {
-  rom  = create_zeroed_array(1024 * 32) //32k x 16 bit (64KB)
-  write_protect = false
 }
 
 function create_zeroed_array(length) {
@@ -66,10 +60,6 @@ function init_activity_indicators() {
     ram_address:0,
     ram_read:0,
     ram_write:0,
-    ram_frame_offset:0,
-    rom_address:0,
-    rom_read:0,
-    rom_write:0,
     vram_address:0,
     vram_read:0,
     vram_write: 0
@@ -156,23 +146,23 @@ onmessage = (event) => {
     case "stop":
       stop()
       break
-    case "set_rom":
-      //rom data is a string with lines breaks between the words
-      var strings_as_array = message[1].split("\n")
-      if (strings_as_array.length < rom.length) {
-        for (var i = 0; i < strings_as_array.length; i++) {
+    case "set_ram":
+      //ram data is a string with lines breaks between the words
+      let strings_as_array = message[1].split("\n")
+      if (strings_as_array.length < ram.length) {
+        for (let i = 0; i < strings_as_array.length; i++) {
           if (strings_as_array[i] == "") {
             break
           }
-          var number = parseInt(strings_as_array[i],2)
+          let number = parseInt(strings_as_array[i],2)
           if (number >= 0 && number <= 0xffff) {
-            rom[i] = number
+            ram_change(i, number)
           } else {
-            console.error(`Illegal ROM input '${strings_as_array[i]}', word ${i}`)
+            console.error(`Illegal RAM input '${strings_as_array[i]}', word ${i}`)
           }
         }
       } else {
-        console.error("Program too large for ROM")
+        console.error("Program too large for RAM")
       }
       break
     case "clock_high":
@@ -427,18 +417,11 @@ function simulate_effect_of_read_bus_change() {
     halt_error("Read bus has an invalid value - check microcode")
   }
 
-  if (read_bus > 32767) {                                                 // ROM
-    var address = read_bus - 32768
-    activity_indicators.rom_read = 1
-    activity_indicators.rom_address = address
-    data_bus = rom[address]
-
-  } else if (read_bus > 16383) {                                          // RAM
+  if (read_bus >= 0x4000) {                                                 // RAM
+    let address = read_bus - 0x4000
     activity_indicators.ram_read = 1
-
-    var address = read_bus - 16384
-    data_bus = ram[address]
     activity_indicators.ram_address = address
+    data_bus = ram[address]
 
   } else if (read_bus < 16384) {                                          //everywhere else (card addressing)
     var card_address = (read_bus & 0b0011100000000000) >> 11
@@ -447,9 +430,6 @@ function simulate_effect_of_read_bus_change() {
     switch (card_address) {                                               //control unit + timer + alu
       case 0:
         switch (address) {
-          case 2:
-            data_bus = stack_pointer
-            break
           case 3:
             data_bus = get_timer_value()[0]
             break
@@ -507,12 +487,6 @@ function simulate_effect_of_read_bus_change() {
             data_bus = data_bus & 0xffff
         }
         break
-      case 1:                                                             //stack
-        let abs_address = stack_pointer + address
-        data_bus = ram[abs_address]
-        activity_indicators.ram_address = abs_address
-        activity_indicators.ram_read = 1
-        break
       case 2:                                                             //user io
         switch (address) {
           case 0: // input switches
@@ -555,23 +529,12 @@ function simulate_effect_of_write_bus_change() {
     halt_error("Write bus has an invalid value - check microcode")
   }
 
-  if (write_bus > 32767) {                                                 // ROM
-    var address = write_bus - 32768
-    activity_indicators.rom_write = 1
-    activity_indicators.rom_address = address
-    if (!write_protect) {
-      rom[address] = data_bus
-    }
-
-  } else if (write_bus > 16383) {                                          // RAM
-    let address = write_bus - 16384
-
-    if (address < 0 || address > 16383) {
-      halt_error("invalid address for ram")
-    }
+  if (write_bus > 0x4000) {                                                 // RAM
+    let address = write_bus - 0x4000
+    activity_indicators.ram_write = 1
+    activity_indicators.ram_address = address
 
     ram_change(address, data_bus)
-    activity_indicators.ram_address = address
 
   } else if (write_bus < 16384) {                                          //everywhere else (card addressing)
     var card_address = (write_bus & 0b0011100000000000) >> 11
@@ -580,12 +543,6 @@ function simulate_effect_of_write_bus_change() {
     switch (card_address) {                                               //control unit
       case 0:
         switch (address) {
-          case 2:
-            stack_pointer = data_bus & 0b11111111111111
-            if (stack_pointer > max_stack_pointer) {
-              max_stack_pointer = stack_pointer
-            }
-            break
           case 3:
             reset_timer()
             break
@@ -600,13 +557,6 @@ function simulate_effect_of_write_bus_change() {
           default:
             break
         }
-        break
-      case 1:                                                             //stack
-      let abs_address = stack_pointer + address
-        ram[abs_address] = data_bus
-        ram_change(abs_address, data_bus)
-        activity_indicators.ram_address = abs_address
-        activity_indicators.ram_write = 1
         break
       case 2:                                                             //user io
         if (address < 6 && address > 2) {

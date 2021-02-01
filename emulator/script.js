@@ -13,6 +13,11 @@ $(document).ready(() => {
 
   set_screen_theme(tools.storage.get_key("emulator-display-colour", "white-grey"))
 
+  let store = parent.interface.window_ref_store
+  if (store.visualiser) {
+    store.visualiser.clear_screen()
+  }
+
   worker = new Worker("engine.js")
   worker.onmessage = e => handle_message(e.data)
 
@@ -36,10 +41,6 @@ $(document).ready(() => {
     worker.postMessage(["set_clock", $("#clock-target").val()])
     setTimeout(() => {
       clear_screen()
-      let store = parent.interface.window_ref_store
-      if (store.visualiser !== undefined) {
-        store.visualiser.clear_screen()
-      }
     }, 150)
     send_user_input()
   })
@@ -160,7 +161,7 @@ function set_screen_theme(theme) {
 }
 
 function inter_page_message_handler(message) {
-  worker.postMessage(["set_rom", message.binary])
+  worker.postMessage(["set_ram", message.binary])
 
   if (message.clock_speed) {
     $("#clock-target").val(message.clock_speed)
@@ -346,7 +347,7 @@ function draw_front_panel() {
   display_number_on_leds("pc_leds", front_panel_info["program_counter"])
 
   let command_string = get_padded_num(front_panel_info.command_word,16,2)
-  let first_part = parseInt(command_string.slice(0,5),2)
+  let first_part = parseInt(command_string.slice(0,9),2)
   display_number_on_leds("cmd_word_1st_part_leds", first_part)
   display_number_on_leds("micro_program_counter", front_panel_info.micro_program_counter)
 
@@ -394,10 +395,6 @@ function draw_front_panel() {
   display_number_on_leds("ram_read_leds", front_panel_info.activity_indicators.ram_read)
   display_number_on_leds("ram_addr_leds", front_panel_info.activity_indicators.ram_address)
   display_number_on_leds("stack_pointer_leds", front_panel_info.stack_pointer)
-
-  display_number_on_leds("rom_addr_leds", front_panel_info.activity_indicators.rom_address)
-  display_number_on_leds("rom_read_leds", front_panel_info.activity_indicators.rom_read)
-  display_number_on_leds("rom_write_leds", front_panel_info.activity_indicators.rom_write)
 }
 
 function draw_screen_updates() {
