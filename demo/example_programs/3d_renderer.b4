@@ -166,10 +166,10 @@ def draw_hud(u16 frame_num)
   sys.vram.draw_line(0,127,progress,127)
 
 def main()
-  load_model(#f117.obj#)
+  load_model(#~f117.obj#)
 
   // draw(0)
-  // {stop 0 0}
+  // {stop}
 
   let u16 frame
   let u16 dest_offset

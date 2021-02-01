@@ -114,7 +114,7 @@ def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
   y += word_x
   y += SYS_VRAM_ADDR
 
-  let u16 scratch = #sys.vram.shifted_pixels#
+  let u16 scratch = #~sys.vram.shifted_pixels#
   scratch += sub_x
 
   if data
@@ -132,7 +132,7 @@ def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
 const u16 ALIEN_SPEED = 8
 const u16 SHOT_SPEED = 1
 
-const u16 SPRITE_ADDR = #space_invaders_aliens#
+const u16 SPRITE_ADDR = #~space_invaders_aliens#
 
 // status of the input buttons
 global bool button_left = false
@@ -435,7 +435,7 @@ for let u16 i = 0; i < alien_status.max_len(); i++
 free i
 
 // draw title screen
-sys.mem_copy(#space_invaders_title_screen#, SYS_VRAM_ADDR, 1024)
+sys.mem_copy(#~space_invaders_title_screen#, SYS_VRAM_ADDR, 1024)
 
 // wait for keypress
 while sys.kbd.get_charcode() == 0
@@ -445,7 +445,7 @@ while sys.kbd.get_charcode() == 0
 sys.vram.clear()
 
 // draw cannon and score title
-draw_8x8(#space_invaders_cannon#, cannon_x, 960)
+draw_8x8(#~space_invaders_cannon#, cannon_x, 960)
 sys.print_string("SCORE 0")
 
 // draw aliens starting in column 2
