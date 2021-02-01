@@ -67,6 +67,7 @@ $(document).ready(() => {
     worker.postMessage(["write_protect_change", $(e.target).prop('checked')])
   })
 
+  worker.postMessage(["reset"])
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock", 100000])
 
@@ -214,7 +215,7 @@ function start_slow_step(delay) {
 }
 
 function stop_slow_step() {
-  if (updates_running) {
+  if (updates_running && step_timer !== undefined) {
     clearInterval(step_timer)
   }
   stop_updates()

@@ -1,7 +1,6 @@
-init_memory()
-init_emulator()
+let ram  = create_zeroed_array(1024 * 48) // 48k x 16 bit (96KB)
 
-function init_memory() {
+function init_state() {
   //system buses
   write_bus = 0
   data_bus = 0
@@ -16,8 +15,6 @@ function init_memory() {
   arg_regs = [0,0,0]
 
   //memory spaces
-  ram  = create_zeroed_array(1024 * 16) //16k x 16 bit (32KB)
-  //rom is done separately
   vram = create_zeroed_array(1024 * 1) // 1k x 16 bit (2KB)
 
   //256 x 8 bit FIFO buffer for key presses
@@ -27,14 +24,8 @@ function init_memory() {
   alu_operands = [0,0]
   user_input = [0,0]
   user_output = [0,0,0]
-}
 
-function create_zeroed_array(length) {
-  let array = Array(length).fill(0)
-  return array
-}
-
-function init_emulator() {
+  // emulator values
   debug = false
   is_running = false
   total_cycles = 0
@@ -50,6 +41,11 @@ function init_emulator() {
   cycle_count_when_timer_last_reset = 0
 
   init_activity_indicators()
+}
+
+function create_zeroed_array(length) {
+  let array = Array(length).fill(0)
+  return array
 }
 
 function init_activity_indicators() {
@@ -182,12 +178,7 @@ onmessage = (event) => {
       }
       break
     case "reset":
-      stop()
-      init_memory()
-      init_emulator()
-      send_front_panel_info()
-      send_vram_changes()
-      postMessage(["changed"])
+      reset()
       break
     case "request_front_panel_info":
       send_front_panel_info()
@@ -244,6 +235,14 @@ onmessage = (event) => {
       console.error(`Unknown command '${message[0]}'`)
       break
   }
+}
+
+function reset() {
+  init_state()
+  stop()
+  send_front_panel_info()
+  send_vram_changes()
+  postMessage(["changed"])
 }
 
 function measure_frequency() {
