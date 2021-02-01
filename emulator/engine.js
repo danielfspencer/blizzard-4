@@ -107,7 +107,7 @@ const execute_microcode = [
   [0,0,0,1,1,1,0,0],
   [0,0,0,1,1,1,0,0],
   [0,0,0,1,1,1,0,0],
-  [0,0,1,1,1,1,0,0],
+  [0,0,1,1,1,1,0,1],
   [0,0,0,1,1,1,0,0],
   [0,0,0,1,1,1,0,0],
   [0,0,0,1,1,1,0,0],
@@ -610,16 +610,15 @@ function run_load_fetch_microcode(instructions, control_clock) {
     if (!instructions[0]) micro_instructions.fetch.pc_to_read_bus()
     if (!instructions[1]) micro_instructions.fetch.arg3_to_read_bus()
   } else {
-    if (instructions[6]) micro_instructions.fetch.increment_pc()
     if (instructions[7]) micro_instructions.both.increment_mode()
 
     // PC/SP relative addressing modes may add to the value first
     let loading_arg1 = instructions[5]
     let loading_arg2 = instructions[4]
 
-    let arg1_sp_rel = (command_word & 0b0001000000000000) > 0
+    let arg1_rel =    (command_word & 0b0001000000000000) > 0
     let arg1_pc_rel = (command_word & 0b0000100000000000) > 0
-    let arg2_sp_rel = (command_word & 0b0000001000000000) > 0
+    let arg2_rel =    (command_word & 0b0000001000000000) > 0
     let arg2_pc_rel = (command_word & 0b0000000100000000) > 0
 
     // get bus value destination register
@@ -627,16 +626,20 @@ function run_load_fetch_microcode(instructions, control_clock) {
     let bus_value = data_bus
 
     // implement SP/PC rel. addressing based on addressing mode in command word
-    if (arg1_pc_rel && loading_arg1 || arg2_pc_rel && loading_arg2) {
-      bus_value = (bus_value + program_counter) & 0xffff
-    }
-
-    if (arg1_sp_rel && loading_arg1 || arg2_sp_rel && loading_arg2) {
-      bus_value = (bus_value + stack_pointer) & 0xffff
+    if (arg1_rel && loading_arg1 || arg2_rel && loading_arg2) {
+      if (arg1_pc_rel && loading_arg1 || arg2_pc_rel && loading_arg2) {
+        bus_value = (bus_value + program_counter) & 0xffff
+      } else {
+        bus_value = (bus_value + stack_pointer) & 0xffff
+      }
     }
 
     // store value from data bus into the correct register
     micro_instructions.fetch.value_to_register(dest_reg, bus_value)
+
+    // only increment PC after PC-relative addition has been performed
+    // this simulates the control module's output latch not allowing value on the read bus to change during a clock
+    if (instructions[6]) micro_instructions.fetch.increment_pc()
   }
 }
 
