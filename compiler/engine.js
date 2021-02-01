@@ -2440,7 +2440,7 @@ function translate(token, ctx_type) {
       }
 
       // actually call the function
-      prefix.push(`call ~${entry_point} ${frame_size(state.scope)}`)
+      prefix.push(`call ~${entry_point} sp+${frame_size(state.scope)}`)
 
       registers = []
       for (let addr of table_entry.return_value) {
