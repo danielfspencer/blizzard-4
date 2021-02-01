@@ -244,6 +244,10 @@ class AsmEntry {
   get_size() {
     throw new Error("Must be overridden")
   }
+
+  generate(address) {
+    return []
+  }
 }
 
 class LabelDefinition extends AsmEntry {
@@ -271,10 +275,6 @@ class LabelDefinition extends AsmEntry {
       address: address,
       line: this.line
     }
-  }
-
-  generate(address) {
-    return []
   }
 }
 
@@ -391,6 +391,25 @@ class WriteInstruction extends Instruction {
 
 class CopyInstruction extends Instruction {
   get_opcode() {return 5}
+}
+
+
+function optimise_addressing_mode(instruction) {
+  let replacement_instruction = null
+
+  if (instruction instanceof WriteInstruction) {
+    let [arg_1, arg_2] = instruction.args
+    let arg_1_mode = arg_1.addressing_mode
+
+    if (arg_1_mode.direct) {
+      arg_1.addressing_mode.direct = false
+      replacement_instruction = new CopyInstruction([arg_1, arg_2])
+      replacement_instruction.set_address(instruction.address)
+      replacement_instruction.set_line(instruction.line)
+    }
+  }
+
+  return replacement_instruction
 }
 
 function parse_mnemonic(string) {
@@ -524,6 +543,7 @@ function assemble(input) {
   init_state()
 
   log.info("Tokenising...")
+
   for (let i = 0; i < input.length; i++) {
     let line_num = i + 1
     let result
@@ -541,20 +561,34 @@ function assemble(input) {
   }
   log.info(`↳ success, ${input.length} line(s)`)
 
+  log.info("Optimising...")
+
+  // replace write instructions that use direct addressing with copy instructions
+  let replacements = 0
+  for (let i = 0; i < state.ast.length; i++) {
+    let replacement = optimise_addressing_mode(state.ast[i])
+
+    if (replacement !== null) {
+      state.ast[i] = replacement
+      replacements++
+    }
+  }
+  log.info(`↳ success, ${replacements} instruction(s) optimised`)
+
+
   log.info("Translating...")
 
   // give each AsmEntry its current address
-  let counter = 0x4000
-  for (const line of state.ast) {
-    line.set_address(counter)
-    let size = line.get_size()
-    counter += size
+  let address = 0x4000
+  for (const token of state.ast) {
+    token.set_address(address)
+
+    address += token.get_size()
   }
 
   // generate machine code from each AsmEntry
   let output = []
-  for (let i = 0; i < state.ast.length; i++) {
-    let token = state.ast[i]
+  for (const token of state.ast) {
     let result
 
     add_line_number(() => {
