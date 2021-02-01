@@ -484,7 +484,6 @@ function parse(input) {
 
       } else {
         content = new Literal(parse_mnemonic(string).toString())
-        // throw new AsmError("Syntax error")
       }
 
       let addressing_mode = new AddressingMode(is_direct, is_relative, program_counter_relative)
@@ -509,24 +508,32 @@ function parse(input) {
   }
 }
 
+function add_line_number(operation, line_num) {
+  try {
+    operation()
+  } catch (error) {
+    if (error instanceof AsmError) {
+      throw new AsmError(error.message, line_num)
+    } else {
+      throw error
+    }
+  }
+}
+
 function assemble(input) {
   init_state()
 
   log.info("Tokenising...")
   for (let i = 0; i < input.length; i++) {
-
     let line_num = i + 1
     let result
-    try {
-      result = parse(input[i])
-    } catch (error) {
-      if (error instanceof AsmError) {
-        throw new AsmError(error.message, line_num)
-      } else {
-        throw error
-      }
-    }
 
+    // if there is an error add the line number before throwing it
+    add_line_number(() => {
+      result = parse(input[i])
+    }, line_num)
+
+    // not all AsmEntries produce an output
     if (result !== null) {
       result.set_line(line_num)
       state.ast.push(result)
@@ -535,6 +542,8 @@ function assemble(input) {
   log.info(`↳ success, ${input.length} line(s)`)
 
   log.info("Translating...")
+
+  // give each AsmEntry its current address
   let counter = 0x4000
   for (const line of state.ast) {
     line.set_address(counter)
@@ -542,10 +551,16 @@ function assemble(input) {
     counter += size
   }
 
+  // generate machine code from each AsmEntry
   let output = []
-  for (const line of state.ast) {
-    let result = line.generate()
-    log.debug(line.toString())
+  for (let i = 0; i < state.ast.length; i++) {
+    let token = state.ast[i]
+    let result
+
+    add_line_number(() => {
+      result = token.generate()
+    }, token.line)
+
     output.push(...result)
   }
   log.info(`↳ success, ${state.ast.length} tokens(s)`)
@@ -553,7 +568,7 @@ function assemble(input) {
   // 2 bytes per word
   log.info(`Output size: ${output.length * 2} bytes`)
 
-
+  // two's complement encode and convert to strings of 1/0s
   output = output.map(twos_complement_encode).map(padded_binary)
 
   return output.join("\n")
