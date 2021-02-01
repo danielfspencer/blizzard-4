@@ -27,7 +27,7 @@ function start_updates() {
 }
 
 function animation_frame_handler() {
-  if (counter > 1) {
+  if (counter > 3) {
     draw_screen_updates()
     counter = 0
   }
