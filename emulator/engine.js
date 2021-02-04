@@ -528,7 +528,7 @@ function simulate_effect_of_write_bus_change() {
     halt_error("Write bus has an invalid value - check microcode")
   }
 
-  if (write_bus > 0x4000) {                                                 // RAM
+  if (write_bus >= 0x4000) {                                                 // RAM
     let address = write_bus - 0x4000
     activity_indicators.ram_write = 1
     activity_indicators.ram_address = address
