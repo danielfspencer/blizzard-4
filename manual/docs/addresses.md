@@ -52,7 +52,6 @@
 | 4098 | 2 | User input switches #3 | `io.inp3` | R | 16 |
 | 4099 | 3 | Output LEDs row #1 | `io.out1` | W | 16 |
 | 4100 | 4 | Output LEDs row #2 | `io.out2` | W | 16 |
-| 4101 | 5 | Output LEDs row #3 | `io.out3` | W | 16 |
 | 4102 | 6 | ps/2 fifo pop last element | `io.pop` | R | 16 |
 
 <br>

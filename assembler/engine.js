@@ -88,10 +88,8 @@ const MNEMONICS = {
   "alu.ov" : 20,
   "io.inp1" : 4096,
   "io.inp2" : 4097,
-  "io.inp3" : 4098,
   "io.out1" : 4099,
   "io.out2" : 4100,
-  "io.out3" : 4101,
   "io.kbd": 4102
 }
 

@@ -61,11 +61,7 @@ $(document).ready(() => {
     worker.postMessage(["set_clock", $("#clock-target").val()])
   })
 
-  $("#usr1_input, #usr2_input, #usr3_input").on('input', send_user_input)
-
-  $("#rom_write_protect").change(e => {
-    worker.postMessage(["write_protect_change", $(e.target).prop('checked')])
-  })
+  $("#usr1_input, #usr2_input").on('input', send_user_input)
 
   worker.postMessage(["reset"])
   worker.postMessage(["request_front_panel_info"])
@@ -175,7 +171,7 @@ function inter_page_message_handler(message) {
 }
 
 function send_user_input(event){
-  let inputs = [$("#usr1_input").val(), $("#usr2_input").val(), $("#usr3_input").val()]
+  let inputs = [$("#usr1_input").val(), $("#usr2_input").val()]
   let sanitised_inputs = []
   for (const input of inputs) {
     let integer = parseInt(input)
@@ -189,7 +185,6 @@ function send_user_input(event){
 
   display_number_on_leds("inp1_leds", sanitised_inputs[0])
   display_number_on_leds("inp2_leds", sanitised_inputs[1])
-  display_number_on_leds("inp3_leds", sanitised_inputs[2])
   worker.postMessage(["user_input_update", sanitised_inputs])
 }
 
@@ -380,7 +375,6 @@ function draw_front_panel() {
   display_number_on_leds("arg2_leds", front_panel_info.arg_regs[1])
   display_number_on_leds("out1_leds", front_panel_info.user_output[0])
   display_number_on_leds("out2_leds", front_panel_info.user_output[1])
-  display_number_on_leds("out3_leds", front_panel_info.user_output[2])
 
   if (front_panel_info.activity_indicators.alu1_write) {
     display_number_on_leds("alu_write_leds",2)
