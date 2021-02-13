@@ -59,14 +59,14 @@ def schedule_process()
   // enter program by overwriting PC/SP of caller and returning
   {write $process[0] sp+0}
   {write $process[1] sp+1}
-  {write 0 io.out3}
+  {write 0 io.out1}
   return
 
 def kernel.get_pid() -> u16
   return current_process_id
 
 def kernel.yield()
-  {write 0xffff io.out3}
+  {write 0xffff io.out1}
 
   // save state of process
   // sp+0 - holds caller's PC

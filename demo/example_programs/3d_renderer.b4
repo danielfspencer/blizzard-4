@@ -12,7 +12,7 @@ struct vec2
 const s16 ORIGIN_X = 57
 const s16 ORIGIN_Y = 60
 
-const u16 FRAME_STORE_ADDR = 38912
+const u16 FRAME_STORE_ADDR = 0x5400
 const u16 FRAME_SIZE = 1024
 const u16 MAX_FRAME_NUM = 25
 

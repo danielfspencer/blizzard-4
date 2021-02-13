@@ -24,8 +24,8 @@ def assert(bool condition)
 
   sub_test_num++
   total_tests++
-  {write $tests_passed io.out2}
-  {write $total_tests io.out3}
+  {write $tests_passed io.out1}
+  {write $total_tests io.out2}
 
 def assert_true(bool condition)
   assert(condition)
