@@ -2,6 +2,7 @@
   "name": "blizzard-4",
   "version": "0.48.0",
   "license": "GPL-3.0",
+  "productName": "Blizzard 4: Emulator & Toolchain",
   "description": "Emulator & toolchain for the Blizzard 4 16-bit computer.",
   "author": "Daniel Spencer <danielfspencer1@gmail.com>",
   "main": "main.js",
