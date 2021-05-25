@@ -15,7 +15,7 @@
   "build": {
     "productName": "Blizzard 4",
     "artifactName": "${name}-v${version}-${os}.${ext}",
-    "icon": "assets/icon_512.png",
+    "icon": "assets/icon_512.icns",
     "directories": {
       "output": "electron_dist"
     },
