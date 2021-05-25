@@ -15,6 +15,8 @@ app.on('ready', () => {
   mainWindow = new BrowserWindow({
     width: 1526,
     height: 656,
+    minWidth: 350,
+    minHeight: 200,
     frame: false,
     icon: path.join(__dirname, 'assets/icon_512.png'),
     webPreferences: {
