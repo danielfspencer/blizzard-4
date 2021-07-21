@@ -523,6 +523,15 @@ draw_score()
 draw_aliens(2,0)
 draw_aliens(2,1)
 draw_aliens(2,2)
+draw_aliens(2,3)
+
+// draw left shield
+draw_8x8(#space_invaders_shield#,3,872)
+draw_8x8(#space_invaders_shield#,4,872)
+
+// draw right shield
+draw_8x8(#space_invaders_shield#,11,872)
+draw_8x8(#space_invaders_shield#,12,872)
 
 let u16 cycle = 0
 let u16 cycle2 = 0

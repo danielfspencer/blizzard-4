@@ -1,0 +1,288 @@
+include sys.consts
+
+global array shifted_sprites = (u16, 1408)[]
+
+global bool button_left = false
+global bool button_right = false
+global bool button_fire = false
+
+global u16 offset = 0
+global s16 dir = 1
+
+global u16 cannon_x = 7
+global u16 cannon_x_sub = 0
+
+def read_inputs()
+  include sys.consts
+  // detect which keys are being pressed
+  let u16 scancode = *SYS_KEYBOARD_ADDR
+  let u16 char_code = 0
+
+  while scancode > 0
+    if scancode == 0xAA
+      // pass
+    else if scancode == 0xF0
+      scancode = *SYS_KEYBOARD_ADDR
+    else if scancode == 0xE0
+      scancode = *SYS_KEYBOARD_ADDR
+      if scancode == 0x6b
+        button_left = true
+        return
+      else if scancode == 0x74
+        button_right = true
+        return
+      else if scancode == 0x75
+        button_fire = true
+        return
+      else if scancode == 0xf0
+        scancode = *SYS_KEYBOARD_ADDR
+        if scancode == 0x6b
+          button_left = false
+        else if scancode == 0x74
+          button_right = false
+        else if scancode == 0x75
+          button_fire = false
+
+    scancode = *SYS_KEYBOARD_ADDR
+
+def wait_time(u16 iterations)
+  // just wait for a configurable about of time
+  while iterations > 0
+    iterations--
+
+// def move_cannon()
+//   read_inputs()
+//   // calculate which word the cannon is in
+//   let u16 cannon_addr = cannon_x >> 1
+//   if cannon_addr > 6
+//     cannon_addr = 6
+
+//   if button_left
+//     let u16 tmp = cannon_x + cannon_x_sub
+//     if tmp > 0
+//       if cannon_x_sub > 0
+//         cannon_x_sub--
+//       else
+//         cannon_x_sub = 7
+//         cannon_x--
+//       shift_sprite_left(7104 + cannon_addr)
+//   else if button_right
+//     if cannon_x < 15
+//       if cannon_x_sub < 7
+//         cannon_x_sub++
+//       else
+//         cannon_x_sub = 0
+//         cannon_x++
+//       shift_sprite_right(7097 + cannon_addr)
+//   else
+//     // if no buttons are pressed, wait an approx. equiv length of time to what
+//     // what actually moving would take this means the speed of the program does
+//     // not vary based on user input
+//     wait_time(20)
+
+// NEW CODE
+def draw_16x8(u16 rom_addr, u16 offset)
+  let u16 vram_addr = SYS_VRAM_ADDR
+  vram_addr += offset
+  {write 8 alu.2}
+  repeat 8
+    {copy $rom_addr $vram_addr}
+    {write $rom_addr alu.1}
+    {write [alu.+] &rom_addr}
+    {write $vram_addr alu.1}
+    {write [alu.+] &vram_addr}
+
+// NEW CODE
+def process_sprite(u16 sprite_addr, u16 dest_addr, bool use_right_sprite)
+  let u16 data
+
+  for let u16 row = 0; row < 8; row++
+    data = *sprite_addr
+    if use_right_sprite
+      // left-shift the right sprite 8 pixels
+      // this shifts the left sprite out of the word
+      data = data << 8
+    else
+      // mask off the right sprite
+      data = data & 0xff00
+
+    *dest_addr = data
+    dest_addr++
+
+    // for let u16 shift = 1; shift < 8; shift++
+    repeat 7
+      data = data >> 1
+      *dest_addr = data
+      dest_addr++
+
+    sprite_addr++
+
+// NEW CODE
+def draw_all()
+  let u16 source = #$shifted_sprites[0]#
+  let u16 sprite_offset = offset
+  for let u16 i = 0; i < 8; i++
+    draw_16x8(source + sprite_offset, i)
+    sprite_offset += 64
+
+  for let u16 q = 0; q < 8; q++
+    draw_16x8(source + sprite_offset, q + 88)
+    sprite_offset += 64
+
+  for let u16 z = 0; z < 8; z++
+    draw_16x8(source + sprite_offset, z + 176)
+    sprite_offset += 64
+
+
+  if offset == 0
+    dir = 1
+  else if offset == 7
+    dir = -1
+
+  offset += dir
+
+// NEW CODE
+global u16 idx = 0
+global u16 sprite_offset = 0
+def move_aliens()
+  let u16 source = #$shifted_sprites[0]#
+
+  if idx < 8
+    draw_16x8(source + sprite_offset, idx)
+    sprite_offset += 64
+    idx++
+  else
+    idx = 0
+    if offset == 0
+      dir = 1
+    else if offset == 7
+      dir = -1
+
+    sprite_offset = offset
+    offset += dir
+
+// preprocess
+let u16 dest_addr = #$shifted_sprites[0]#
+let u16 sprite_addr = #space_invaders_aliens#
+
+for let u16 sprite_index = 0; sprite_index < 11; sprite_index++
+  for let u16 side = 0; side <= 1; side++
+    process_sprite(sprite_addr, dest_addr, side)
+    dest_addr += 64
+  sprite_addr += 8
+
+// render
+while true
+  draw_all()
+  continue
+  let u16 u = #$shifted_sprites[0]# + 1024
+  draw_16x8(u, 0)
+  u += 128
+
+  wait_time(2000)
+
+  for let u16 j = 0; j < 10; j++
+    for let u16 i = 0; i < 196; i += 64
+      draw_16x8(u + i, 0)
+      wait_time(150)
+
+
+  // move_aliens()
+  // while sys.kbd.get_charcode() == 0
+  // pass
+
+### space_invaders_aliens:
+0b0001100000011000
+0b0011110000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b0010010000100100
+0b0100001001011010
+0b0010010010100101
+0b0100001001000010
+0b0011110000100100
+0b0101101010111101
+0b1111111111111111
+0b1011110111011011
+0b1010010101111110
+0b0010010000100100
+0b0100001001000010
+0b0011110000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b0110011001100110
+0b1001100100111100
+0b0100001011000011
+0b0000000000000000
+0b0100001000100100
+0b0010010000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b1011110110100101
+0b0010010000100100
+0b0100001001100110
+0b1000000110000001
+0b0111111001111110
+0b1101101111011011
+0b1101101111011011
+0b0111111001111110
+0b1010010100100100
+0b1000000101000010
+0b0110011010000001
+0b0011110000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b0001100000011000
+0b0010010000100100
+0b0100001001000010
+0b0010010010000001
+0b0100001001000010
+0b0010010000100100
+0b0111111010111101
+0b1101101111011011
+0b1111111111111111
+0b1011110101011010
+0b1001100101000010
+0b0010010011000011
+0b0000100000010000
+0b1000100110010001
+0b0100001001000010
+0b0010000000000100
+0b0000010000100000
+0b0100001001000010
+0b1001000110001001
+0b0001000000001000
+###
+
+### space_invaders_cannon:
+0b0000000010000001
+0b0001100001000010
+0b0001100010011001
+0b0001100000011000
+0b0111111001111110
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+// explosion frame 1
+0b0000010001000010
+0b0101000000001000
+0b0001101000010001
+0b0101110001010000
+0b0011100000111000
+0b1110110011101100
+0b1110011111100110
+0b0110111001101110
+// explosion frame 2
+0b1001000100001000
+0b0000100000001010
+0b0000000001100000
+0b0101010000010100
+0b0011100000001001
+0b1010110000100010
+0b1100011110000011
+0b0110111001101110
+###

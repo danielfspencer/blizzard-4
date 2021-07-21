@@ -1,0 +1,267 @@
+include sys.consts
+
+const u16 NUM_SPRITES = 22
+global array shifted_sprites = (u16, 6144)[]
+
+global bool button_left = false
+global bool button_right = false
+global bool button_fire = false
+
+global u16 offset = 0
+global s16 dir = 1
+
+global u16 cannon_x = 0
+global u16 cannon_x_sub = 8
+
+def read_inputs()
+  include sys.consts
+  // detect which keys are being pressed
+  let u16 scancode = *SYS_KEYBOARD_ADDR
+  let u16 char_code = 0
+
+  while scancode > 0
+    if scancode == 0xAA
+      // pass
+    else if scancode == 0xF0
+      scancode = *SYS_KEYBOARD_ADDR
+    else if scancode == 0xE0
+      scancode = *SYS_KEYBOARD_ADDR
+      if scancode == 0x6b
+        button_left = true
+        return
+      else if scancode == 0x74
+        button_right = true
+        return
+      else if scancode == 0x75
+        button_fire = true
+        return
+      else if scancode == 0xf0
+        scancode = *SYS_KEYBOARD_ADDR
+        if scancode == 0x6b
+          button_left = false
+        else if scancode == 0x74
+          button_right = false
+        else if scancode == 0x75
+          button_fire = false
+
+    scancode = *SYS_KEYBOARD_ADDR
+
+// NEW CODE
+def draw_16x8(u16 rom_addr, u16 offset)
+  let u16 vram_addr = SYS_VRAM_ADDR
+  vram_addr += offset
+  {write 8 alu.2}
+  repeat 8
+    {copy $rom_addr $vram_addr}
+    {write $rom_addr alu.1}
+    {write [alu.+] &rom_addr}
+    {write $vram_addr alu.1}
+    {write [alu.+] &vram_addr}
+
+def wait_time(u16 iterations)
+  // just wait for a configurable about of time
+  while iterations > 0
+    iterations--
+
+// NEW CODE
+def process_sprite_full(u16 sprite_addr, u16 dest_addr, bool use_right_sprite)
+  for let u16 row = 0; row < 8; row++
+    let u16 word = *sprite_addr
+    if use_right_sprite
+      word = word & 0x00ff
+    else
+      word = word >> 8
+
+    let u32 data = 0
+    {write $word &data[0]}
+
+    //  0 = blank
+    //  1 = 1 pixel in left column
+    //  8 = fully on screen (left 8 pixels of word)
+    // 16 = fully on screen (right 8 pixels of word)
+    // 23 = 1 pixel in right column
+    // sprite 0:  0 -  7
+    // sprite 1:  8 - 15
+    // sprite 2: 16 - 24
+    for let u16 sprites = 0; sprites < 3; sprites++
+      repeat 8
+        *dest_addr = #$data[1]#
+        data = data >> 1
+        dest_addr++
+      dest_addr += 56
+
+    dest_addr -= 184
+    sprite_addr++
+
+def clamp(u16 input, u16 max) -> u16
+  if input >= max
+    input -= max
+
+  return input
+
+global u16 source = #$shifted_sprites[0]# + 0
+def draw_shifted(u16 offset, u16 addr)
+  // sys.print_u16(offset, 0, 4+addr, true)
+  if offset < 8
+    draw_16x8(source + offset, addr)
+  else if offset < 16
+    offset += 56
+    draw_16x8(source + offset, addr)
+  else
+    offset += 112
+    draw_16x8(source + offset, addr)
+
+
+def draw(u16 x_pos_pixel, u16 x_pos_word)
+  x_pos_pixel += 8
+
+  let u16 addr
+
+  // offset 0 - 16
+  addr = clamp(x_pos_pixel, 24)
+  draw_shifted(addr, x_pos_word)
+  if x_pos_pixel > 15
+    draw_shifted(x_pos_pixel - 16, x_pos_word + 1)
+
+
+// NEW CODE
+global u16 x_offset = 0
+global u16 x_word = 0
+def move_cannon()
+  if button_right
+    if x_offset == 16
+      if x_word < 7
+        x_word++
+        x_offset = 1
+    else
+      x_offset++
+
+  if button_left
+    if x_offset == 0
+      if x_word > 0
+        x_word--
+        x_offset = 15
+    else
+      x_offset--
+
+  draw(x_offset,x_word)
+  // sys.print_u16(x_offset, 0, 2, true)
+
+// draw_all()
+// {stop 0 0}
+
+// preprocess
+sys.print_string("load")
+let u16 dest_addr = #$shifted_sprites[0]#
+let u16 sprite_addr = #space_invaders_cannon#
+for let u16 sprite_index = 0; sprite_index < 11; sprite_index++
+  for let u16 side = 0; side <= 1; side++
+    process_sprite_full(sprite_addr, dest_addr, side)
+    dest_addr += 196
+  sprite_addr += 8
+
+sys.vram.clear()
+
+// render
+while true
+  read_inputs()
+  move_cannon()
+
+
+### space_invaders_cannon:
+// normal + firing
+0b0000000010000001
+0b0001100001000010
+0b0001100010011001
+0b0001100000011000
+0b0111111001111110
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+// explosion frame 1
+0b0000010001000010
+0b0101000000001000
+0b0001101000010001
+0b0101110001010000
+0b0011100000111000
+0b1110110011101100
+0b1110011111100110
+0b0110111001101110
+// explosion frame 2
+0b1001000100001000
+0b0000100000001010
+0b0000000001100000
+0b0101010000010100
+0b0011100000001001
+0b1010110000100010
+0b1100011110000011
+0b0110111001101110
+###
+
+
+### space_invaders_aliens:
+0b0001100000011000
+0b0011110000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b0010010000100100
+0b0100001001011010
+0b0010010010100101
+0b0100001001000010
+0b0011110000100100
+0b0101101010111101
+0b1111111111111111
+0b1011110111011011
+0b1010010101111110
+0b0010010000100100
+0b0100001001000010
+0b0011110000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b0110011001100110
+0b1001100100111100
+0b0100001011000011
+0b0000000000000000
+0b0100001000100100
+0b0010010000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b1011110110100101
+0b0010010000100100
+0b0100001001100110
+0b1000000110000001
+0b0111111001111110
+0b1101101111011011
+0b1101101111011011
+0b0111111001111110
+0b1010010100100100
+0b1000000101000010
+0b0110011010000001
+0b0011110000111100
+0b0111111001111110
+0b1101101111011011
+0b1111111111111111
+0b0001100000011000
+0b0010010000100100
+0b0100001001000010
+0b0010010010000001
+0b0100001001000010
+0b0010010000100100
+0b0111111010111101
+0b1101101111011011
+0b1111111111111111
+0b1011110101011010
+0b1001100101000010
+0b0010010011000011
+0b0000100000010000
+0b1000100110010001
+0b0100001001000010
+0b0010000000000100
+0b0000010000100000
+0b0100001001000010
+0b1001000110001001
+0b0001000000001000
+###

@@ -1,4 +1,14 @@
 {
+  "poc3": {
+    "name": "Test",
+    "desc": "",
+    "clock_speed": 100000
+  },
+  "poc2": {
+      "name": "Test",
+      "desc": "",
+      "clock_speed": 100000
+    },
   "space_invaders_demo": {
     "name":"Space Invaders",
     "desc":"A space-invaders style game. Use the ← left and right → arrow keys to move the cannon. Press the ↑ up arrow key to fire. This game currently has no victory condition or shields for the player.",
