@@ -2004,9 +2004,10 @@ function translate(token, ctx_type) {
           let buffer = get_temp_word()
           prefix = write_operands(args.expr1, args.expr2, operand_type)
           prefix.push(`write [alu.=] ${buffer.label}`)
-          prefix.push(`write [${buffer.label}] alu.1`)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write [${buffer.label}] alu.2`)
           buffer.free()
-          registers = ["[alu.!]"]
+          registers = ["[alu.-]"]
         } break
 
         case "s32":
@@ -2162,8 +2163,11 @@ function translate(token, ctx_type) {
     } break
 
     case "!": {
-      prefix = write_operand(args.expr,ctx_type)
-      registers = ["[alu.!]"]
+      let [expr_prefix, expr_reg] = translate(args.expr, ctx_type)
+      prefix = expr_prefix
+      prefix.push(`write 0xffff alu.1`)
+      prefix.push(`write ${expr_reg} alu.2`)
+      registers = ["[alu.-]"]
     } break
 
     case "expr_array": {

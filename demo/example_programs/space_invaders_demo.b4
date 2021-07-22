@@ -122,8 +122,9 @@ def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
     {copy $y alu.2}
     {write [alu.|] $y}
   else
-    {copy $scratch alu.1}
-    {copy alu.! &scratch}
+    {write 0xffff alu.1}
+    {copy $scratch alu.2}
+    {copy alu.- &scratch}
     {copy $scratch alu.1}
     {copy $y alu.2}
     {write [alu.&] $y}

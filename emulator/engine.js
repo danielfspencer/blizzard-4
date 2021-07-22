@@ -460,10 +460,6 @@ function simulate_effect_of_read_bus_change() {
                 data_bus = alu_operands[0] | alu_operands[1]
                 activity_indicators.alu_read = 2 ** 5
                 break
-              case 8:
-                data_bus = alu_operands[0] ^ 0xffff
-                activity_indicators.alu_read = 2 ** 4
-                break
               case 9:
                 data_bus = alu_operands[0] > alu_operands[1] ? 1 : 0
                 activity_indicators.alu_read = 2 ** 3

@@ -17,7 +17,6 @@
 | 13 | 13 | 1-bit logical left shift | `alu.<<` | R | 15 |
 | 14 | 14 | bitwise AND | `alu.&` | R | 16 |
 | 15 | 15 | bitwise OR | `alu.\|` | R | 16 |
-| 16 | 16 | operand 1 NOT | `alu.!` | R | 16 |
 | 17 | 17 | op.1 greater than op.2 | `alu.>` | R | 1 |
 | 18 | 18 | op.1 less than op.2 | `alu.<` | R | 1 |
 | 19 | 19 | op.1 equal to op.2 | `alu.=` | R | 1 |

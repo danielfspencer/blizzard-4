@@ -128,10 +128,11 @@ const libs = {
   ],
   "sys.u32_subtract": [
     "def sys.u32_subtract(u32 a, u32 b) -> u32",
-    "  {write $b[0] alu.1}",
-    "  {write [alu.!] &b[0]}",
-    "  {write $b[1] alu.1}",
-    "  {write [alu.!] &b[1]}",
+    "  {write 0xffff alu.1}",
+    "  {write $b[0] alu.2}",
+    "  {write [alu.-] &b[0]}",
+    "  {write $b[1] alu.2}",
+    "  {write [alu.-] &b[1]}",
     "  b++",
     "  return a + b"
   ],
@@ -395,8 +396,9 @@ const libs = {
     "    {copy $addr alu.2}",
     "    {write [alu.|] $addr}",
     "  else",
-    "    {copy $table_addr alu.1}",
-    "    {copy alu.! &table_addr}",
+    "    {write 0xffff alu.1}",
+    "    {copy $table_addr alu.2}",
+    "    {copy alu.- &table_addr}",
     "    {copy &table_addr alu.1}",
     "    {copy $addr alu.2}",
     "    {write [alu.&] $addr}"

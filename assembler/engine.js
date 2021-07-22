@@ -81,7 +81,6 @@ const MNEMONICS = {
   "alu.<<" : 13,
   "alu.&" : 14,
   "alu.|" : 15,
-  "alu.!" : 16,
   "alu.>" : 17,
   "alu.<" : 18,
   "alu.=" : 19,
