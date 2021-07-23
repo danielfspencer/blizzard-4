@@ -2114,17 +2114,19 @@ function translate(token, ctx_type) {
       switch (ctx_type) {
         case "u16":
         case "s16": {
-          prefix = write_operand(args.expr1,ctx_type)
+          let [expr_prefix, expr_reg] = translate(args.expr1, ctx_type)
+          prefix = expr_prefix
+          prefix.push(`write ${expr_reg} alu.1&2`)
 
           let temp_word = get_temp_word()
           while (num_places > 1) {
-            prefix.push(`write [alu.<<] ${temp_word.label}`)
-            prefix.push(`write [${temp_word.label}] alu.1`)
+            prefix.push(`write [alu.+] ${temp_word.label}`)
+            prefix.push(`write [${temp_word.label}] alu.1&2`)
             num_places--
           }
           temp_word.free()
 
-          registers = ["[alu.<<]"]
+          registers = ["[alu.+]"]
         } break
 
         case "s32":

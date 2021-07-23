@@ -40,12 +40,10 @@ def shift_right(u16 start, u16 end)
 def shift_left(u16 start, u16 end)
   // shift a portion of the screen left one pixel
   while start < end
-    {write 1 alu.2}
     repeat 8
-      {copy $start alu.1}
-      {copy alu.<< $start}
-      {write $start alu.1}
-      {write [alu.+] &start}
+      {copy $start alu.1&2}
+      {copy alu.+ $start}
+      start++
 
 def shift_down(u16 start, u16 end)
   // shift a portion of the screen down 3 pixels
@@ -83,8 +81,8 @@ def shift_sprite_right(u16 start)
 def shift_sprite_left(u16 start)
   let u16 end = start + 65
   while start < end
-    {copy $start alu.1}
-    {copy alu.<< $start}
+    {copy $start alu.1&2}
+    {copy alu.+ $start}
     start++
     {copy $start alu.1}
     {write 0b1000000000000000 alu.2}
@@ -95,8 +93,8 @@ def shift_sprite_left(u16 start)
       {copy alu.| $start}
       start++
 
-    {copy $start alu.1}
-    {copy alu.<< $start}
+    {copy $start alu.1&2}
+    {copy alu.+ $start}
     start += 7
     {copy $start alu.1}
     {write 0b1000000000000000 alu.2}

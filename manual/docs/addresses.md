@@ -11,10 +11,10 @@
 | 4 | 4	| 32-bit timer (low 16 bits) | `timer.low` | R | 16
 | 8 | 8 | Operand 1 Register | `alu.1` | W | 16 |
 | 9 | 9 | Operand 2 Register | `alu.2` | W | 16 |
+| 10 | 10 | (write only) Store into Op 1 & Op 2 | `alu.1&2` | W | 16 |
 | 10 | 10 | Addition | `alu.+` | R | 16 |
 | 11 | 11 | Subtraction | `alu.-` | R | 16 |
 | 12 | 12 | 1-bit logical right shift | `alu.>>` | R | 15 |
-| 13 | 13 | 1-bit logical left shift | `alu.<<` | R | 15 |
 | 14 | 14 | bitwise AND | `alu.&` | R | 16 |
 | 15 | 15 | bitwise OR | `alu.\|` | R | 16 |
 | 17 | 17 | op.1 greater than op.2 | `alu.>` | R | 1 |

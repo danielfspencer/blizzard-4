@@ -448,10 +448,6 @@ function simulate_effect_of_read_bus_change() {
                 data_bus = alu_operands[0] >> 1
                 activity_indicators.alu_read = 2 ** 8
                 break
-              case 5:
-                data_bus = alu_operands[0] << 1
-                activity_indicators.alu_read = 2 ** 7
-                break
               case 6:
                 data_bus = alu_operands[0] & alu_operands[1]
                 activity_indicators.alu_read = 2 ** 6
@@ -547,6 +543,12 @@ function simulate_effect_of_write_bus_change() {
             break
           case 9:
             alu_operands[1] = data_bus
+            activity_indicators.alu2_write = 1
+            break
+          case 10:
+            alu_operands[0] = data_bus
+            alu_operands[1] = data_bus
+            activity_indicators.alu1_write = 1
             activity_indicators.alu2_write = 1
             break
           default:
