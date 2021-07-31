@@ -284,6 +284,12 @@ function replace_var_references(words) {
   for (let i = 0; i < words.length; i++) {
     let word = words[i]
 
+    let direct = word.startsWith("[") && word.endsWith("]")
+
+    if (direct) {
+      word = word.slice(1, -1)
+    }
+
     // names begining with & represent the address of the variable
     let addr_operator = word.startsWith("&")
 
@@ -291,9 +297,7 @@ function replace_var_references(words) {
     let value_operator = word.startsWith("$")
 
     if (addr_operator || value_operator) {
-      let name_and_index = word.substr(1) // remove the operator character
-
-      let [, name, index_string] = /(\w+)(?:\[(\d+)\])?/.exec(name_and_index)
+      let [, name, index_string] = /(\w+)(?:\[(\d+)\])?/.exec(word)
       let token = {name:"var_or_const", type:"expression", arguments: { name: name }}
 
       let [prefix, values, type] = translate(token)
@@ -314,10 +318,24 @@ function replace_var_references(words) {
 
       let symbol = values[index]
 
+      let is_var = /\+/.test(symbol)
+
+      if (is_var && direct) {
+        throw new CompError(`Invalid syntax: use $ for direct addressing of variables. For indirect, use $ with a copy command`)
+      }
+
       if (addr_operator) {
-        words[i] = symbol.slice(1, -1)
+        if (is_var) {
+          words[i] = symbol.slice(1, -1)
+        } else {
+          throw new CompError(`Can't include address of '${name}' because constants don't have addresses.`)
+        }
       } else {
-        words[i] = symbol
+        if (direct) {
+          words[i] = `[${symbol}]`
+        } else {
+          words[i] = symbol
+        }
       }
     }
   }
