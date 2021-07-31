@@ -1,4 +1,133 @@
+class Flash_SST39SF040_Dual {
+  constructor () {
+    this.SECTOR_SIZE = 4096
+    this._init()
+
+    this.commands = {
+      byte_program: {
+        has_argument: true, index: 0,
+        sequence: [[0x5555, 0xaaaa], [0x2aaa, 0x5555], [0x5555, 0xa0a0]],
+        action: (address, data) => this._byte_program(address, data)
+      },
+      sector_erase: {
+        has_argument: true, index: 0,
+        sequence: [[0x5555, 0xaaaa], [0x2aaa, 0x5555], [0x5555, 0x8080], [0x5555, 0xaaaa], [0x2aaa, 0x5555]],
+        action: (address, data) => {if (data === 0x3030) this._sector_erase(address >> 12)}
+      },
+      chip_erase: {
+        has_argument: false, index: 0,
+        sequence: [[0x5555, 0xaaaa], [0x2aaa, 0x5555], [0x5555, 0x8080], [0x5555, 0xaaaa], [0x2aaa, 0x5555], [0x5555, 0x1010]],
+        action: _ => this._erase()
+      }
+    }
+  }
+
+  _init () {
+    // erased flash has a value of all 1s
+    this.content = Array(1024 * 512).fill(0xffff) // 512k x 8 bit x 2 8-bit ICs = 1MB
+    this.sector_erased_flag = create_zeroed_array(this.content.length / this.SECTOR_SIZE) // 4kB (per chip) sectors
+  }
+
+  _erase () {
+    this._init()
+    debug && console.debug(`flash: erased chip`)
+
+    // set erased flag on all sectors
+    for (let i = 0; i < this.sector_erased_flag.length; i++) {
+      this.sector_erased_flag[i] = 1
+    }
+  }
+
+  _byte_program (address, data) {
+    // actually 2 byte program due to dual ICs
+    let sector = Math.floor(address / this.SECTOR_SIZE)
+
+    if (this.sector_erased_flag[sector]) {
+      debug && console.debug(`flash: data ${data} programmed at address ${address}`)
+      // programming only changes 1 -> 0 so use AND to ensure this
+      this.content[address] = this.content[address] & data
+    } else {
+      console.error(`flash: could not program data, sector ${sector} has not been erased`)
+    }
+  }
+
+  _sector_erase (sector) {
+    if (sector < 0 || sector > this.sector_erased_flag.length) {
+      console.error(`flash: no such sector ${sector}`)
+      return
+    }
+
+    debug && console.debug(`flash: erased sector ${sector}`)
+    this.sector_erased_flag[sector] = 1
+    for (let i = 0; i < this.SECTOR_SIZE; i++) {
+      this.content[sector * this.SECTOR_SIZE + i] = 0xffff
+    }
+  }
+
+  _load (data) {
+    if (data.length > this.content.length) {
+      console.error(`flash: input image too large ${data.length} > ${this.content.length}`)
+      return
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      this.content[i] = data[i] & 0xffff
+    }
+    debug && console.debug(`flash: loaded ${data.length} word image`)
+  }
+
+  _dump () {
+    return this.content
+  }
+
+  write (address, data) {
+    address = address & (2**19 - 1) // limit to 19 bits
+    data = data & (2**16 - 1) // limit to 16 bits
+
+    for (let name in this.commands) {
+      let command = this.commands[name]
+
+      // commands with arguments are 1 longer than their prefix seqeunce
+      let is_complete
+      if (command.has_argument) {
+        is_complete = command.index == command.sequence.length
+      } else {
+        is_complete = command.index == command.sequence.length - 1
+      }
+
+      // current (address, data) pair is the argument, so despatch command
+      if (is_complete && command.has_argument) {
+        command.action(address, data)
+        command.index = 0
+        continue
+      }
+
+      // otherwise, check if next pair is part of the remaning prefix
+      let [cmd_address, cmd_data] = command.sequence[command.index]
+      if (address === cmd_address && data === cmd_data) {
+        if (is_complete) {
+          // just matched the end of a no-arguments command, despatch
+          command.action(address, data)
+          command.index = 0
+        } else {
+          // next time round check for the next entry in the sqeuence
+          command.index++
+        }
+      } else {
+        // didn't get next expected value, must be a different command
+        command.index = 0
+      }
+    }
+  }
+
+  read(address) {
+    address = address & (2**19 - 1) // limit to 19 bits
+    return this.content[address]
+  }
+}
+
 let ram  = create_zeroed_array(1024 * 48) // 48k x 16 bit (96KB)
+let flash = new Flash_SST39SF040_Dual()
 
 function init_state() {
   //system buses
@@ -13,6 +142,8 @@ function init_state() {
   command_word = 0
   control_mode = 0
   arg_regs = [0,0,0]
+  flash_address_upper = 0
+  flash_address_lower = 0
 
   //memory spaces
   vram = create_zeroed_array(1024 * 1) // 1k x 16 bit (2KB)
@@ -161,6 +292,9 @@ onmessage = (event) => {
         console.error("Program too large for RAM")
       }
       break
+    case "set_flash":
+      flash._load(message[1])
+      break
     case "clock_high":
       if (!is_running) {
         step_clock()
@@ -230,6 +364,12 @@ onmessage = (event) => {
       break
     case "write_protect_change":
       write_protect = message[1]
+      break
+    case "dump_ram":
+      postMessage(["ram_dump", ram])
+      break
+    case "dump_flash":
+      postMessage(["flash_dump", flash._dump()])
       break
     default:
       console.error(`Unknown command '${message[0]}'`)
@@ -505,6 +645,13 @@ function simulate_effect_of_read_bus_change() {
           activity_indicators.vram_read = 1
         }
         break
+      case 4:                                                             // flash
+        if (address == 0) {
+          data_bus = flash.read((flash_address_upper << 16) + flash_address_lower)
+        } else if (address >= 256 && address < 512) {
+          data_bus = flash.read(address - 256)
+        }
+        break
       default:
         break
     }
@@ -563,6 +710,21 @@ function simulate_effect_of_write_bus_change() {
       case 3:                                                             //video adapter
         if (address < 1024) {
           vram_change(address, data_bus)
+        }
+        break
+      case 4:
+        switch (address) {
+          case 0:
+            flash.write((flash_address_upper << 16) + flash_address_lower, data_bus)
+            break
+          case 1:
+            flash_address_lower = data_bus
+            break
+          case 2:
+            flash_address_upper = data_bus & 0b111
+            break
+          default:
+            break
         }
         break
       default:

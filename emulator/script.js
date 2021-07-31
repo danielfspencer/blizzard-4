@@ -67,6 +67,8 @@ $(document).ready(() => {
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock", 100000])
 
+  load_flash()
+
   parent.interface.child_page_loaded(inter_page_message_handler)
   parent.interface.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
   parent.interface.add_button(gen_button("fullscreen.svg", "fullscreen"), go_fullscreen)
@@ -107,6 +109,9 @@ function handle_message(message) {
     case "stop":
       stop_slow_step()
       break
+    case "flash_dump":
+      save_flash(message[1])
+      break
     default:
       console.error(`Unknown command '${message[0]}'`)
       break
@@ -131,6 +136,39 @@ function open_visualiser() {
 function go_fullscreen() {
   canvas.requestFullscreen()
   window.focus()
+}
+
+function save_flash(data) {
+  let as_bytes = []
+
+  for (let i = 0; i < data.length; i++) { // for each word
+    let [high, low] = [data[i] >> 8, data[i] & 0xff]
+    as_bytes.push(high)
+    as_bytes.push(low)
+  }
+
+  let base64 = tools.base64.array_to_b64(as_bytes)
+
+  tools.storage.set_key("emulator_flash", base64)
+}
+
+function load_flash() {
+  let image = tools.storage.get_key("emulator_flash")
+
+  if (image === undefined) {
+    console.log("No flash image found to load")
+    return
+  }
+
+  let as_bytes = tools.base64.b64_to_array(image)
+  let data = []
+
+  for (let i = 0; i < as_bytes.length; i += 2) {
+    let [high, low] = [as_bytes[i], as_bytes[i + 1]]
+    data.push((high << 8) + low)
+  }
+
+  worker.postMessage(["set_flash", data])
 }
 
 // function open_stats() {

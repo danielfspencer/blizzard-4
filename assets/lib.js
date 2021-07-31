@@ -131,5 +131,25 @@ const tools = {
         }
       })
     }
+  },
+  base64: {
+    array_to_b64: (array) => {
+      let binary = ''
+      for (let byte of array) {
+        binary += String.fromCharCode(byte)
+      }
+
+      return window.btoa(binary)
+    },
+    b64_to_array: (base64) => {
+      let binary_string = window.atob(base64)
+      let len = binary_string.length
+      let bytes = new Uint8Array(len)
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i)
+      }
+
+      return bytes
+    }
   }
 }
