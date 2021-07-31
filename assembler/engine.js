@@ -275,6 +275,29 @@ class LabelDefinition extends AsmEntry {
   }
 }
 
+class LabelReference extends AsmEntry {
+  constructor(name, addressing_mode) {
+    super()
+    this.label = new Argument(new Label(name), addressing_mode)
+  }
+
+  set_address(address) {
+    this.label.set_address(address)
+  }
+
+  get_size() {
+    return 1
+  }
+
+  toString() {
+    return `<LabelReference: ${this.name}>`
+  }
+
+  generate() {
+    return [this.label.get_value()]
+  }
+}
+
 class Data extends AsmEntry {
   constructor(literral) {
     super()
@@ -450,6 +473,12 @@ function parse(input) {
   } else if (input.endsWith(":")) {
     // label definition
     return new LabelDefinition(input.slice(0,-1))
+
+  } else if (input.startsWith("#") || input.startsWith("~")) {
+    // label reference as data
+    let relative = input.slice(0,1) == "~"
+
+    return new LabelReference(input.slice(1),  new AddressingMode(false, relative, relative))
 
   } else if (NUMBER_REGEX.test(input)) {
     // data
