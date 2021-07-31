@@ -325,7 +325,7 @@ onmessage = (event) => {
       break
     case "bus_read":
       if (!is_running) {
-        read_bus = user_input[2]
+        read_bus = user_input[0]
         simulate_effect_of_read_bus_change()
         send_front_panel_info()
         send_vram_changes()
@@ -344,8 +344,8 @@ onmessage = (event) => {
       break
     case "bus_copy":
       if (!is_running) {
-        write_bus = user_input[0]
-        read_bus = user_input[2]
+        read_bus = user_input[0]
+        write_bus = user_input[1]
         simulate_effect_of_read_bus_change()
         simulate_effect_of_write_bus_change()
         send_front_panel_info()
