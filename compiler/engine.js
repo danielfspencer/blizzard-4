@@ -440,17 +440,6 @@ function frame_size(scope) {
   }
 }
 
-function stack_to_absolute(stack_addr) {
-  let prefix = [
-    `write ${stack_addr + 0x4000} alu.1`,
-    `write sp+0 alu.2`
-  ]
-  return {
-    prefix: prefix,
-    value: "[alu.+]"
-  }
-}
-
 function assert_valid_datatype(type) {
   if (!is_data_type(type)) {
     throw new CompError(`Data type '${type}' unknown`)
@@ -1144,9 +1133,7 @@ function translate(token, ctx_type) {
         if (args.global) {
           absoulte_base_addr = `~data+${array_memory[3]}`
         } else {
-          let absoulte = stack_to_absolute(array_memory[3])
-          result.push(...absoulte.prefix)
-          absoulte_base_addr = "[alu.+]"
+          absoulte_base_addr = `sp+${array_memory[3]}`
         }
         result.push(`write ${absoulte_base_addr} ${prefix}${array_memory[0]}`)
       } else {
