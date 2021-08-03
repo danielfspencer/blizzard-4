@@ -1239,31 +1239,31 @@ function translate(token, ctx_type) {
       })
       result.push(...expr_prefix)
 
-      let memory = alloc_global(array.item_size)
+      let memory = alloc_stack(array.item_size)
       let buffer = memory.slice()
-      let source_addr = `~data+${memory[0]}`
+      let source_addr = `sp+${memory[0]}`
 
       // copy expression into buffer area
       for (let word of expr_values) {
-        result.push(`write ${word} ~data+${buffer.shift()}`)
+        result.push(`write ${word} sp+${buffer.shift()}`)
       }
 
       // fast path for single word items
       if (array.item_size === 1) {
         // buffer the index value (in case it is still in the alu)
-        let buffer = buffer_if_needed(index_value)
-        result.push(...buffer.prefix)
+        let index_buffer = buffer_if_needed(index_value)
+        result.push(...index_buffer.prefix)
         result.push(`write ${array.base_addr} alu.1`)
-        result.push(`write ${buffer.label} alu.2`)
+        result.push(`write ${index_buffer.label} alu.2`)
         result.push(`write [${source_addr}] [alu.+]`)
-        buffer.free()
+        index_buffer.free()
       } else {
         // slower path using mem_copy for >1 word data types
         let [call_prefix,,] = function_call("sys.array_set", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${source_addr}#`], "u16", true)
         result.push(...call_prefix)
       }
 
-      // free_global(memory) might corrupt 1st stack frame
+      free_stack(memory)
     } break
 
     case "struct_member_set": {
@@ -2335,22 +2335,22 @@ function translate(token, ctx_type) {
           let buffer = buffer_if_needed(index_value)
           prefix.push(...buffer.prefix)
 
-          // TODO leaks global memory
-          let result = alloc_global(1)
+          // TODO leaks stack memory
+          let result = alloc_stack(1)
           prefix.push(`write ${array.base_addr} alu.1`)
           prefix.push(`write ${buffer.label} alu.2`)
-          prefix.push(`copy [alu.+] ~data+${result}`)
-          registers = [`[~data+${result}]`]
+          prefix.push(`copy [alu.+] sp+${result}`)
+          registers = [`[sp+${result}]`]
           buffer.free()
         } else {
           // slower path using mem_copy for >1 word data types
-          let dest_memory = alloc_global(array.item_size)
-          let abs_dest = `~data+${dest_memory[0]}`
+          let dest_memory = alloc_stack(array.item_size)
+          let abs_dest = `sp+${dest_memory[0]}`
           let [call_prefix,,] = function_call("sys.array_read", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${abs_dest}#`], "u16", true)
           prefix.push(...call_prefix)
           registers = []
           for (let addr of dest_memory) {
-            registers.push(`[~data+${addr}]`)
+            registers.push(`[sp+${addr}]`)
           }
         }
         type = array.array_type
