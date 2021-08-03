@@ -2340,6 +2340,16 @@ function translate(token, ctx_type) {
           prefix.push(`write ${array.base_addr} alu.1`)
           prefix.push(`write ${buffer.label} alu.2`)
           prefix.push(`copy [alu.+] sp+${result}`)
+
+          if (array.array_type === "str") {
+            // TODO very bad hack to convert realative jumps into absoulute addresses
+            let temp = get_temp_word()
+            prefix.push(`write [alu.+] ${temp.label}`)
+            prefix.push(`write [${temp.label}] alu.1`)
+            prefix.push(`write [sp+${result}] alu.2`)
+            prefix.push(`write [alu.+] sp+${result}`)
+          }
+
           registers = [`[sp+${result}]`]
           buffer.free()
         } else {
