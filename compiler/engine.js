@@ -2414,6 +2414,12 @@ function translate(token, ctx_type) {
       }
 
       let args_processed = 0
+      let arg_prefixes = []
+      let arg_values = []
+
+      // translating expressions might increase the size of the current stack frame
+      // therefore the copy into the callee's stack frame can only happen after all expressions have been translated
+      // so this first loop does not emit the copying code
       for (let [arg_name, details] of Object.entries(table_entry.arguments)) {
         if (args_processed == actual_arg_num) {
           // we have run out of supplied arguments
@@ -2433,15 +2439,25 @@ function translate(token, ctx_type) {
           })
         }
 
-        // run code state.required by expression
-        prefix.push(...expr_prefix)
+        // store code required to make expression available
+        arg_prefixes.push(expr_prefix)
 
-        // copy each word into argument memory
-        for (let i = 0; i < details.ram_addresses.length; i++) {
-          prefix.push(`write ${expr_value[i]} sp+${details.ram_addresses[i] + frame_size(state.scope)}`)
-        }
+        // store expression source and address of argument it should be copied into
+        arg_values.push([expr_value, details.ram_addresses])
 
         args_processed++
+      }
+
+      // emit argument copying code now that the frame size can't change
+      for (let i = 0; i < arg_prefixes.length; i++) {
+        // make expression available
+        prefix.push(...arg_prefixes[i])
+
+        // copy value into caculated address of argument in callee's stack frame
+        let [source, dest] = arg_values[i]
+        for (let i = 0; i < dest.length; i++) {
+          prefix.push(`write ${source[i]} sp+${dest[i] + frame_size(state.scope)}`)
+        }
       }
 
       // skip the initialisation of arguments that we have supplied values for
