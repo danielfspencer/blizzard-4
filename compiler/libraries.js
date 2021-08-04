@@ -1609,6 +1609,7 @@ const libs = {
     "sig sys.s32_greater(s32 a, s32 b) -> bool",
     "sig sys.s32_less(s32 a, s32 b) -> bool",
     "sig sys.mem_copy(u16 origin_addr, u16 target_addr, u16 length)",
+    "sig sys.mem_copy_fast(u16 origin_addr, u16 target_addr, u16 length)",
     "sig sys.array_set(u16 base_addr, u16 item_size, u16 index, u16 item_addr)",
     "sig sys.array_read(u16 base_addr, u16 item_size, u16 index, u16 target_addr)",
     "sig sys.array_shift(u16 base_addr, u16 item_size, u16 index, u16 length)",
