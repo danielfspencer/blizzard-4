@@ -56,6 +56,8 @@ sys.**s32_less**(s32 a, s32 b) -> bool
 
 sys.**mem_copy**(u16 origin_addr, u16 target_addr, u16 length)
 
+sys.**mem_copy_fast**(u16 origin_addr, u16 target_addr, u16 length)
+
 sys.**array_set**(u16 base_addr, u16 item_size, u16 index, u16 item_addr)
 
 sys.**array_read**(u16 base_addr, u16 item_size, u16 index, u16 target_addr)
