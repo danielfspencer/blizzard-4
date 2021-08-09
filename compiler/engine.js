@@ -1211,7 +1211,7 @@ function translate(token, ctx_type) {
 
       // copy the rest of the words if the data type is more than one word long
       if (size > 1) {
-        result.push(`write ${ptr_regs[0]} alu.1`)
+        result.push(`write ${ptr_value[0]} alu.1`)
         for (let i = 1; i < size; i++) {
           result.push(`write ${i} alu.2`)
           result.push(`write ${expr_value[i]} [alu.+]`)
