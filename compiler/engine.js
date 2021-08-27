@@ -2458,6 +2458,12 @@ function translate(token, ctx_type) {
         args_processed++
       }
 
+      // stack pointers must be even, so make current frame size even
+      let current_frame_size = frame_size(state.scope)
+      if (current_frame_size % 2 !== 0) {
+        current_frame_size++
+      }
+
       // emit argument copying code now that the frame size can't change
       for (let i = 0; i < arg_prefixes.length; i++) {
         // make expression available
@@ -2466,7 +2472,7 @@ function translate(token, ctx_type) {
         // copy value into caculated address of argument in callee's stack frame
         let [source, dest] = arg_values[i]
         for (let i = 0; i < dest.length; i++) {
-          prefix.push(`write ${source[i]} sp+${dest[i] + frame_size(state.scope)}`)
+          prefix.push(`write ${source[i]} sp+${dest[i] + current_frame_size}`)
         }
       }
 
@@ -2477,11 +2483,12 @@ function translate(token, ctx_type) {
       }
 
       // actually call the function
-      prefix.push(`call ~${entry_point} sp+${frame_size(state.scope)}`)
+      prefix.push(`write sp+0 sp+${current_frame_size+1}`)
+      prefix.push(`call ~${entry_point} sp+${current_frame_size}`)
 
       registers = []
       for (let addr of table_entry.return_value) {
-        registers.push(`[sp+${addr + frame_size(state.scope)}]`)
+        registers.push(`[sp+${addr + current_frame_size}]`)
       }
 
       if (args.ignore_type_mismatch) {
@@ -2998,7 +3005,14 @@ function compile(input, nested) {
   let main = translate_body(tokens)
 
   let output = []
-  output.push(`call ~func__main ~data+${frame_size("__global")}`)
+
+  // global data section must be even sized
+  let global_frame = frame_size("__global")
+  if (global_frame % 2 !== 0) {
+    global_frame++
+  }
+
+  output.push(`call ~func__main ~data+${global_frame}`)
   output.push("stop")
   output.push("")
   output.push("func__main:")
@@ -3021,6 +3035,7 @@ function compile(input, nested) {
     output.push("")
   }
 
+  output.push("$align 2")
   output.push("data:")
 
   //feedback
