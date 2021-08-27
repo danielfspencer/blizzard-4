@@ -230,38 +230,22 @@ const load_fetch_microcode = [
 ]
 
 const execute_microcode = [
-  [0,0,0,1,1,1,1,1],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,0,1,1,1,1,0,1],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,1,0,1,1,1,0,1],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,0,0,1,0,0],
-  [0,0,0,1,1,0,0,0],
-  [0,0,1,1,1,1,0,1],
-  [0,0,0,1,1,1,0,0],
-  [1,1,0,0,1,1,0,1],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [1,0,0,0,1,1,0,1],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,1,1],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,1,1],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0],
-  [0,0,0,1,1,1,0,0]
+  [1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,0,0],
+  [1,1,0,1,0,1,0,1],
+  [1,1,1,1,1,1,0,0],
+  [1,1,0,1,1,1,0,1],
+  [1,1,1,1,1,1,0,0],
+  [1,1,1,0,1,0,0,0],
+  [1,1,0,1,0,1,0,1],
+  [0,1,1,0,1,1,0,1],
+  [1,1,1,1,1,1,0,0],
+  [1,0,1,0,1,1,0,1],
+  [1,1,1,1,1,1,0,0],
+  [1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,0,0],
+  [1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,0,0]
 ]
 
 onmessage = (event) => {
@@ -751,7 +735,7 @@ function get_load_fetch_microcode_instructions() {
 
 function get_execute_microcode_instructions() {
   let opcode = (command_word & 0b1110000000000000) >> 13
-  let address = (opcode << 2) + micro_program_counter
+  let address = (opcode << 1) + (micro_program_counter & 1)
   let instructions = execute_microcode[address]
 
   debug && console.debug(`execute microcode[${get_padded_num(address,5,2)}]`)
@@ -804,13 +788,14 @@ function run_load_fetch_microcode(instructions, control_clock) {
 
 function run_execute_microcode(instructions, control_clock) {
   if (control_clock) {
-    let dest_select = (instructions[0] << 1) + instructions[1]
-    micro_instructions.execute.arg1_to_dest(dest_select)
-    if (instructions[2]) micro_instructions.execute.arg1_to_pc_AND_arg2_to_sp()
     // inverted for simpler wiring to active-low tristate buffer enable inputs
+    if (!instructions[0]) micro_instructions.execute.arg1_to_data_bus()
+    if (!instructions[1]) micro_instructions.execute.arg1_to_read_bus()
+    if (!instructions[2]) micro_instructions.execute.arg1_to_pc_conditional()
     if (!instructions[3]) micro_instructions.execute.arg2_to_write_bus()
-    if (!instructions[4]) micro_instructions.execute.pc_to_data_bus()
-    if (!instructions[5]) micro_instructions.execute.sp_to_data_bus_AND_arg2_inc_to_write_bus()
+    if (!instructions[4]) micro_instructions.execute.arg2_to_sp()
+    if (!instructions[5]) micro_instructions.execute.pc_to_data_bus()
+
     if (instructions[6]) micro_instructions.execute.stop_clock()
   } else {
     if (instructions[7]) micro_instructions.both.increment_mode()
@@ -819,30 +804,26 @@ function run_execute_microcode(instructions, control_clock) {
 
 const micro_instructions = {
   execute: {
-    arg1_to_dest: (dest) => {
-      switch (dest) {
-        case 0: break;
-        case 1:
-          if ((arg_regs[1] & 1) == 0) { // (if arg 2 LSB = 0)
-            program_counter = arg_regs[0]
-          }; break;
-        case 2: read_bus = arg_regs[0]; break;
-        case 3: data_bus = arg_regs[0]; break;
-      }
+    arg1_to_data_bus: () => {
+      data_bus = arg_regs[0]
     },
-    arg1_to_pc_AND_arg2_to_sp: () => {
-      program_counter = arg_regs[0]
-      stack_pointer = arg_regs[1]
+    arg1_to_read_bus: () => {
+      read_bus = arg_regs[0]
+    },
+    arg1_to_pc_conditional: () => {
+      // only set if arg 2 LSB == 0
+      if ((arg_regs[1] & 1) === 0) {
+        program_counter = arg_regs[0]
+      }
     },
     arg2_to_write_bus: () => {
       write_bus = arg_regs[1]
     },
+    arg2_to_sp: () => {
+      stack_pointer = arg_regs[1]
+    },
     pc_to_data_bus: () => {
       data_bus = program_counter
-    },
-    sp_to_data_bus_AND_arg2_inc_to_write_bus: () => {
-      data_bus = stack_pointer
-      write_bus = arg_regs[1] + 1
     },
     stop_clock: () => {
       stop()
