@@ -69,6 +69,7 @@ const ADDRESS_MNEMONIC_REGEX = /(ram|vram).(\d+)/
 
 const RAM_BASE = 0x4000
 const VRAM_BASE = 0x1800
+const BASE_ADDRESS = RAM_BASE
 
 const MNEMONICS = {
   "timer.high" : 3,
@@ -114,13 +115,20 @@ function padded_binary(number) {
 }
 
 function parse_int(string) {
+  let value
   if (string.startsWith("0b")) {
-    return parseInt(string.substring(2),2)
+    value = parseInt(string.substring(2),2)
   } else if (string.startsWith("0x")) {
-    return parseInt(string)
+    value = parseInt(string)
   } else {
-    return parseInt(string)
+    value = parseInt(string)
   }
+
+  if (isNaN(value)) {
+    throw new AsmError(`Invalid integer '${string}'`)
+  }
+
+  return value
 }
 
 class AddressingMode {
@@ -244,6 +252,44 @@ class AsmEntry {
 
   generate(address) {
     return []
+  }
+}
+
+class Align extends AsmEntry {
+  constructor(alignment) {
+    super()
+    this.alignment = parse_int(alignment)
+
+    if (this.alignment < 2) {
+      throw new AsmError(`Alignments must be at least 2 words`, this.line)
+    }
+  }
+
+  set_address(address) {
+    let old_address = address - BASE_ADDRESS
+
+    let remainder = old_address % this.alignment
+
+    let new_address
+    if (remainder === 0) {
+      new_address = old_address
+    } else {
+      new_address = old_address + this.alignment - remainder
+    }
+
+    this.difference = new_address - old_address
+  }
+
+  get_size() {
+    return this.difference
+  }
+
+  toString() {
+    return `<Align: ${this.alignment}>`
+  }
+
+  generate() {
+    return Array(this.difference).fill(0)
   }
 }
 
@@ -474,6 +520,9 @@ function parse(input) {
     // label definition
     return new LabelDefinition(input.slice(0,-1))
 
+  } else if (input.startsWith("$align")) {
+    return new Align(input.slice(7))
+
   } else if (input.startsWith("#") || input.startsWith("~")) {
     // label reference as data
     let relative = input.slice(0,1) == "~"
@@ -605,7 +654,7 @@ function assemble(input) {
   log.info("Translating...")
 
   // give each AsmEntry its current address
-  let address = 0x4000
+  let address = BASE_ADDRESS
   for (const token of state.ast) {
     token.set_address(address)
 
