@@ -630,10 +630,10 @@ function simulate_effect_of_read_bus_change() {
         }
         break
       case 4:                                                             // flash
-        if (address == 0) {
+        if (address < 256) {
+          data_bus = flash.read(address)
+        } else if (address === 256) {
           data_bus = flash.read((flash_address_upper << 16) + flash_address_lower)
-        } else if (address >= 256 && address < 512) {
-          data_bus = flash.read(address - 256)
         }
         break
       default:
@@ -697,18 +697,12 @@ function simulate_effect_of_write_bus_change() {
         }
         break
       case 4:
-        switch (address) {
-          case 0:
-            flash.write((flash_address_upper << 16) + flash_address_lower, data_bus)
-            break
-          case 1:
-            flash_address_lower = data_bus
-            break
-          case 2:
-            flash_address_upper = data_bus & 0b111
-            break
-          default:
-            break
+        if (address === 256) {
+          flash.write((flash_address_upper << 16) + flash_address_lower, data_bus)
+        } else if (address === 257) {
+          flash_address_upper = data_bus & 0b111
+        } else if (address === 258) {
+          flash_address_lower = data_bus
         }
         break
       default:
