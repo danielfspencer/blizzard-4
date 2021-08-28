@@ -13,7 +13,7 @@ context_menu({
 
 app.on('ready', () => {
   mainWindow = new BrowserWindow({
-    width: 1526,
+    width: 1550,
     height: 656,
     frame: false,
     icon: path.join(__dirname, 'assets/icon_512.png'),

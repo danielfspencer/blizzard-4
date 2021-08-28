@@ -63,6 +63,12 @@ $(document).ready(() => {
 
   $("#usr1_input, #usr2_input").on('input', send_user_input)
 
+  $('input[type=radio][name=boot]').change(function() {
+    set_boot_mode(this.value)
+  })
+
+  set_boot_mode("flash")
+
   worker.postMessage(["reset"])
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock", 100000])
@@ -171,6 +177,19 @@ function load_flash() {
   worker.postMessage(["set_flash", data])
 }
 
+function set_boot_mode(mode) {
+  $(`#${mode}`).prop("checked", true).trigger("click")
+
+  let address
+  if (mode === "flash") {
+    address = 0x2000
+  } else {
+    address = 0x4000
+  }
+
+  worker.postMessage(["set_reset_address", address])
+}
+
 // function open_stats() {
 //   let store = parent.interface.window_ref_store
 //   if (store.stats === undefined || store.stats.parent === null) {
@@ -185,8 +204,8 @@ function set_screen_theme(theme) {
     "white-black": [[255,255,255],[0,0,0]],
     "white-grey":  [[255,255,255],[21,21,21]],
     "black-white": [[0,0,0],[250,250,250]],
-    "green-black": [[58,181,58],[0,0,0]],
-    "green-grey":  [[58,181,58],[21,21,21]]
+    "green-black": [[51,248,150],[0,0,0]],
+    "green-grey":  [[51,248,150],[21,21,21]]
   }
   let [red_on, green_on, blue_on] = mapping[theme][0]
   let [red_off, green_off, blue_off] = mapping[theme][1]
@@ -196,6 +215,9 @@ function set_screen_theme(theme) {
 }
 
 function inter_page_message_handler(message) {
+  set_boot_mode("ram")
+
+  worker.postMessage(["reset"])
   worker.postMessage(["set_ram", message.binary])
 
   if (message.clock_speed) {
@@ -287,6 +309,9 @@ function get_led_references(element) {
     element.addEventListener("mouseover", mouseover_tooltip)
     element.addEventListener("mouseout", mouseoff_tooltip)
   }
+
+  // remove spacers
+  references.leds = references.leds.filter((element) => element.className.startsWith("led"))
 
   let log10_of_leds_squared = Math.log10(Math.pow(2, references.leds.length))
   references.num_dec_digits = Math.ceil(log10_of_leds_squared)
@@ -427,6 +452,10 @@ function draw_front_panel() {
   display_number_on_leds("ram_write_leds", front_panel_info.activity_indicators.ram_write)
   display_number_on_leds("ram_read_leds", front_panel_info.activity_indicators.ram_read)
   display_number_on_leds("ram_addr_leds", front_panel_info.activity_indicators.ram_address)
+
+  display_number_on_leds("flash_write_leds", front_panel_info.activity_indicators.flash_write)
+  display_number_on_leds("flash_read_leds", front_panel_info.activity_indicators.flash_read)
+  display_number_on_leds("flash_addr_leds", front_panel_info.activity_indicators.flash_address)
   display_number_on_leds("stack_pointer_leds", front_panel_info.stack_pointer)
 }
 

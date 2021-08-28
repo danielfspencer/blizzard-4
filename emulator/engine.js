@@ -128,6 +128,7 @@ class Flash_SST39SF040_Dual {
 
 let ram  = create_zeroed_array(1024 * 48) // 48k x 16 bit (96KB)
 let flash = new Flash_SST39SF040_Dual()
+let reset_address = 0x4000
 
 function init_state() {
   //system buses
@@ -136,7 +137,7 @@ function init_state() {
   read_bus = 0
 
   //control unit registers
-  program_counter = 0x4000  // 1st word of RAM
+  program_counter = reset_address
   stack_pointer = 0
   micro_program_counter = 0
   command_word = 0
@@ -189,7 +190,10 @@ function init_activity_indicators() {
     ram_write:0,
     vram_address:0,
     vram_read:0,
-    vram_write: 0
+    vram_write: 0,
+    flash_address: (flash_address_upper << 16) + flash_address_lower,
+    flash_read: 0,
+    flash_write: 0
   }
 }
 
@@ -281,6 +285,7 @@ onmessage = (event) => {
       break
     case "clock_high":
       if (!is_running) {
+        zero_busses()
         step_clock()
         send_front_panel_info()
         send_vram_changes()
@@ -318,8 +323,8 @@ onmessage = (event) => {
       break
     case "bus_write":
       if (!is_running) {
-        write_bus = user_input[0]
-        data_bus = user_input[1]
+        write_bus = user_input[1]
+        data_bus = user_input[0]
         simulate_effect_of_write_bus_change()
         send_front_panel_info()
         send_vram_changes()
@@ -345,6 +350,9 @@ onmessage = (event) => {
     case "set_clock":
       target_cycles_per_second = message[1]
       cycles_per_batch = Math.floor(target_cycles_per_second / 100)
+      break
+    case "set_reset_address":
+      reset_address = message[1]
       break
     case "write_protect_change":
       write_protect = message[1]
@@ -562,23 +570,23 @@ function simulate_effect_of_read_bus_change() {
             switch (address - 8) {
               case 2:
                 data_bus = alu_operands[0] + alu_operands[1]
-                activity_indicators.alu_read = 2 ** 10
+                activity_indicators.alu_read = 2 ** 8
                 break
               case 3:
                 data_bus = alu_operands[0] - alu_operands[1]
-                activity_indicators.alu_read = 2 ** 9
+                activity_indicators.alu_read = 2 ** 7
                 break
               case 4:
                 data_bus = alu_operands[0] >> 1
-                activity_indicators.alu_read = 2 ** 8
+                activity_indicators.alu_read = 2 ** 6
                 break
               case 6:
                 data_bus = alu_operands[0] & alu_operands[1]
-                activity_indicators.alu_read = 2 ** 6
+                activity_indicators.alu_read = 2 ** 5
                 break
               case 7:
                 data_bus = alu_operands[0] | alu_operands[1]
-                activity_indicators.alu_read = 2 ** 5
+                activity_indicators.alu_read = 2 ** 4
                 break
               case 9:
                 data_bus = alu_operands[0] > alu_operands[1] ? 1 : 0
@@ -630,11 +638,16 @@ function simulate_effect_of_read_bus_change() {
         }
         break
       case 4:                                                             // flash
+        let effective_address
         if (address < 256) {
-          data_bus = flash.read(address)
+          effective_address = address
         } else if (address === 256) {
-          data_bus = flash.read((flash_address_upper << 16) + flash_address_lower)
+          effective_address = (flash_address_upper << 16) + flash_address_lower
         }
+
+        data_bus = flash.read(effective_address)
+        activity_indicators.flash_read = 1
+        activity_indicators.flash_address = effective_address
         break
       default:
         break
