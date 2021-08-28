@@ -130,6 +130,12 @@ let ram  = create_zeroed_array(1024 * 48) // 48k x 16 bit (96KB)
 let flash = new Flash_SST39SF040_Dual()
 let reset_address = 0x4000
 
+let is_running = false
+let target_cycles_per_second
+let cycles_per_batch
+let interval_timer
+let frequency_measurement_timer
+
 function init_state() {
   //system buses
   write_bus = 0
@@ -159,14 +165,11 @@ function init_state() {
 
   // emulator values
   debug = false
-  is_running = false
   total_cycles = 0
   total_instructions = 0
   max_stack_pointer = 0
   temp_cycles = 0
   actual_cycles_per_second = 0
-  target_cycles_per_second = 0
-  cycles_per_batch = 0
   vram_addresses_changed = {}
   ram_addresses_changed = {}
 
@@ -260,6 +263,7 @@ onmessage = (event) => {
       break
     case "stop":
       stop()
+      send_front_panel_info()
       break
     case "set_ram":
       //ram data is a string with lines breaks between the words
@@ -370,8 +374,8 @@ onmessage = (event) => {
 }
 
 function reset() {
-  init_state()
   stop()
+  init_state()
   send_front_panel_info()
   send_vram_changes()
   postMessage(["changed"])
@@ -469,6 +473,7 @@ function stop() {
     zero_busses()
     clearInterval(interval_timer)
     clearInterval(frequency_measurement_timer)
+    actual_cycles_per_second = 0
     postMessage(["stopped"])
   } else {
     postMessage(["stop"])
