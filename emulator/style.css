@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   padding: 0;
 }
@@ -6,30 +10,40 @@ table {
   padding: 0;
 }
 
+h1 {
+  min-width: 80px;
+}
+
 #main {
-  width: 1518px;
+  width: max-content;
   padding-left: 4px;
   padding-right: 4px;
+  padding-top: 6px;
   margin: 0 auto;
 }
 
 #screen_container {
-  padding-top: 4px;
-  float: right;
+  display: inline-block;
+}
+
+#front_panel {
+  width: 990px;
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: top;
+}
+
+#screen_card {
+  padding: 10px;
 }
 
 #screen {
+  display: block;
   width: 512px;
   height: 512px;
   background: #000;
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
-}
-
-#front_panel {
-  padding-top: 4px;
-  width: 934px;
-  display: inline-block;
 }
 
 #front_panel > .card {
@@ -38,24 +52,31 @@ table {
   padding-bottom: 2px;
 }
 
-#control_panel > table {
-  width: 100%;
-}
-
-#memory_panel > table {
-  width: 100%;
-}
-
-.right_align {
-  margin-left: auto;
-}
-
 #controls > .button {
   display: inline-block;
 }
 
 #bus_controls > .button {
   display: inline-block;
+}
+
+#controls {
+  display: flex;
+  align-items: center;
+}
+
+#controls > .button {
+  display: flex;
+  min-width: 110px;
+  justify-content: center;
+}
+
+#controls > .button > a {
+  margin-left: 6px;
+}
+
+.button > img {
+  width: 24px;
 }
 
 #clock-target {
@@ -73,6 +94,11 @@ table {
 
 #alu-lables > a {
   flex-grow: 1;
+}
+
+#boot_selectors > div {
+  display: inline-block;
+  width: 32%;
 }
 
 #ram-addr-mode-lables {
@@ -99,22 +125,28 @@ input[type="number"] {
 
 .led_row {
   height: 18px;
-  display: inline-block;
+
   float: left;
+  position: relative;
 }
 
 .tooltip_enabled .tooltip_content {
   visibility: hidden;
-  border-radius: 2px;
-  background: #FAFAFA;
-  padding: 14px;
-  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.37);
-  position: absolute;
   z-index: 1;
+  background: #FAFAFA;
 }
 
 .tooltip_content {
   font-family: 'DejaVu Sans Mono';
+  position: absolute;
+  background: inherit;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  margin: auto;
+  text-align: center;
+  min-width: max-content;
 }
 
 .tooltip_enabled:hover .tooltip_content {
@@ -123,11 +155,17 @@ input[type="number"] {
 
 .led {
   float: left; /* removes the spaces between elements caused by newlines in html*/
-  display: inline-block;
   border-radius: 50%;
   width: 18px;
   height: 18px;
   opacity: 0.2;
+  margin-right: 4px;
+}
+
+.spacer {
+  float: left;
+  width: 18px;
+  height: 18px;
   margin-right: 4px;
 }
 
@@ -153,4 +191,42 @@ input[type="number"] {
 
 .led_row > div.led.blank.on {
   opacity: 0.2;
+}
+
+h1 {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  font-size: 1.5em;
+  background: #808080;
+  color: #ffffff;
+  padding: 0 0.25em;
+  border-radius: 4px 0 0 0;
+}
+
+.panel {
+  position: relative;
+  box-sizing: border-box;
+}
+
+.panel > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: unset;
+  padding-right: 80px;
+}
+
+.label_col {
+  text-align: right;
+  width: 55px;
+  padding-right: 5px;
+}
+
+#opcode_leds {
+  float: right;
+}
+
+#opcodes {
+  float: right;
 }

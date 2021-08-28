@@ -11,13 +11,12 @@
 | 4 | 4	| 32-bit timer (low 16 bits) | `timer.low` | R | 16
 | 8 | 8 | Operand 1 Register | `alu.1` | W | 16 |
 | 9 | 9 | Operand 2 Register | `alu.2` | W | 16 |
+| 10 | 10 | (write only) Store into Op 1 & Op 2 | `alu.1&2` | W | 16 |
 | 10 | 10 | Addition | `alu.+` | R | 16 |
 | 11 | 11 | Subtraction | `alu.-` | R | 16 |
 | 12 | 12 | 1-bit logical right shift | `alu.>>` | R | 15 |
-| 13 | 13 | 1-bit logical left shift | `alu.<<` | R | 15 |
 | 14 | 14 | bitwise AND | `alu.&` | R | 16 |
 | 15 | 15 | bitwise OR | `alu.\|` | R | 16 |
-| 16 | 16 | operand 1 NOT | `alu.!` | R | 16 |
 | 17 | 17 | op.1 greater than op.2 | `alu.>` | R | 1 |
 | 18 | 18 | op.1 less than op.2 | `alu.<` | R | 1 |
 | 19 | 19 | op.1 equal to op.2 | `alu.=` | R | 1 |
@@ -52,7 +51,6 @@
 | 4098 | 2 | User input switches #3 | `io.inp3` | R | 16 |
 | 4099 | 3 | Output LEDs row #1 | `io.out1` | W | 16 |
 | 4100 | 4 | Output LEDs row #2 | `io.out2` | W | 16 |
-| 4101 | 5 | Output LEDs row #3 | `io.out3` | W | 16 |
 | 4102 | 6 | ps/2 fifo pop last element | `io.pop` | R | 16 |
 
 <br>

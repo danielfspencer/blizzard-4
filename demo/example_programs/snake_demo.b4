@@ -44,7 +44,7 @@ def init_state()
   global u16 target_length = START_LENGTH
   global u16 current_length = START_LENGTH
 
-  sys.mem_copy(#snake_header_bar#, SYS_VRAM_ADDR, 54)
+  sys.mem_copy(#~snake_header_bar#, SYS_VRAM_ADDR, 54)
   draw_hud()
   draw_food()
 
@@ -108,7 +108,7 @@ def game_over()
   draw_line(66, 0)
 
   sys.print_string("GAME OVER", 4, 7)
-  {stop 0 0}
+  {stop}
 
 def wait_cycles(u16 cycles)
   while cycles > 0

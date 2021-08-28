@@ -53,6 +53,9 @@ const tools = {
     set_key: (key, value) => {
       localStorage.setItem(key, JSON.stringify(value))
     },
+    remove_key: (key) => {
+      localStorage.removeItem(key)
+    },
     clear: () => {
       localStorage.clear()
     }
@@ -64,6 +67,30 @@ const tools = {
       } else {
         parent.postMessage([target, null], '*')
       }
+    }
+  },
+  style: {
+    get_scrollbar_width: () => {
+      // by Slava Fomin II: Get scrollbar width using JavaScript
+
+      // Creating invisible container
+      const outer = document.createElement('div')
+      outer.style.visibility = 'hidden'
+      outer.style.overflow = 'scroll' // forcing scrollbar to appear
+      outer.style.msOverflowStyle = 'scrollbar' // needed for WinJS apps
+      document.body.appendChild(outer)
+
+      // Creating inner element and placing it in the container
+      const inner = document.createElement('div')
+      outer.appendChild(inner)
+
+      // Calculating difference between container's full width and the child width
+      const scrollbarWidth = (outer.offsetWidth - inner.offsetWidth)
+
+      // Removing temporary elements from the DOM
+      outer.parentNode.removeChild(outer)
+
+      return scrollbarWidth
     }
   },
   headless: {
@@ -106,6 +133,26 @@ const tools = {
           callback()
         }
       })
+    }
+  },
+  base64: {
+    array_to_b64: (array) => {
+      let binary = ''
+      for (let byte of array) {
+        binary += String.fromCharCode(byte)
+      }
+
+      return window.btoa(binary)
+    },
+    b64_to_array: (base64) => {
+      let binary_string = window.atob(base64)
+      let len = binary_string.length
+      let bytes = new Uint8Array(len)
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i)
+      }
+
+      return bytes
     }
   }
 }

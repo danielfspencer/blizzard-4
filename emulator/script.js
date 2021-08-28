@@ -7,11 +7,18 @@ let front_panel_info = {}
 let updates_running = false
 let vram_changes_buffer = []
 
+let flash_data
+
 $(document).ready(() => {
   canvas = document.querySelector("#screen")
   canvas_context = canvas.getContext("2d")
 
   set_screen_theme(tools.storage.get_key("emulator-display-colour", "white-grey"))
+
+  let store = parent.interface.window_ref_store
+  if (store.visualiser) {
+    store.visualiser.clear_screen()
+  }
 
   worker = new Worker("engine.js")
   worker.onmessage = e => handle_message(e.data)
@@ -36,10 +43,6 @@ $(document).ready(() => {
     worker.postMessage(["set_clock", $("#clock-target").val()])
     setTimeout(() => {
       clear_screen()
-      let store = parent.interface.window_ref_store
-      if (store.visualiser !== undefined) {
-        store.visualiser.clear_screen()
-      }
     }, 150)
     send_user_input()
   })
@@ -60,14 +63,27 @@ $(document).ready(() => {
     worker.postMessage(["set_clock", $("#clock-target").val()])
   })
 
-  $("#usr1_input, #usr2_input, #usr3_input").on('input', send_user_input)
+  $("#usr1_input, #usr2_input").on('input', send_user_input)
 
-  $("#rom_write_protect").change(e => {
-    worker.postMessage(["write_protect_change", $(e.target).prop('checked')])
+  $('input[type=radio][name=boot]').change(function() {
+    set_boot_mode(this.value)
   })
 
+  set_boot_mode("flash")
+
+  worker.postMessage(["reset"])
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock", 100000])
+
+  get_flash_image(load_flash)
+
+  window.onbeforeunload = () => {
+    // if the flash has been modified
+    if (flash_data !== undefined) {
+      save_flash(flash_data)
+      console.log("Saved modified flash image to localStorage")
+    }
+  }
 
   parent.interface.child_page_loaded(inter_page_message_handler)
   parent.interface.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
@@ -109,6 +125,9 @@ function handle_message(message) {
     case "stop":
       stop_slow_step()
       break
+    case "flash_dump":
+      flash_data = message[1]
+      break
     default:
       console.error(`Unknown command '${message[0]}'`)
       break
@@ -122,7 +141,9 @@ function gen_button(icon, text) {
 function open_visualiser() {
   let store = parent.interface.window_ref_store
   if (store.visualiser === undefined || store.visualiser.parent === null) {
-    windows.open('emulator/visualiser/visualiser.html', 512, 512 + 24, ref => {
+    let width = 512
+    let height = 512 + tools.style.get_scrollbar_width() + 24 // (header bar size)
+    windows.open('emulator/visualiser/visualiser.html', width, height, ref => {
       store.visualiser = ref
     })
   }
@@ -131,6 +152,62 @@ function open_visualiser() {
 function go_fullscreen() {
   canvas.requestFullscreen()
   window.focus()
+}
+
+function save_flash(data) {
+  let as_bytes = []
+
+  for (let i = 0; i < data.length; i++) { // for each word
+    let [high, low] = [data[i] >> 8, data[i] & 0xff]
+    as_bytes.push(high)
+    as_bytes.push(low)
+  }
+
+  let base64 = tools.base64.array_to_b64(as_bytes)
+  tools.storage.set_key("emulator_flash", base64)
+}
+
+function get_flash_image(callback) {
+  let image = tools.storage.get_key("emulator_flash")
+
+  if (image === undefined) {
+    console.log("No flash image in localStorage, loading default...")
+
+    $.ajax({
+      url: `../assets/flash_images/default.base64`,
+      dataType: 'text'
+    })
+    .then(callback)
+  } else {
+
+    console.log("Using flash image in localStorage")
+    callback(image)
+  }
+}
+
+function load_flash(image) {
+  let as_bytes = tools.base64.b64_to_array(image)
+  let data = []
+
+  for (let i = 0; i < as_bytes.length; i += 2) {
+    let [high, low] = [as_bytes[i], as_bytes[i + 1]]
+    data.push((high << 8) + low)
+  }
+
+  worker.postMessage(["set_flash", data])
+}
+
+function set_boot_mode(mode) {
+  $(`#${mode}`).prop("checked", true).trigger("click")
+
+  let address
+  if (mode === "flash") {
+    address = 0x2000
+  } else {
+    address = 0x4000
+  }
+
+  worker.postMessage(["set_reset_address", address])
 }
 
 // function open_stats() {
@@ -147,8 +224,8 @@ function set_screen_theme(theme) {
     "white-black": [[255,255,255],[0,0,0]],
     "white-grey":  [[255,255,255],[21,21,21]],
     "black-white": [[0,0,0],[250,250,250]],
-    "green-black": [[58,181,58],[0,0,0]],
-    "green-grey":  [[58,181,58],[21,21,21]]
+    "green-black": [[51,248,150],[0,0,0]],
+    "green-grey":  [[51,248,150],[21,21,21]]
   }
   let [red_on, green_on, blue_on] = mapping[theme][0]
   let [red_off, green_off, blue_off] = mapping[theme][1]
@@ -158,7 +235,10 @@ function set_screen_theme(theme) {
 }
 
 function inter_page_message_handler(message) {
-  worker.postMessage(["set_rom", message.binary])
+  set_boot_mode("ram")
+
+  worker.postMessage(["reset"])
+  worker.postMessage(["set_ram", message.binary])
 
   if (message.clock_speed) {
     $("#clock-target").val(message.clock_speed)
@@ -171,7 +251,7 @@ function inter_page_message_handler(message) {
 }
 
 function send_user_input(event){
-  let inputs = [$("#usr1_input").val(), $("#usr2_input").val(), $("#usr3_input").val()]
+  let inputs = [$("#usr1_input").val(), $("#usr2_input").val()]
   let sanitised_inputs = []
   for (const input of inputs) {
     let integer = parseInt(input)
@@ -185,7 +265,6 @@ function send_user_input(event){
 
   display_number_on_leds("inp1_leds", sanitised_inputs[0])
   display_number_on_leds("inp2_leds", sanitised_inputs[1])
-  display_number_on_leds("inp3_leds", sanitised_inputs[2])
   worker.postMessage(["user_input_update", sanitised_inputs])
 }
 
@@ -211,7 +290,7 @@ function start_slow_step(delay) {
 }
 
 function stop_slow_step() {
-  if (updates_running) {
+  if (updates_running && step_timer !== undefined) {
     clearInterval(step_timer)
   }
   stop_updates()
@@ -250,6 +329,9 @@ function get_led_references(element) {
     element.addEventListener("mouseover", mouseover_tooltip)
     element.addEventListener("mouseout", mouseoff_tooltip)
   }
+
+  // remove spacers
+  references.leds = references.leds.filter((element) => element.className.startsWith("led"))
 
   let log10_of_leds_squared = Math.log10(Math.pow(2, references.leds.length))
   references.num_dec_digits = Math.ceil(log10_of_leds_squared)
@@ -344,7 +426,7 @@ function draw_front_panel() {
   display_number_on_leds("pc_leds", front_panel_info["program_counter"])
 
   let command_string = get_padded_num(front_panel_info.command_word,16,2)
-  let first_part = parseInt(command_string.slice(0,5),2)
+  let first_part = parseInt(command_string.slice(0,9),2)
   display_number_on_leds("cmd_word_1st_part_leds", first_part)
   display_number_on_leds("micro_program_counter", front_panel_info.micro_program_counter)
 
@@ -376,7 +458,6 @@ function draw_front_panel() {
   display_number_on_leds("arg2_leds", front_panel_info.arg_regs[1])
   display_number_on_leds("out1_leds", front_panel_info.user_output[0])
   display_number_on_leds("out2_leds", front_panel_info.user_output[1])
-  display_number_on_leds("out3_leds", front_panel_info.user_output[2])
 
   if (front_panel_info.activity_indicators.alu1_write) {
     display_number_on_leds("alu_write_leds",2)
@@ -391,11 +472,11 @@ function draw_front_panel() {
   display_number_on_leds("ram_write_leds", front_panel_info.activity_indicators.ram_write)
   display_number_on_leds("ram_read_leds", front_panel_info.activity_indicators.ram_read)
   display_number_on_leds("ram_addr_leds", front_panel_info.activity_indicators.ram_address)
-  display_number_on_leds("stack_pointer_leds", front_panel_info.stack_pointer)
 
-  display_number_on_leds("rom_addr_leds", front_panel_info.activity_indicators.rom_address)
-  display_number_on_leds("rom_read_leds", front_panel_info.activity_indicators.rom_read)
-  display_number_on_leds("rom_write_leds", front_panel_info.activity_indicators.rom_write)
+  display_number_on_leds("flash_write_leds", front_panel_info.activity_indicators.flash_write)
+  display_number_on_leds("flash_read_leds", front_panel_info.activity_indicators.flash_read)
+  display_number_on_leds("flash_addr_leds", front_panel_info.activity_indicators.flash_address)
+  display_number_on_leds("stack_pointer_leds", front_panel_info.stack_pointer)
 }
 
 function draw_screen_updates() {

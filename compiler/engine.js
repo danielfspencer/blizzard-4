@@ -8,14 +8,12 @@ let debug = false
 importScripts('libraries.js')
 
 const MIN_FRAME_SIZE = 2
-const MAX_FRAME_SIZE = 2048
-const MAX_RAM_SIZE = 16384
 const DATA_TYPE_SIZE = { u16:1, s16:1, u32:2, s32:2, bool:1, str:1, array:3, none:0 }
 const MIXABLE_NUMERIC_TYPES = [["u16","s16"],["u32","s32"]]
 const RESERVED_KEYWORDS = [
   "if","for","while","repeat","struct","def","true","false","sys","return","break","continue","include","__main","__global", "__return"
 ]
-const RETURN_INSTRUCTION = "return [stack.0] [stack.1]"
+const RETURN_INSTRUCTION = "return [sp+0] [sp+1]"
 const STRUCTURE_INDENT = "  "
 
 // setup message handlers
@@ -286,6 +284,12 @@ function replace_var_references(words) {
   for (let i = 0; i < words.length; i++) {
     let word = words[i]
 
+    let direct = word.startsWith("[") && word.endsWith("]")
+
+    if (direct) {
+      word = word.slice(1, -1)
+    }
+
     // names begining with & represent the address of the variable
     let addr_operator = word.startsWith("&")
 
@@ -293,9 +297,7 @@ function replace_var_references(words) {
     let value_operator = word.startsWith("$")
 
     if (addr_operator || value_operator) {
-      let name_and_index = word.substr(1) // remove the operator character
-
-      let [, name, index_string] = /(\w+)(?:\[(\d+)\])?/.exec(name_and_index)
+      let [, name, index_string] = /(\w+)(?:\[(\d+)\])?/.exec(word)
       let token = {name:"var_or_const", type:"expression", arguments: { name: name }}
 
       let [prefix, values, type] = translate(token)
@@ -316,10 +318,24 @@ function replace_var_references(words) {
 
       let symbol = values[index]
 
+      let is_var = /\+/.test(symbol)
+
+      if (is_var && direct) {
+        throw new CompError(`Invalid syntax: use $ for direct addressing of variables. For indirect, use $ with a copy command`)
+      }
+
       if (addr_operator) {
-        words[i] = symbol.slice(1, -1)
+        if (is_var) {
+          words[i] = symbol.slice(1, -1)
+        } else {
+          throw new CompError(`Can't include address of '${name}' because constants don't have addresses.`)
+        }
       } else {
-        words[i] = symbol
+        if (direct) {
+          words[i] = `[${symbol}]`
+        } else {
+          words[i] = symbol
+        }
       }
     }
   }
@@ -377,9 +393,6 @@ function alloc_stack(size) {
 
   for (let i = 0; i < size; i++) {
     let addr = base_addr + i
-    if (addr >= MAX_FRAME_SIZE) {
-      throw new CompError(`Stack frame is out of memory, ${size} word(s) requested (only ${MAX_FRAME_SIZE - base_addr} free)`)
-    }
     addrs.push(addr)
     state.frame_usage[state.scope].push(addr)
   }
@@ -400,9 +413,6 @@ function alloc_global(size) {
 
   for (let i = 0; i < size; i++) {
     let addr = base_addr + i
-    if (addr >= MAX_RAM_SIZE) {
-      throw new CompError(`Out of memory, ${size} word(s) requested (only ${MAX_RAM_SIZE - base_addr} free)`)
-    }
     addrs.push(addr)
     state.frame_usage.__global.push(addr)
   }
@@ -427,17 +437,6 @@ function frame_size(scope) {
     }
   } else {
     return frame_usage[frame_usage.length - 1] + 1
-  }
-}
-
-function stack_to_absolute(stack_addr) {
-  let prefix = [
-    `write ${stack_addr + 16384} alu.1`,
-    `write [ctl.sp] alu.2`
-  ]
-  return {
-    prefix: prefix,
-    value: "[alu.+]"
   }
 }
 
@@ -473,7 +472,7 @@ function get_temp_word() {
   let addr = alloc_stack(1)
   return {
     addr: addr[0],
-    label: `stack.${addr[0]}`,
+    label: `sp+${addr[0]}`,
     free: () => free_stack(addr)
   }
 }
@@ -987,12 +986,12 @@ function translate(token, ctx_type) {
         assert_global_name_available(args.name)
         allocator = alloc_global
         scope = "__global"
-        prefix = "ram."
+        prefix = "~data+"
       } else {
         assert_local_name_available(args.name)
         allocator = alloc_stack
         scope = state.scope
-        prefix = "stack."
+        prefix = "sp+"
       }
 
       let memory = allocator(get_data_type_size(args.type))
@@ -1101,12 +1100,12 @@ function translate(token, ctx_type) {
         assert_global_name_available(args.name)
         allocator = alloc_global
         scope = "__global"
-        prefix = "ram."
+        prefix = "~data+"
       } else {
         assert_local_name_available(args.name)
         allocator = alloc_stack
         scope = state.scope
-        prefix = "stack."
+        prefix = "sp+"
       }
 
       let array_memory = allocator(max_len * element_size + 3)
@@ -1132,11 +1131,9 @@ function translate(token, ctx_type) {
       if (max_len > 0) {
         let absoulte_base_addr
         if (args.global) {
-          absoulte_base_addr = `ram.${array_memory[3]}`
+          absoulte_base_addr = `~data+${array_memory[3]}`
         } else {
-          let absoulte = stack_to_absolute(array_memory[3])
-          result.push(...absoulte.prefix)
-          absoulte_base_addr = "[alu.+]"
+          absoulte_base_addr = `sp+${array_memory[3]}`
         }
         result.push(`write ${absoulte_base_addr} ${prefix}${array_memory[0]}`)
       } else {
@@ -1242,31 +1239,31 @@ function translate(token, ctx_type) {
       })
       result.push(...expr_prefix)
 
-      let memory = alloc_global(array.item_size)
+      let memory = alloc_stack(array.item_size)
       let buffer = memory.slice()
-      let source_addr = `ram.${memory[0]}`
+      let source_addr = `sp+${memory[0]}`
 
       // copy expression into buffer area
       for (let word of expr_values) {
-        result.push(`write ${word} ram.${buffer.shift()}`)
+        result.push(`write ${word} sp+${buffer.shift()}`)
       }
 
       // fast path for single word items
       if (array.item_size === 1) {
         // buffer the index value (in case it is still in the alu)
-        let buffer = buffer_if_needed(index_value)
-        result.push(...buffer.prefix)
+        let index_buffer = buffer_if_needed(index_value)
+        result.push(...index_buffer.prefix)
         result.push(`write ${array.base_addr} alu.1`)
-        result.push(`write ${buffer.label} alu.2`)
+        result.push(`write ${index_buffer.label} alu.2`)
         result.push(`write [${source_addr}] [alu.+]`)
-        buffer.free()
+        index_buffer.free()
       } else {
         // slower path using mem_copy for >1 word data types
         let [call_prefix,,] = function_call("sys.array_set", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${source_addr}#`], "u16", true)
         result.push(...call_prefix)
       }
 
-      // free_global(memory) might corrupt 1st stack frame
+      free_stack(memory)
     } break
 
     case "struct_member_set": {
@@ -1305,7 +1302,7 @@ function translate(token, ctx_type) {
       result.push(...expr_prefix)
 
       for (let i = 0; i < expr_value.length; i++) {
-        result.push(`write ${expr_value[i]} stack.${target_addrs[i]}`)
+        result.push(`write ${expr_value[i]} sp+${target_addrs[i]}`)
       }
     } break
 
@@ -1483,7 +1480,7 @@ function translate(token, ctx_type) {
         // copy result into return buffer
         let return_buffer = table_entry.return_value
         for (let i = 0; i < value.length; i++) {
-          result.push(`write ${value[i]} stack.${return_buffer[i]}`)
+          result.push(`write ${value[i]} sp+${return_buffer[i]}`)
         }
       }
 
@@ -1505,14 +1502,14 @@ function translate(token, ctx_type) {
       if (state.inner_structure_label === null) {
         throw new CompError("'break' can only be used in for/while loops")
       }
-      result.push(`goto ${state.inner_structure_label}_end 0`)
+      result.push(`goto ~${state.inner_structure_label}_end 0`)
     } break
 
     case "continue": {
       if (state.inner_structure_label === null) {
         throw new CompError("'continue' can only be used in for/while loops")
       }
-      result.push(`goto ${state.inner_structure_label}_start 0`)
+      result.push(`goto ~${state.inner_structure_label}_start 0`)
     } break
 
     case "signature_def": {
@@ -1705,7 +1702,7 @@ function translate(token, ctx_type) {
       output.push(STRUCTURE_INDENT + 0)
       state.data.push(output)
 
-      registers = [id]
+      registers = [`~${id}`]
       type = "str"
     } break
 
@@ -2012,9 +2009,10 @@ function translate(token, ctx_type) {
           let buffer = get_temp_word()
           prefix = write_operands(args.expr1, args.expr2, operand_type)
           prefix.push(`write [alu.=] ${buffer.label}`)
-          prefix.push(`write [${buffer.label}] alu.1`)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write [${buffer.label}] alu.2`)
           buffer.free()
-          registers = ["[alu.!]"]
+          registers = ["[alu.-]"]
         } break
 
         case "s32":
@@ -2073,14 +2071,14 @@ function translate(token, ctx_type) {
           if (num_places > 1) {
             // allocate buffer for intermediate values
             let buffer = alloc_stack(data_type_size)
-            let buffer_values = buffer.map((addr) => {return `[stack.${addr}]`})
+            let buffer_values = buffer.map((addr) => {return `[sp+${addr}]`})
             let buffer_as_arg = `#${buffer_values.join(",")}#`
 
             // write operand to buffer
             let [op_prefix, op_value] = translate(args.expr1, ctx_type)
             prefix.push(...op_prefix)
             for (let i = 0; i < data_type_size; i++) {
-              prefix.push(`write ${op_value[i]} stack.${buffer[i]}`)
+              prefix.push(`write ${op_value[i]} sp+${buffer[i]}`)
             }
 
             // repeatedly shift the content of the buffer and write the result into the buffer
@@ -2088,7 +2086,7 @@ function translate(token, ctx_type) {
               let [call_prefix, call_registers] = function_call(`sys.${ctx_type}_rshift`, [buffer_as_arg], ctx_type, true)
               prefix.push(...call_prefix)
               for (let i = 0; i < data_type_size; i++) {
-                prefix.push(`write ${call_registers[i]} stack.${buffer[i]}`)
+                prefix.push(`write ${call_registers[i]} sp+${buffer[i]}`)
               }
               num_places--
             }
@@ -2121,17 +2119,19 @@ function translate(token, ctx_type) {
       switch (ctx_type) {
         case "u16":
         case "s16": {
-          prefix = write_operand(args.expr1,ctx_type)
+          let [expr_prefix, expr_reg] = translate(args.expr1, ctx_type)
+          prefix = expr_prefix
+          prefix.push(`write ${expr_reg} alu.1&2`)
 
           let temp_word = get_temp_word()
           while (num_places > 1) {
-            prefix.push(`write [alu.<<] ${temp_word.label}`)
-            prefix.push(`write [${temp_word.label}] alu.1`)
+            prefix.push(`write [alu.+] ${temp_word.label}`)
+            prefix.push(`write [${temp_word.label}] alu.1&2`)
             num_places--
           }
           temp_word.free()
 
-          registers = ["[alu.<<]"]
+          registers = ["[alu.+]"]
         } break
 
         case "s32":
@@ -2139,14 +2139,14 @@ function translate(token, ctx_type) {
           if (num_places > 1) {
             // allocate buffer for intermediate values
             let buffer = alloc_stack(data_type_size)
-            let buffer_values = buffer.map((addr) => {return `[stack.${addr}]`})
+            let buffer_values = buffer.map((addr) => {return `[sp+${addr}]`})
             let buffer_as_arg = `#${buffer_values.join(",")}#`
 
             // write operand to buffer
             let [op_prefix, op_value] = translate(args.expr1, ctx_type)
             prefix.push(...op_prefix)
             for (let i = 0; i < data_type_size; i++) {
-              prefix.push(`write ${op_value[i]} stack.${buffer[i]}`)
+              prefix.push(`write ${op_value[i]} sp+${buffer[i]}`)
             }
 
             // repeatedly shift the content of the buffer and write the result into the buffer
@@ -2154,7 +2154,7 @@ function translate(token, ctx_type) {
               let [call_prefix, call_registers] = function_call(`sys.u32_lshift`, [buffer_as_arg], ctx_type, true)
               prefix.push(...call_prefix)
               for (let i = 0; i < data_type_size; i++) {
-                prefix.push(`write ${call_registers[i]} stack.${buffer[i]}`)
+                prefix.push(`write ${call_registers[i]} sp+${buffer[i]}`)
               }
               num_places--
             }
@@ -2170,8 +2170,11 @@ function translate(token, ctx_type) {
     } break
 
     case "!": {
-      prefix = write_operand(args.expr,ctx_type)
-      registers = ["[alu.!]"]
+      let [expr_prefix, expr_reg] = translate(args.expr, ctx_type)
+      prefix = expr_prefix
+      prefix.push(`write 0xffff alu.1`)
+      prefix.push(`write ${expr_reg} alu.2`)
+      registers = ["[alu.-]"]
     } break
 
     case "expr_array": {
@@ -2212,7 +2215,7 @@ function translate(token, ctx_type) {
       }
       state.data.push(consts_to_add)
 
-      registers = [label, length, max_length, contained_type]
+      registers = [`~${label}`, length, max_length, contained_type]
       type = "expr_array"
     } break
 
@@ -2274,9 +2277,9 @@ function translate(token, ctx_type) {
         // it's a regular variable/argument
         for (let addr of table_entry.specific.ram_addresses) {
           if (is_global) {
-            registers.push(`[ram.${addr}]`)
+            registers.push(`[~data+${addr}]`)
           } else {
-            registers.push(`[stack.${addr}]`)
+            registers.push(`[sp+${addr}]`)
           }
         }
       } else if (table_entry.type === "constant") {
@@ -2332,22 +2335,32 @@ function translate(token, ctx_type) {
           let buffer = buffer_if_needed(index_value)
           prefix.push(...buffer.prefix)
 
-          // TODO leaks global memory
-          let result = alloc_global(1)
+          // TODO leaks stack memory
+          let result = alloc_stack(1)
           prefix.push(`write ${array.base_addr} alu.1`)
           prefix.push(`write ${buffer.label} alu.2`)
-          prefix.push(`copy [alu.+] ram.${result}`)
-          registers = [`[ram.${result}]`]
+          prefix.push(`copy [alu.+] sp+${result}`)
+
+          if (array.array_type === "str") {
+            // TODO very bad hack to convert realative jumps into absoulute addresses
+            let temp = get_temp_word()
+            prefix.push(`write [alu.+] ${temp.label}`)
+            prefix.push(`write [${temp.label}] alu.1`)
+            prefix.push(`write [sp+${result}] alu.2`)
+            prefix.push(`write [alu.+] sp+${result}`)
+          }
+
+          registers = [`[sp+${result}]`]
           buffer.free()
         } else {
           // slower path using mem_copy for >1 word data types
-          let dest_memory = alloc_global(array.item_size)
-          let abs_dest = `ram.${dest_memory[0]}`
+          let dest_memory = alloc_stack(array.item_size)
+          let abs_dest = `sp+${dest_memory[0]}`
           let [call_prefix,,] = function_call("sys.array_read", [`#${array.base_addr}#`, `#${array.item_size}#`, `#${index_value}#`, `#${abs_dest}#`], "u16", true)
           prefix.push(...call_prefix)
           registers = []
           for (let addr of dest_memory) {
-            registers.push(`[ram.${addr}]`)
+            registers.push(`[sp+${addr}]`)
           }
         }
         type = array.array_type
@@ -2411,6 +2424,12 @@ function translate(token, ctx_type) {
       }
 
       let args_processed = 0
+      let arg_prefixes = []
+      let arg_values = []
+
+      // translating expressions might increase the size of the current stack frame
+      // therefore the copy into the callee's stack frame can only happen after all expressions have been translated
+      // so this first loop does not emit the copying code
       for (let [arg_name, details] of Object.entries(table_entry.arguments)) {
         if (args_processed == actual_arg_num) {
           // we have run out of supplied arguments
@@ -2430,15 +2449,31 @@ function translate(token, ctx_type) {
           })
         }
 
-        // run code state.required by expression
-        prefix.push(...expr_prefix)
+        // store code required to make expression available
+        arg_prefixes.push(expr_prefix)
 
-        // copy each word into argument memory
-        for (let i = 0; i < details.ram_addresses.length; i++) {
-          prefix.push(`write ${expr_value[i]} stack.${details.ram_addresses[i] + frame_size(state.scope)}`)
-        }
+        // store expression source and address of argument it should be copied into
+        arg_values.push([expr_value, details.ram_addresses])
 
         args_processed++
+      }
+
+      // stack pointers must be even, so make current frame size even
+      let current_frame_size = frame_size(state.scope)
+      if (current_frame_size % 2 !== 0) {
+        current_frame_size++
+      }
+
+      // emit argument copying code now that the frame size can't change
+      for (let i = 0; i < arg_prefixes.length; i++) {
+        // make expression available
+        prefix.push(...arg_prefixes[i])
+
+        // copy value into caculated address of argument in callee's stack frame
+        let [source, dest] = arg_values[i]
+        for (let i = 0; i < dest.length; i++) {
+          prefix.push(`write ${source[i]} sp+${dest[i] + current_frame_size}`)
+        }
       }
 
       // skip the initialisation of arguments that we have supplied values for
@@ -2448,11 +2483,12 @@ function translate(token, ctx_type) {
       }
 
       // actually call the function
-      prefix.push(`call ${entry_point} ${frame_size(state.scope)}`)
+      prefix.push(`write sp+0 sp+${current_frame_size+1}`)
+      prefix.push(`call ~${entry_point} sp+${current_frame_size}`)
 
       registers = []
       for (let addr of table_entry.return_value) {
-        registers.push(`[stack.${addr + frame_size(state.scope)}]`)
+        registers.push(`[sp+${addr + current_frame_size}]`)
       }
 
       if (args.ignore_type_mismatch) {
@@ -2489,7 +2525,7 @@ function translate(token, ctx_type) {
       prefix.push(...buffer.prefix)
 
       // lookup pointer value and copy into temp buffer
-      prefix.push(`copy ${buffer.label} stack.${temp_buffer[0]}`)
+      prefix.push(`copy ${buffer.label} sp+${temp_buffer[0]}`)
       buffer.free()
 
       // if the target type is more than one word, copy more words
@@ -2498,14 +2534,14 @@ function translate(token, ctx_type) {
 
         for (let i = 1; i < size; i++) {
           prefix.push(`write ${i} alu.2`)
-          prefix.push(`copy [alu.+] stack.${temp_buffer[i]}`)
+          prefix.push(`copy [alu.+] sp+${temp_buffer[i]}`)
         }
       }
 
       // output registers are the values of the temp buffer
       registers = []
       for (let addr of temp_buffer) {
-        registers.push(`[stack.${addr}]`)
+        registers.push(`[sp+${addr}]`)
       }
     } break
 
@@ -2568,12 +2604,12 @@ function translate(token, ctx_type) {
           throw new CompError(`Conditional expression expected type 'bool', got '${type}'`)
         }
         result.push(...prefix)
-        result.push(`goto ${next_case_label} ${value[value.length - 1]}`)
+        result.push(`goto ~${next_case_label} ${value[value.length - 1]}`)
 
         result.push(...translate_body(main_tokens[i]))
 
         if ((else_present || else_if_present) && i !==  exprs.length) {
-          result.push(`goto ${label}_end 0`)
+          result.push(`goto ~${label}_end 0`)
         }
       }
 
@@ -2604,7 +2640,7 @@ function translate(token, ctx_type) {
 
       result.push([(`${label}_start:`)])
       result.push(...expr_prefix)
-      result.push(`goto ${label}_end ${expr_value}`)
+      result.push(`goto ~${label}_end ${expr_value}`)
 
       let prev_state = state.inner_structure_label
       state.inner_structure_label = label
@@ -2614,7 +2650,7 @@ function translate(token, ctx_type) {
       let cmd_prefix = translate(args.cmd)
       result.push(...cmd_prefix)
 
-      result.push(`goto ${label}_start 0`)
+      result.push(`goto ~${label}_start 0`)
       result.push(`${label}_end:`)
     } break
 
@@ -2628,14 +2664,14 @@ function translate(token, ctx_type) {
 
       result.push([(`${label}_start:`)])
       result.push(...prefix)
-      result.push(`goto ${label}_end ${value}`)
+      result.push(`goto ~${label}_end ${value}`)
 
       let prev_state = state.inner_structure_label
       state.inner_structure_label = label
       result.push(...translate_body(token.body))
       state.inner_structure_label = prev_state
 
-      result.push(`goto ${label}_start 0`)
+      result.push(`goto ~${label}_start 0`)
       result.push(`${label}_end:`)
     } break
 
@@ -2726,7 +2762,7 @@ function translate(token, ctx_type) {
           data_type: type,
           specific: {
             ram_addresses: memory.slice(),
-            addr_prefix: "stack."
+            addr_prefix: "sp+"
           }
         }
 
@@ -2750,7 +2786,7 @@ function translate(token, ctx_type) {
             target.push(...expr_prefix)
 
             for (let word of expr_value) {
-              target.push(`write ${word} stack.${memory.shift()}`)
+              target.push(`write ${word} sp+${memory.shift()}`)
             }
           }
         } else {
@@ -2775,7 +2811,7 @@ function translate(token, ctx_type) {
         data_type: args.type,
         specific: {
           ram_addresses: return_buffer,
-          addr_prefix: "stack."
+          addr_prefix: "sp+"
         }
       }
 
@@ -2969,9 +3005,15 @@ function compile(input, nested) {
   let main = translate_body(tokens)
 
   let output = []
-  output.push("write 0 ctl.sp")
-  output.push(`call func__main ${frame_size("__global")}`)
-  output.push("stop 0 0")
+
+  // global data section must be even sized
+  let global_frame = frame_size("__global")
+  if (global_frame % 2 !== 0) {
+    global_frame++
+  }
+
+  output.push(`call ~func__main ~data+${global_frame}`)
+  output.push("stop")
   output.push("")
   output.push("func__main:")
   output.push(...main)
@@ -2992,6 +3034,9 @@ function compile(input, nested) {
     output.push(...entry)
     output.push("")
   }
+
+  output.push("$align 2")
+  output.push("data:")
 
   //feedback
   if (!nested) {

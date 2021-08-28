@@ -49,12 +49,10 @@ def shift_right(u16 start, u16 end)
 def shift_left(u16 start, u16 end)
   // shift a portion of the screen left one pixel
   while start < end
-    {write 1 alu.2}
     repeat 8
-      {copy $start alu.1}
-      {copy alu.<< $start}
-      {write $start alu.1}
-      {write [alu.+] &start}
+      {copy $start alu.1&2}
+      {copy alu.+ $start}
+      start++
 
 def shift_down(u16 start, u16 end)
   // shift a portion of the screen down 3 pixels (x 8 words = 24)
@@ -93,8 +91,8 @@ def shift_sprite_right(u16 start)
 def shift_sprite_left(u16 start)
   let u16 end = start + 65
   while start < end
-    {copy $start alu.1}
-    {copy alu.<< $start}
+    {copy $start alu.1&2}
+    {copy alu.+ $start}
     start++
     {copy $start alu.1}
     {write 0b1000000000000000 alu.2}
@@ -105,8 +103,8 @@ def shift_sprite_left(u16 start)
       {copy alu.| $start}
       start++
 
-    {copy $start alu.1}
-    {copy alu.<< $start}
+    {copy $start alu.1&2}
+    {copy alu.+ $start}
     start += 7
     {copy $start alu.1}
     {write 0b1000000000000000 alu.2}
@@ -124,7 +122,7 @@ def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
   y += word_x
   y += SYS_VRAM_ADDR
 
-  let u16 scratch = #sys.vram.shifted_pixels#
+  let u16 scratch = #~sys.vram.shifted_pixels#
   scratch += sub_x
 
   if data
@@ -132,9 +130,10 @@ def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
     {copy $y alu.2}
     {write [alu.|] $y}
   else
+    {write 0xffff alu.1}
+    {copy $scratch alu.2}
+    {copy alu.- &scratch}
     {copy $scratch alu.1}
-    {copy alu.! &scratch}
-    {copy &scratch alu.1}
     {copy $y alu.2}
     {write [alu.&] $y}
 
@@ -146,6 +145,7 @@ const u16 TITLE_SCREEN_FLASH_SPEED = 1000
 // higher = longer before exploded aliens are erased
 const u16 EXPLOSION_TIME = 4
 
+const u16 SPRITE_ADDR = #~space_invaders_aliens#
 const u16 MAX_EXPLODED_ALEINS = 10
 const u16 START_LIVES = 3
 
@@ -287,7 +287,7 @@ def update_cannon()
 
 def draw_aliens(u16 start_column, u16 alien_row)
   let u16 invader_sprite = 16 * alien_row
-  invader_sprite += #space_invaders_aliens#
+  invader_sprite += #~space_invaders_aliens#
 
   let u16 invader_index = 6 * alien_row
   let u16 row = 88 * alien_row
@@ -302,7 +302,7 @@ def draw_aliens(u16 start_column, u16 alien_row)
       else
         draw_8x8(invader_sprite + 8 , col, row)
     else
-      draw_8x8(#space_invaders_blank#, col, row)
+      draw_8x8(#~space_invaders_blank#, col, row)
     invader_index++
 
 def move_aliens()
@@ -393,7 +393,7 @@ def hit_alien(u16 x, u16 y)
   offset += start_row
 
   let u16 explosion_sprite = invader_x_pos * 8
-  explosion_sprite += #space_invaders_explosion#
+  explosion_sprite += #~space_invaders_explosion#
   draw_16x8(explosion_sprite, x + 1, offset)
 
   // queue the expolsion for erasure
@@ -417,7 +417,7 @@ def erase_aliens()
 
       // erase the exploded alien
       let u16 vram_offset = 88 * entry.y
-      draw_16x8(#space_invaders_blank#, entry.x + 1, start_row + vram_offset)
+      draw_16x8(#~space_invaders_blank#, entry.x + 1, start_row + vram_offset)
       // bin the entry
       entry = erase_queue.pop()
     else
@@ -493,7 +493,7 @@ for let u16 i = 0; i < alien_status.max_len(); i++
   aliens_alive++
 
 // draw title screen
-sys.mem_copy_fast(#space_invaders_title_screen#, SYS_VRAM_ADDR, 1024)
+sys.mem_copy_fast(#~space_invaders_title_screen#, SYS_VRAM_ADDR, 1024)
 
 let bool flip = false
 let u16 wait = 0xffff
@@ -502,9 +502,9 @@ while sys.kbd.get_charcode() == 0
   // switch between 2 frames of "press any key to start"
   if wait > TITLE_SCREEN_FLASH_SPEED
     if flip
-      sys.mem_copy_fast(#space_invaders_title_screen_animation#, SYS_VRAM_ADDR + 465, 104)
+      sys.mem_copy_fast(#~space_invaders_title_screen_animation#, SYS_VRAM_ADDR + 465, 104)
     else
-      sys.mem_copy_fast(#space_invaders_title_screen# + 465, SYS_VRAM_ADDR + 465, 104)
+      sys.mem_copy_fast(#~space_invaders_title_screen# + 465, SYS_VRAM_ADDR + 465, 104)
     flip = !flip
     wait = 0
 
@@ -514,9 +514,9 @@ while sys.kbd.get_charcode() == 0
 sys.vram.clear()
 
 // draw cannon and score title
-draw_8x8(#space_invaders_cannon#, cannon_x, 960)
+draw_8x8(#~space_invaders_cannon#, cannon_x, 960)
 
-sys.mem_copy_fast(#space_invaders_header#, SYS_VRAM_ADDR, 56)
+sys.mem_copy_fast(#~space_invaders_header#, SYS_VRAM_ADDR, 56)
 draw_score()
 
 // draw aliens starting in column 2

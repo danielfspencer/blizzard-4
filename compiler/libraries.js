@@ -1,6 +1,6 @@
 const libs = {
   "sys.consts": [
-    "const u16 SYS_ROM_ADDR = #rom.0#",
+    "const u16 SYS_RAM_ADDR = #ram.0#",
     "const u16 SYS_VRAM_ADDR = #vram.0#",
     "const u16 SYS_KEYBOARD_ADDR = #io.kbd#",
     "const u16 SYS_TIMER_ADDR = #timer.high#"
@@ -129,8 +129,9 @@ const libs = {
   "sys.u32_subtract": [
     "def sys.u32_subtract(u32 a, u32 b) -> u32",
     "  let u16 carry",
-    "  {write $b[0] alu.1}",
-    "  {write [alu.!] &b[0]}",
+    "  {write 0xffff alu.1}",
+    "  {write $b[0] alu.2}",
+    "  {write [alu.-] &b[0]}",
     "  {write 0 alu.1}",
     "  {write $b[1] alu.2}",
     "  {write [alu.-] &b[1]}",
@@ -198,10 +199,10 @@ const libs = {
   ],
   "sys.u32_lshift": [
     "def sys.u32_lshift(u32 a) -> u32",
-    "  {write $a[0] alu.1}",
-    "  {write [alu.<<] &__return[0]}",
-    "  {write $a[1] alu.1}",
-    "  {write [alu.<<] &__return[1]}",
+    "  {write $a[0] alu.1&2}",
+    "  {write [alu.+] &__return[0]}",
+    "  {write $a[1] alu.1&2}",
+    "  {write [alu.+] &__return[1]}",
     "  {write 0b1000000000000000 alu.2}",
     "  if #[alu.ov]#",
     "    {write $__return[0] alu.1}",
@@ -397,7 +398,7 @@ const libs = {
     "  let u16 column = x >> 4",
     "  let u16 addr = y << 3",
     "  let u16 table_addr",
-    "  {write sys.vram.shifted_pixels &table_addr}",
+    "  {write ~sys.vram.shifted_pixels &table_addr}",
     "",
     "  let u16 pixel = x & 0xf",
     "  addr += column",
@@ -408,8 +409,9 @@ const libs = {
     "    {copy $addr alu.2}",
     "    {write [alu.|] $addr}",
     "  else",
-    "    {copy $table_addr alu.1}",
-    "    {copy alu.! &table_addr}",
+    "    {write 0xffff alu.1}",
+    "    {copy $table_addr alu.2}",
+    "    {copy alu.- &table_addr}",
     "    {copy &table_addr alu.1}",
     "    {copy $addr alu.2}",
     "    {write [alu.&] $addr}"
@@ -421,7 +423,7 @@ const libs = {
     "  let u16 column = x >> 4",
     "  let u16 addr = y << 3",
     "  let u16 table_addr",
-    "  {write sys.vram.shifted_pixels &table_addr}",
+    "  {write ~sys.vram.shifted_pixels &table_addr}",
     "",
     "  let u16 pixel = x & 0xf",
     "  addr += column",
@@ -450,7 +452,7 @@ const libs = {
     "",
     "  char_code -= 32",
     "  ",
-    "  let u16 char_pointer = #sys.vram.glyphs#",
+    "  let u16 char_pointer = #~sys.vram.glyphs#",
     "  let u16 char_offset = char_code << 2",
     "  char_offset += char_code",
     "  char_offset += char_code",
@@ -517,7 +519,7 @@ const libs = {
     "  {write [alu.+] &tmp}",
     "  {write $tmp alu.1}",
     "  {write vram.1023 alu.2}",
-    "  {goto func_sys.vram.fast_fill_loop [alu.>]}"
+    "  {goto ~func_sys.vram.fast_fill_loop [alu.>]}"
   ],
   "sys.vram.clear": [
     "def sys.vram.clear()",
@@ -778,7 +780,7 @@ const libs = {
     "  if scancode == 0",
     "    return 0",
     "",
-    "  let u16 table_addr = #sys.kbd.scancode_charcode_table#",
+    "  let u16 table_addr = #~sys.kbd.scancode_charcode_table#",
     "  let u16 word",
     "  let u16 charcode",
     "",
