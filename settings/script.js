@@ -11,6 +11,10 @@ $( document ).ready( () => {
     tools.storage.clear()
   })
 
+  $( "#reset-flash" ).click( () => {
+    tools.storage.remove_key("emulator_flash")
+  })
+
   $( "#theme" ).change(function() {
     tools.storage.set_key("theme",$(this).val())
   })

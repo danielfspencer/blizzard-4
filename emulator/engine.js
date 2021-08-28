@@ -36,6 +36,8 @@ class Flash_SST39SF040_Dual {
     for (let i = 0; i < this.sector_erased_flag.length; i++) {
       this.sector_erased_flag[i] = 1
     }
+
+    this._modified()
   }
 
   _byte_program (address, data) {
@@ -49,6 +51,8 @@ class Flash_SST39SF040_Dual {
     } else {
       console.error(`flash: could not program data, sector ${sector} has not been erased`)
     }
+
+    this._modified()
   }
 
   _sector_erase (sector) {
@@ -62,6 +66,8 @@ class Flash_SST39SF040_Dual {
     for (let i = 0; i < this.SECTOR_SIZE; i++) {
       this.content[sector * this.SECTOR_SIZE + i] = 0xffff
     }
+
+    this._modified()
   }
 
   _load (data) {
@@ -74,6 +80,11 @@ class Flash_SST39SF040_Dual {
       this.content[i] = data[i] & 0xffff
     }
     debug && console.debug(`flash: loaded ${data.length} word image`)
+  }
+
+  _modified () {
+    // TODO, not ideal as 1 MB has to be sent over postMessage each time
+    postMessage(["flash_dump", flash._dump()])
   }
 
   _dump () {

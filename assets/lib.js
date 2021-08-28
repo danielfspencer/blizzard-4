@@ -53,6 +53,9 @@ const tools = {
     set_key: (key, value) => {
       localStorage.setItem(key, JSON.stringify(value))
     },
+    remove_key: (key) => {
+      localStorage.removeItem(key)
+    },
     clear: () => {
       localStorage.clear()
     }

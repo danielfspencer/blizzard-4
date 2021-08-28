@@ -7,6 +7,8 @@ let front_panel_info = {}
 let updates_running = false
 let vram_changes_buffer = []
 
+let flash_data
+
 $(document).ready(() => {
   canvas = document.querySelector("#screen")
   canvas_context = canvas.getContext("2d")
@@ -73,7 +75,15 @@ $(document).ready(() => {
   worker.postMessage(["request_front_panel_info"])
   worker.postMessage(["set_clock", 100000])
 
-  load_flash()
+  get_flash_image(load_flash)
+
+  window.onbeforeunload = () => {
+    // if the flash has been modified
+    if (flash_data !== undefined) {
+      save_flash(flash_data)
+      console.log("Saved modified flash image to localStorage")
+    }
+  }
 
   parent.interface.child_page_loaded(inter_page_message_handler)
   parent.interface.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
@@ -116,7 +126,7 @@ function handle_message(message) {
       stop_slow_step()
       break
     case "flash_dump":
-      save_flash(message[1])
+      flash_data = message[1]
       break
     default:
       console.error(`Unknown command '${message[0]}'`)
@@ -154,18 +164,28 @@ function save_flash(data) {
   }
 
   let base64 = tools.base64.array_to_b64(as_bytes)
-
   tools.storage.set_key("emulator_flash", base64)
 }
 
-function load_flash() {
+function get_flash_image(callback) {
   let image = tools.storage.get_key("emulator_flash")
 
   if (image === undefined) {
-    console.log("No flash image found to load")
-    return
-  }
+    console.log("No flash image in localStorage, loading default...")
 
+    $.ajax({
+      url: `../assets/flash_images/default.base64`,
+      dataType: 'text'
+    })
+    .then(callback)
+  } else {
+
+    console.log("Using flash image in localStorage")
+    callback(image)
+  }
+}
+
+function load_flash(image) {
   let as_bytes = tools.base64.b64_to_array(image)
   let data = []
 
