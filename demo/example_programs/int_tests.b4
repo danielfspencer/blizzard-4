@@ -235,6 +235,12 @@ assert_true(u32_tmp == 4)
 u32_tmp = 4 / 2
 assert_true(u32_tmp == 2)
 
+u32_tmp = 1000000000 / 10
+assert_true(u32_tmp == 100000000)
+
+u32_tmp = 999999999 / 9
+assert_true(u32_tmp == 111111111)
+
 u32_tmp = 7 * 2
 assert_true(u32_tmp == 14)
 
