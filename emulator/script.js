@@ -8,6 +8,7 @@ let updates_running = false
 let vram_changes_buffer = []
 
 let flash_data
+let store = parent.interface.window_ref_store
 
 $(document).ready(() => {
   canvas = document.querySelector("#screen")
@@ -15,7 +16,6 @@ $(document).ready(() => {
 
   set_screen_theme(tools.storage.get_key("emulator-display-colour", "white-grey"))
 
-  let store = parent.interface.window_ref_store
   if (store.visualiser) {
     store.visualiser.clear_screen()
   }
@@ -103,8 +103,7 @@ function handle_message(message) {
       vram_changes_buffer.push(...message[1])
       break
     case "ram_changes":
-      let store = parent.interface.window_ref_store
-      if (store.visualiser !== undefined) {
+      if (store.visualiser && store.visualiser.ready) {
         store.visualiser.ram_changes_buffer.push(...message[1])
       }
       break
@@ -128,6 +127,15 @@ function handle_message(message) {
     case "flash_dump":
       flash_data = message[1]
       break
+    case "ram_dump": {
+      let ram_data = message[1]
+
+      if (store.visualiser && store.visualiser.ready) {
+        for (let address = 0; address < ram_data.length; address++) {
+          store.visualiser.bulk_changes_buffer.push([address, ram_data[address]])
+        }
+      }
+      } break
     default:
       console.error(`Unknown command '${message[0]}'`)
       break
@@ -139,12 +147,15 @@ function gen_button(icon, text) {
 }
 
 function open_visualiser() {
-  let store = parent.interface.window_ref_store
   if (store.visualiser === undefined || store.visualiser.parent === null) {
     let width = 512
     let height = 512 + tools.style.get_scrollbar_width() + 24 // (header bar size)
     windows.open('emulator/visualiser/visualiser.html', width, height, ref => {
       store.visualiser = ref
+
+      // update entire view of ram as all changes are ignored when the visualiser isn't open
+      // delay allows time for page to load
+      setTimeout(() => worker.postMessage(["dump_ram"]), 1000)
     })
   }
 }

@@ -1,4 +1,9 @@
+const BULK_CHANGES_CHUNK_SIZE = 1000
+
 let counter = 0
+var ready = false
+var ram_changes_buffer = []
+var bulk_changes_buffer = []
 
 $(document).ready( () => {
   canvas = document.getElementById("memory")
@@ -7,9 +12,9 @@ $(document).ready( () => {
   $( "#close" ).click(() => window.close())
   pixel_on_colours = [255,255,255]
   pixel_off_colours = [0,0,0]
-  ram_changes_buffer = []
 
   start_updates()
+  ready = true
 })
 
 function benchmark() {
@@ -28,6 +33,11 @@ function start_updates() {
 
 function animation_frame_handler() {
   if (counter > 3) {
+    // bulk changes are applied in small batches spread through time to avoid lag spikes
+    if (bulk_changes_buffer.length > 0) {
+      ram_changes_buffer.push(...bulk_changes_buffer.splice(0, BULK_CHANGES_CHUNK_SIZE))
+    }
+
     draw_screen_updates()
     counter = 0
   }
