@@ -85,6 +85,11 @@ function set_toolbar_title() {
   let id = /\/\w+\/(\w+).html/.exec(href)[1]
 
   $("#toolbar-title").text($(`#menu-list #${id}`).text())
+
+  // un-select all options
+  $("#menu-list li").removeClass("active")
+  // select the new one
+  $(`#menu-list #${id}`).addClass("active")
 }
 
 function menu_item_clicked(id) {
@@ -96,12 +101,9 @@ function menu_item_clicked(id) {
 function load_page(id) {
   if ($(`#menu-list #${id}`).length) {
     // if the page exists, load it
-    $("#menu-list li").removeClass("active") //un-select all options
-    $(`#menu-list #${id}`).addClass("active") // select the new one
     $("#content").attr("src", `${id}/${id}.html`)
   } else {
-    // otherwise, reset preferences & load the default page
-    console.error(`No such page '${id}', switching to default '${DEFAULT_PAGE}'`)
+    console.error(`No such page '${id}', resetting localStorage`)
     tools.storage.clear()
     location.reload()
   }
