@@ -491,8 +491,6 @@ function draw_front_panel() {
 }
 
 function draw_screen_updates() {
-  let img_data = canvas_context.createImageData(16, 1)
-
   for (const [address, word] of vram_changes_buffer) {
     let y = Math.floor(address / 8)
     let x = (address % 8) * 16
