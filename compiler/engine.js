@@ -211,7 +211,7 @@ function assert_valid_function_name(name) {
 }
 
 function buffer_if_needed(address) {
-  if (/(alu\.)|(ram\+\.)/.test(address)) {
+  if (/(alu\.)/.test(address)) {
     let buffer = get_temp_word()
     return {
       prefix: [`write ${address} ${buffer.label}`],
@@ -234,12 +234,23 @@ function gen_label(type) {
 
 function write_operands(expr1, expr2, type) {
   let result = []
+
   let [expr1_prefix, expr1_reg] = translate(expr1, type)
-  let [expr2_prefix, expr2_reg] = translate(expr2, type)
+  let expr1_reg_buffered = buffer_if_needed(expr1_reg)
   result.push(...expr1_prefix)
-  result.push(`write ${expr1_reg} alu.1`)
+  result.push(...expr1_reg_buffered.prefix)
+
+  let [expr2_prefix, expr2_reg] = translate(expr2, type)
+  let expr2_reg_buffered = buffer_if_needed(expr2_reg)
   result.push(...expr2_prefix)
-  result.push(`write ${expr2_reg} alu.2`)
+  result.push(...expr2_reg_buffered.prefix)
+
+  result.push(`write ${expr1_reg_buffered.label} alu.1`)
+  result.push(`write ${expr2_reg_buffered.label} alu.2`)
+
+  expr1_reg_buffered.free()
+  expr2_reg_buffered.free()
+
   return result
 }
 
