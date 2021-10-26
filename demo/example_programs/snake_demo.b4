@@ -24,6 +24,7 @@ sig draw_food()
 sig draw_hud()
 
 global u16 lives = START_LIVES
+global u16 idle_timer
 
 def init_state()
   global u16 food_x
@@ -50,10 +51,10 @@ def init_state()
 
 def draw_food()
   // generate pseudorandom position
-  food_x = *SYS_TIMER_ADDR
+  food_x = idle_timer
   food_x += 20
   food_x *= food_x
-  food_y = *SYS_TIMER_ADDR
+  food_y = idle_timer
   food_y += 25
   food_y *= food_y
 
@@ -118,6 +119,10 @@ init_state()
 
 while true
   let u16 key_code = sys.kbd.get_charcode()
+
+  if key_code == 0
+    idle_timer++
+
   if key_code == 30
     if direction != 2
       direction = 0

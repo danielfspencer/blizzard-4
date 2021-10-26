@@ -2,8 +2,7 @@ const libs = {
   "sys.consts": [
     "const u16 SYS_RAM_ADDR = #ram.0#",
     "const u16 SYS_VRAM_ADDR = #vram.0#",
-    "const u16 SYS_KEYBOARD_ADDR = #io.kbd#",
-    "const u16 SYS_TIMER_ADDR = #timer.high#"
+    "const u16 SYS_KEYBOARD_ADDR = #io.kbd#"
   ],
   "sys.u16_multiply": [
     "def sys.u16_multiply(u16 a, u16 b) -> u16",
