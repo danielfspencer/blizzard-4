@@ -184,8 +184,6 @@ function init_state() {
   vram_addresses_changed = {}
   ram_addresses_changed = {}
 
-  cycle_count_when_timer_last_reset = 0
-
   init_activity_indicators()
 }
 
@@ -452,21 +450,6 @@ function ram_change(address, new_data) {
   ram_addresses_changed[address] = true
 }
 
-function get_timer_value() {
-  let cycles = total_cycles - cycle_count_when_timer_last_reset
-  let time_sec = cycles / actual_cycles_per_second
-  let value = time_sec * 8192   // 8192 counts per second
-
-  let low_word = value & 0xffff
-  let high_word = (value >> 16) & 0xffff
-
-  return [low_word,high_word]
-}
-
-function reset_timer() {
-  cycle_count_when_timer_last_reset = total_cycles
-}
-
 function start() {
   if (!is_running) {
     debug = false
@@ -574,57 +557,49 @@ function simulate_effect_of_read_bus_change() {
     var card_address = (read_bus & 0b0011100000000000) >> 11
     var address = read_bus & 0b0000011111111111
 
-    switch (card_address) {                                               //control unit + timer + alu
+    switch (card_address) {                                               //control unit + alu
       case 0:
-        switch (address) {
+        switch (address - 8) {
+          case 2:
+            data_bus = alu_operands[0] + alu_operands[1]
+            activity_indicators.alu_read = 2 ** 8
+            break
           case 3:
-            data_bus = get_timer_value()[0]
+            data_bus = alu_operands[0] - alu_operands[1]
+            activity_indicators.alu_read = 2 ** 7
             break
           case 4:
-            data_bus = get_timer_value()[1]
+            data_bus = alu_operands[0] >> 1
+            activity_indicators.alu_read = 2 ** 6
+            break
+          case 6:
+            data_bus = alu_operands[0] & alu_operands[1]
+            activity_indicators.alu_read = 2 ** 5
+            break
+          case 7:
+            data_bus = alu_operands[0] | alu_operands[1]
+            activity_indicators.alu_read = 2 ** 4
+            break
+          case 9:
+            data_bus = alu_operands[0] > alu_operands[1] ? 1 : 0
+            activity_indicators.alu_read = 2 ** 3
+            break
+          case 10:
+            data_bus = alu_operands[0] < alu_operands[1] ? 1 : 0
+            activity_indicators.alu_read = 2 ** 2
+            break
+          case 11:
+            data_bus = alu_operands[0] === alu_operands[1] ? 1 : 0
+            activity_indicators.alu_read = 2
+            break
+          case 12:
+            data_bus = (alu_operands[0] + alu_operands[1]) > 0xffff ? 1 : 0
+            activity_indicators.alu_read = 1
+            break
           default:
-            switch (address - 8) {
-              case 2:
-                data_bus = alu_operands[0] + alu_operands[1]
-                activity_indicators.alu_read = 2 ** 8
-                break
-              case 3:
-                data_bus = alu_operands[0] - alu_operands[1]
-                activity_indicators.alu_read = 2 ** 7
-                break
-              case 4:
-                data_bus = alu_operands[0] >> 1
-                activity_indicators.alu_read = 2 ** 6
-                break
-              case 6:
-                data_bus = alu_operands[0] & alu_operands[1]
-                activity_indicators.alu_read = 2 ** 5
-                break
-              case 7:
-                data_bus = alu_operands[0] | alu_operands[1]
-                activity_indicators.alu_read = 2 ** 4
-                break
-              case 9:
-                data_bus = alu_operands[0] > alu_operands[1] ? 1 : 0
-                activity_indicators.alu_read = 2 ** 3
-                break
-              case 10:
-                data_bus = alu_operands[0] < alu_operands[1] ? 1 : 0
-                activity_indicators.alu_read = 2 ** 2
-                break
-              case 11:
-                data_bus = alu_operands[0] === alu_operands[1] ? 1 : 0
-                activity_indicators.alu_read = 2
-                break
-              case 12:
-                data_bus = (alu_operands[0] + alu_operands[1]) > 0xffff ? 1 : 0
-                activity_indicators.alu_read = 1
-                break
-              default:
-                break
-            }
-            data_bus = data_bus & 0xffff
+            break
         }
+        data_bus = data_bus & 0xffff
         break
       case 2:                                                             //user io
         switch (address) {
@@ -694,9 +669,6 @@ function simulate_effect_of_write_bus_change() {
     switch (card_address) {                                               //control unit
       case 0:
         switch (address) {
-          case 3:
-            reset_timer()
-            break
           case 8:
             alu_operands[0] = data_bus
             activity_indicators.alu1_write = 1

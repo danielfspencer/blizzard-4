@@ -1,4 +1,4 @@
-### Card 0 (Control Unit, Timer and ALU)
+### Card 0 (ALU)
 
 | base address | 0 |
 | --- | --- |
@@ -7,8 +7,6 @@
 | Absolute<br>Address | Internal<br>Address | Description |	Mnemonic | Read/Write | Width<br>(bits) |
 | --- | --- | --- | --- | --- | --- |
 | 2	| 2	| stack pointer	| `ctl.sp` | R/W |	14
-| 3	| 3	| 32-bit timer (upper 16 bits) | `timer.high`	| R |	16
-| 4 | 4	| 32-bit timer (low 16 bits) | `timer.low` | R | 16
 | 8 | 8 | Operand 1 Register | `alu.1` | W | 16 |
 | 9 | 9 | Operand 2 Register | `alu.2` | W | 16 |
 | 10 | 10 | (write only) Store into Op 1 & Op 2 | `alu.1&2` | W | 16 |

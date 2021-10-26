@@ -72,8 +72,6 @@ const VRAM_BASE = 0x1800
 const BASE_ADDRESS = RAM_BASE
 
 const MNEMONICS = {
-  "timer.high" : 3,
-  "timer.low" : 4,
   "alu.1" : 8,
   "alu.2" : 9,
   "alu.1&2": 10,
