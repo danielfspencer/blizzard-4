@@ -1,7 +1,8 @@
 # Introduction
-**Blizzard 4 Compiled Language** (file extension `.b4`) is a statically & strongly typed, general purpose, procedural programming language. Much like C, it is designed to efficiently map high-level constructs to machine code instructions. Blocks are indented with two spaces, therefore whitespace at the start of lines is significant.
+**Blizzard 4 Compiled Language** (file extension `.b4`) is a statically & strongly typed, general purpose, call-by-value, procedural programming language. Much like C, it is designed to efficiently map high-level constructs to machine code instructions. Blocks are indented with two spaces, therefore whitespace at the start of lines is significant.
 
-Compiled programs contain no runtime environment.
+Compiled programs do not contain nor require a runtime environment.
+By default, generated programs can be booted directly by the computer.
 
 ### Scope
 local scope:
@@ -195,7 +196,7 @@ Decrement *name* by 1.
 my_num--
 ```
 
-+ **sig** [name]( <args> ) < -> type>
++ **sig** \[name\]( <args> ) < -> type>
 
 Defines the signature of function *name*. This gives the compiler all the information it needs to compile calls to the function. The function can then either be defined later in the program or it can be linked at assembly time.
 
@@ -366,7 +367,7 @@ def sys.u16_multiply(u16 a, u16 b) -> u16
   let u16 ans = 0
   while b > 0
     if b
-      ans += a  
+      ans += a
     a = a <<
     b = b >>
   return ans
@@ -470,7 +471,7 @@ optional_block_label:
 | `u32` | (see numerical types) |
 | `s32` | (see numerical types) |
 
-*see [charcode listing](/manual/docs/charcode.md) for more details.
+*see [charcode listing](/manual/docs/programming/charcode.md) for more details.
 
 #### Numerical types
 
