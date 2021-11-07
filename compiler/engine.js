@@ -11,7 +11,7 @@ const MIN_FRAME_SIZE = 2
 const DATA_TYPE_SIZE = { u16:1, s16:1, u32:2, s32:2, bool:1, str:1, array:3, none:0 }
 const MIXABLE_NUMERIC_TYPES = [["u16","s16"],["u32","s32"]]
 const RESERVED_KEYWORDS = [
-  "if","for","while","repeat","struct","def","true","false","sys","return","break","continue","include","__main","__global", "__return"
+  "if","else","for","while","global","let","const","repeat","struct","sig","def","true","false","sys","return","break","continue","include","__main","__global", "__return"
 ]
 const RETURN_INSTRUCTION = "return [sp+0] [sp+1]"
 const STRUCTURE_INDENT = "  "
