@@ -514,6 +514,13 @@ function translate_body(tokens) {
       instructions = output
     }
 
+    if (token.name !== "comment") {
+      let directive = `$line ${token.line}`
+      if (instructions.length > 0) {
+        instructions.unshift(directive)
+      }
+    }
+
     if (token.name === "function" && data_type !== "none") {
       log.warn(`line ${token.line}:\nDiscarding function's returned value of type '${data_type}'`)
     }
@@ -2830,6 +2837,18 @@ function translate(token, ctx_type) {
         }
       }
 
+      // create signature in the following format: "(type, type) -> return_type"
+      let table_entry = state.function_table[args.name]
+      let parameters = Object.values(table_entry.arguments)
+
+      // comma separated types
+      let argument_string = parameters.map(arg => arg.data_type).join(", ")
+
+      let signature = `${args.name}(${argument_string}) -> ${table_entry.data_type}`
+
+      // insert $block directive under function label
+      target.splice(1, 0, `$block ${signature}`)
+
       // indent function header
       for (let i = 1; i < target.length; i++) {
         target[i] = `  ${target[i]}`
@@ -3027,10 +3046,13 @@ function compile(input, nested) {
     global_frame++
   }
 
+  output.push("$block [entry point]")
+
   output.push(`call ~func__main ~data+${global_frame}`)
   output.push("stop")
   output.push("")
   output.push("func__main:")
+  output.push(STRUCTURE_INDENT + "$block __main()")
   output.push(...main)
   output.push(STRUCTURE_INDENT + RETURN_INSTRUCTION)
   output.push("")
@@ -3044,11 +3066,15 @@ function compile(input, nested) {
     output.push("")
   }
 
+  output.push("$block [constants]")
+
   //add constants
   for (let entry of state.data) {
     output.push(...entry)
     output.push("")
   }
+
+  output.push("$block")
 
   output.push("$align 2")
   output.push("data:")

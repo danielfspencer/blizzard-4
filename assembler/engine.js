@@ -96,7 +96,10 @@ const MNEMONICS = {
 function init_state() {
   state = {
     labels: {},
-    ast: []
+    ast: [],
+    block_name: "unknown",
+    b4_line_map: {},
+    asm_line_map: {}
   }
 }
 
@@ -290,6 +293,44 @@ class Align extends AsmEntry {
 
   generate() {
     return Array(this.difference).fill(0)
+  }
+}
+
+class BlockName extends AsmEntry {
+  constructor(tag) {
+    super()
+    this.tag = tag
+  }
+
+  set_address(address) {
+    state.block_name = this.tag
+  }
+
+  get_size() {
+    return 0
+  }
+
+  toString() {
+    return `<BlockName: ${this.tag}>`
+  }
+}
+
+class LineNumber extends AsmEntry {
+  constructor(tag) {
+    super()
+    this.tag = tag
+  }
+
+  set_address(address) {
+    state.b4_line_map[address - BASE_ADDRESS] = `${state.block_name}:${this.tag}`
+  }
+
+  get_size() {
+    return 0
+  }
+
+  toString() {
+    return `<LineNumber: ${this.tag}>`
   }
 }
 
@@ -533,6 +574,12 @@ function parse(input) {
   } else if (input.startsWith("$align")) {
     return new Align(input.slice(7))
 
+  } else if (input.startsWith("$line")) {
+    return new LineNumber(input.slice(6))
+
+  } else if (input.startsWith("$block")) {
+    return new BlockName(input.slice(7))
+
   } else if (input.startsWith("#") || input.startsWith("~")) {
     // label reference as data
     let relative = input.slice(0,1) == "~"
@@ -667,6 +714,9 @@ function assemble(input) {
   let address = BASE_ADDRESS
   for (const token of state.ast) {
     token.set_address(address)
+
+    // associate current (relative) address with the token's line number
+    state.asm_line_map[address - BASE_ADDRESS] = token.line.toString()
 
     address += token.get_size()
   }
