@@ -2675,7 +2675,11 @@ function translate(token, ctx_type) {
 
       result.push([(`${label}_start:`)])
       result.push(...prefix)
-      result.push(`goto ~${label}_end ${value}`)
+
+      // don't emit goto if it will never be taken
+      if (value[0] !== "1") {
+        result.push(`goto ~${label}_end ${value}`)
+      }
 
       let prev_state = state.inner_structure_label
       state.inner_structure_label = label
