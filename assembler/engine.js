@@ -375,7 +375,7 @@ class Instruction extends AsmEntry {
     this.args = args
 
     let arg_number = this.get_num_arguments()
-    if (this.args.length !== arg_number) {
+    if (!arg_number.includes(this.args.length)) {
       throw new AsmError(`Instruction requires ${arg_number} argument(s)`)
     }
   }
@@ -395,7 +395,7 @@ class Instruction extends AsmEntry {
   }
 
   get_num_arguments() {
-    return 2
+    return [2]
   }
 
   toString() {
@@ -432,7 +432,7 @@ class Instruction extends AsmEntry {
 }
 
 class StopInstruction extends Instruction {
-  get_num_arguments() {return 0}
+  get_num_arguments() {return [0]}
 
   get_opcode() {return 0}
 
@@ -444,7 +444,17 @@ class ReturnInstruction extends Instruction {
 }
 
 class GotoInstruction extends Instruction {
+  get_num_arguments() {return [1,2]}
   get_opcode() {return 2}
+  generate() {
+    // if second argument not specified, the last argument word should be 0 (unconditional jump)
+    let result = super.generate()
+    if (result.length === 2) {
+      result.push(0)
+    }
+
+    return result
+  }
 }
 
 class CallInstruction extends Instruction {
