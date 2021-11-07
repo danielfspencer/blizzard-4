@@ -265,7 +265,7 @@ function operation_assignment_token(var_name, op, value_token) {
     name:var_name
   }}
 
-  let token = set_token(var_name, op, [var_token, value_token])
+  let token = set_token(var_name, op, [var_token, value_token], value_token.line)
   return translate(token)
 }
 
