@@ -1513,14 +1513,14 @@ function translate(token, ctx_type) {
       if (state.inner_structure_label === null) {
         throw new CompError("'break' can only be used in for/while loops")
       }
-      result.push(`goto ~${state.inner_structure_label}_end 0`)
+      result.push(`goto ~${state.inner_structure_label}_end`)
     } break
 
     case "continue": {
       if (state.inner_structure_label === null) {
         throw new CompError("'continue' can only be used in for/while loops")
       }
-      result.push(`goto ~${state.inner_structure_label}_start 0`)
+      result.push(`goto ~${state.inner_structure_label}_start`)
     } break
 
     case "signature_def": {
@@ -2620,7 +2620,7 @@ function translate(token, ctx_type) {
         result.push(...translate_body(main_tokens[i]))
 
         if ((else_present || else_if_present) && i !==  exprs.length) {
-          result.push(`goto ~${label}_end 0`)
+          result.push(`goto ~${label}_end`)
         }
       }
 
@@ -2661,7 +2661,7 @@ function translate(token, ctx_type) {
       let cmd_prefix = translate(args.cmd)
       result.push(...cmd_prefix)
 
-      result.push(`goto ~${label}_start 0`)
+      result.push(`goto ~${label}_start`)
       result.push(`${label}_end:`)
     } break
 
@@ -2682,7 +2682,7 @@ function translate(token, ctx_type) {
       result.push(...translate_body(token.body))
       state.inner_structure_label = prev_state
 
-      result.push(`goto ~${label}_start 0`)
+      result.push(`goto ~${label}_start`)
       result.push(`${label}_end:`)
     } break
 
