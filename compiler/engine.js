@@ -3063,25 +3063,6 @@ function compile(input, nested) {
 
   //feedback
   if (!nested) {
-    let non_deallocated_vars = 0
-
-    for (let namespace in state.symbol_table) {
-      if (namespace.startsWith("sys.")) {
-        continue
-      }
-      let symbols = state.symbol_table[namespace]
-      for (let name in symbols) {
-        let symbol = symbols[name]
-        if (symbol.type === "variable") {
-          non_deallocated_vars += 1
-        }
-      }
-    }
-
-    if (non_deallocated_vars > 0) {
-      log.warn(`${non_deallocated_vars} variable(s) are never deallocated`)
-    }
-
     for (let [name, table_entry] of Object.entries(state.function_table)) {
       if (!table_entry.fully_defined) {
         log.warn(`${name}() is not defined and must be linked at assemble time`)
