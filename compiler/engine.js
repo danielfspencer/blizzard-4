@@ -3025,6 +3025,10 @@ function compile(input, nested) {
     prev_indent = Math.floor(input[i].search(/\S|$/)/2)
   }
 
+  if (expect_indent) {
+    throw new CompError("Expected indent", input.length)
+  }
+
   let t1 = performance.now()
   log.info(`↳ success, ${input.length} line(s) in ${Math.round(t1-t0)} ms`)
 
