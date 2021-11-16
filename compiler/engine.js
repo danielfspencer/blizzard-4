@@ -2846,8 +2846,8 @@ function translate(token, ctx_type) {
 
       let signature = `${args.name}(${argument_string}) -> ${table_entry.data_type}`
 
-      // insert $block directive under function label
-      target.splice(1, 0, `$block ${signature}`)
+      // insert $name directive under function label
+      target.splice(1, 0, `$name ${signature}`)
 
       // indent function header
       for (let i = 1; i < target.length; i++) {
@@ -3046,13 +3046,13 @@ function compile(input, nested) {
     global_frame++
   }
 
-  output.push("$block [entry point]")
+  output.push("$name [entry point]")
 
   output.push(`call ~func__main ~data+${global_frame}`)
   output.push("stop")
   output.push("")
   output.push("func__main:")
-  output.push(STRUCTURE_INDENT + "$block __main()")
+  output.push(STRUCTURE_INDENT + "$name __main() -> none")
   output.push(...main)
   output.push(STRUCTURE_INDENT + RETURN_INSTRUCTION)
   output.push("")
@@ -3066,15 +3066,15 @@ function compile(input, nested) {
     output.push("")
   }
 
-  output.push("$block [constants]")
+  if (state.data.length) {
+    output.push("$name [constants]")
+  }
 
   //add constants
   for (let entry of state.data) {
     output.push(...entry)
     output.push("")
   }
-
-  output.push("$block")
 
   output.push("$align 2")
   output.push("data:")

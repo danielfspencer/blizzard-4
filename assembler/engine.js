@@ -577,8 +577,8 @@ function parse(input) {
   } else if (input.startsWith("$line")) {
     return new LineNumber(input.slice(6))
 
-  } else if (input.startsWith("$block")) {
-    return new BlockName(input.slice(7))
+  } else if (input.startsWith("$name")) {
+    return new BlockName(input.slice(6))
 
   } else if (input.startsWith("#") || input.startsWith("~")) {
     // label reference as data
