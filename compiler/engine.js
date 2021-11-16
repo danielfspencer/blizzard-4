@@ -11,7 +11,7 @@ const MIN_FRAME_SIZE = 2
 const DATA_TYPE_SIZE = { u16:1, s16:1, u32:2, s32:2, bool:1, str:1, array:3, none:0 }
 const MIXABLE_NUMERIC_TYPES = [["u16","s16"],["u32","s32"]]
 const RESERVED_KEYWORDS = [
-  "if","else","for","while","global","let","const","repeat","struct","sig","def","true","false","sys","return","break","continue","include","__main","__global", "__return"
+  "if","else","for","while","global","let","const","repeat","struct","sig","def","true","false","sys","return","pass","break","continue","include","__main","__global", "__return"
 ]
 const RETURN_INSTRUCTION = "return [sp+0] [sp+1]"
 const STRUCTURE_INDENT = "  "
@@ -714,6 +714,9 @@ function tokenise(input, line) {
 
   } else if (/^continue$/.test(input)) {                 // break
     token = {name:"continue",type:"command",arguments:{}}
+
+  } else if (/^pass$/.test(input)) {                 // pass
+    token = {name:"pass",type:"command",arguments:{}}
 
   } else if (/^([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.test(input)) {                    // [name] = [expr]
     let matches = /^([a-zA-Z_]\w*)\s*=\s*([^=].*)$/.exec(input)
@@ -1514,6 +1517,10 @@ function translate(token, ctx_type) {
       } else {
         load_lib(args.name)
       }
+    } break
+
+    case "pass": {
+      // no op (used when indentation is required)
     } break
 
     case "break": {

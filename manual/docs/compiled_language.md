@@ -37,7 +37,7 @@ Variables, arguments, constants and functions are all referred to by alphanumeri
 - must not be the name of a data type
 
 ### Reserved Keywords
-`if` `for` `while` `repeat` `struct` `def` `true` `false` `sys` `return` `break` `continue` `include` `__root` `__global`  `__return`
+`if` `for` `while` `repeat` `struct` `def` `true` `false` `sys` `return` `break` `continue` `pass` `include` `__root` `__global`  `__return`
 
 # Syntax
 Each line in a `b4` program must be one of the following:
@@ -121,6 +121,17 @@ for let u16 i = 0; i < 5; i++
   if i == 3
     continue
   some_func(i)
+```
+
++ **pass**
+
+Used as a no-op when the language requires an indent.
+
+```javascript
+// wait for a keypress
+while sys.kbd.get_charcode() == 0
+  pass
+
 ```
 
 + [name] **=** [value]

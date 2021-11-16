@@ -29,7 +29,7 @@ while true
           x = 15
           y--
     else if code == 127
-      //pass
+      pass
     else
       sys.vram.render_char(code,x,y,false)
       x++

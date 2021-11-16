@@ -41,7 +41,7 @@ def get_key() -> u16
     if scan_code == 0xf0
       scan_code = *SYS_KEYBOARD_ADDR
     else if scan_code == 0xe0
-      //pass
+      pass
     else
       return scan_code
 
