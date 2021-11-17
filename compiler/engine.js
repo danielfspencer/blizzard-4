@@ -706,9 +706,6 @@ function tokenise(input, line) {
 
     token = {name:"struct_def",type:"structure",body:[],arguments:{name:list[1]}}
 
-  } else if (list[0] === "free") {                 // free [name]
-    token = {name:"delete",type:"command",arguments:{name:list[1]}}
-
   } else if (/^break$/.test(input)) {                 // break
     token = {name:"break",type:"command",arguments:{}}
 
@@ -1384,45 +1381,6 @@ function translate(token, ctx_type) {
       } else {
         throw new CompError("not implemented")
       }
-    } break
-
-    case "delete": {          //free [name]
-      let table_entry
-      let is_global = false
-
-      if (args.name in state.symbol_table[state.scope])  {
-        // it's a local symbol
-        table_entry = state.symbol_table[state.scope][args.name]
-      } else if (args.name in state.symbol_table.__global) {
-        // it's a global symbol
-        table_entry = state.symbol_table.__global[args.name]
-        is_global = true
-      } else {
-        // it does not exist
-        throw new CompError(`Variable '${args.name}' is undefined`)
-      }
-
-      if (table_entry.type !== "variable") {
-        throw new CompError(`'${args.name}' is not a variable and cannot be freed`)
-      }
-
-      let addrs = []
-      if (table_entry.data_type === "array") {
-        addrs.push(table_entry.specific.base_addr)
-        addrs.push(table_entry.specific.current_len)
-        addrs.push(table_entry.specific.max_len)
-        addrs.push(...table_entry.specific.array_mem)
-      } else {
-        addrs = table_entry.specific.ram_addresses
-      }
-
-      if (is_global) {
-        free_global(addrs)
-      } else {
-        free_stack(addrs)
-      }
-
-      delete state.symbol_table[state.scope][args.name]
     } break
 
     //all the cmds below are just shortcuts for set tokens

@@ -446,7 +446,6 @@ def update_shot()
             if shot_x_sub < tmp
               // if it has hit then delete the alien
               hit_alien(shot_x_word-1,row_of_invader_above_shot)
-            free tmp
       shot_present = false
       fast_set_pixel(shot_x_word, shot_x_sub, shot_y, false)
       fast_set_pixel(shot_x_word, shot_x_sub, shot_y + 4, false)

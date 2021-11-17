@@ -76,13 +76,6 @@ Declare a global variable of the specified type with the specified name. e.g.
 global bool shift_key_pressed = true
 ```
 
-+ **free** [name]
-
-De-allocated the memory assigned to a local or global variable. The variable cannot then be refered to after this command.
-```javascript
-free my_array
-```
-
 + **include** [name]
 
 Load an object from the standard library. This is not necessary when calling functions from the standard library because they are automatically included when you call them. Use the name ```*``` to include the entire standard library.
