@@ -2607,7 +2607,10 @@ function translate(token, ctx_type) {
 
         result.push(...translate_body(main_tokens[i]))
 
-        if ((else_present || else_if_present) && i !==  exprs.length) {
+        if (else_present || i !== exprs.length - 1) {
+          // need to jump to the end of the if statement, unless:
+          // there are no "else" clauses
+          // this is the last "else if" clause
           result.push(`goto ~${label}_end`)
         }
       }
