@@ -67,7 +67,7 @@ assert_true(u16_tmp == 14)
 u16_tmp = 14 / 2
 assert_true(u16_tmp == 7)
 
-u16_tmp = 4 ^ 4
+u16_tmp = 4 ** 4
 assert_true(u16_tmp == 256)
 
 u16_tmp = 63 % 4
@@ -84,7 +84,7 @@ assert_true(2 <= 3)
 u16_tmp = 250 * 147
 assert_true(u16_tmp == 36750)
 
-u16_tmp = 9 ^ 5
+u16_tmp = 9 ** 5
 assert_true(u16_tmp == 59049)
 
 u16_tmp = 0xffff + 1
@@ -140,7 +140,7 @@ assert_true(s16_tmp == 14)
 s16_tmp = 14 / 2
 assert_true(s16_tmp == 7)
 
-s16_tmp = 4 ^ 4
+s16_tmp = 4 ** 4
 assert_true(s16_tmp == 256)
 
 s16_tmp = 63 % 4
@@ -176,13 +176,13 @@ assert_true(s16_tmp == -5)
 s16_tmp = 147 * 147
 assert_true(s16_tmp == 21609)
 
-s16_tmp = 9 ^ 4
+s16_tmp = 9 ** 4
 assert_true(s16_tmp == 6561)
 
-s16_tmp = -9 ^ 4
+s16_tmp = -9 ** 4
 assert_true(s16_tmp == 6561)
 
-s16_tmp = -9 ^ 3
+s16_tmp = -9 ** 3
 assert_true(s16_tmp == -729)
 
 s16_tmp = 32760
@@ -247,7 +247,7 @@ assert_true(u32_tmp == 14)
 u32_tmp = 14 / 2
 assert_true(u32_tmp == 7)
 
-u32_tmp = 4 ^ 4
+u32_tmp = 4 ** 4
 assert_true(u32_tmp == 256)
 
 u32_tmp = 63 % 4
@@ -268,7 +268,7 @@ assert_true(u32_tmp <= 3)
 u32_tmp = 250 * 147
 assert_true(u32_tmp == 36750)
 
-u32_tmp = 9 ^ 5
+u32_tmp = 9 ** 5
 assert_true(u32_tmp == 59049)
 
 u32_tmp = 0xffffffff + 1
@@ -330,7 +330,7 @@ assert_true(s32_tmp == 14)
 s32_tmp = 14 / 2
 assert_true(s32_tmp == 7)
 
-s32_tmp = 4 ^ 4
+s32_tmp = 4 ** 4
 assert_true(s32_tmp == 256)
 
 s32_tmp = 63 % 4
@@ -366,13 +366,13 @@ assert_true(s32_tmp == -5)
 s32_tmp = 147 * 147
 assert_true(s32_tmp == 21609)
 
-s32_tmp = 9 ^ 4
+s32_tmp = 9 ** 4
 assert_true(s32_tmp == 6561)
 
-s32_tmp = -9 ^ 4
+s32_tmp = -9 ** 4
 assert_true(s32_tmp == 6561)
 
-s32_tmp = -9  ^ 3
+s32_tmp = -9  ** 3
 assert_true(s32_tmp == -729)
 
 u32_tmp = 0b01010101010101010101010101010101 >> 1

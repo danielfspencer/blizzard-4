@@ -16,6 +16,8 @@ sys.**s16_modulo**(s16 a, s16 b) -> s16
 
 sys.**s16_rshift**(s16 a) -> s16
 
+sys.**u16_xor**(u16 a, u16 b) -> u16
+
 sys.**u32_add**(u32 a, u32 b) -> u32
 
 sys.**u32_subtract**(u32 a, u32 b) -> u32

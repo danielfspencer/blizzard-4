@@ -377,7 +377,7 @@ def sys.u16_multiply(u16 a, u16 b) -> u16
   let u16 ans = 0
   while b > 0
     if b
-      ans += a  
+      ans += a
     a = a <<
     b = b >>
   return ans
@@ -408,11 +408,12 @@ def shift_right(u16 start = 6144, u16 end = 7167)
 | `-` | subtraction | `u16 s16 u32 s32` | (same as input) |
 | `/` | division | `u16 s16 u32 s32` | (same as input) |
 | `*` | multiplication | `u16 s16 u32 s32` | (same as input) |
-| `^` | exponentiation | `u16 s16 u32 s32` | (same as input) |
+| `**` | exponentiation | `u16 s16 u32 s32` | (same as input) |
 | `%` | modulo | `u16 s16 u32 s32` | (same as input) |
 | `&` | bit-wise AND | `bool u16 s16 u32 s32` | (same as input) |
 | `\|` | bit-wise OR | `bool u16 s16 u32 s32` | (same as input) |
 | `!` | bit-wise NOT | `bool u16 s16 u32 s32` | (same as input) |
+| `^` | bit-wise XOR | `u16 s16` | (same as input) |
 | `>>` |  arithmetic bit-shift 1 bit right | `u16 s16 u32 s32` | (same as input) |
 | `<<` |  arithmetic bit-shift 1 bit left | `u16 s16 u32 s32` | (same as input) |
 | `>` | greater than | `u16 s16 u32 s32` | `bool` |

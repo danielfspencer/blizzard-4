@@ -931,11 +931,11 @@ function tokenise(input, line) {
       size: size_token
     }}
 
-  } else if (/^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|==) *(\S*)$/.test(input)) {          // is an expression
-    let matches = /^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\||\%|==) *(\S*)$/.exec(input)
+  } else if (/^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\*\*|\||\%|==) *(\S*)$/.test(input)) {          // is an expression
+    let matches = /^(\S*) *(>>|<<|!=|<=|>=|\+|\-|\*|\/|\!|\<|\>|\&|\^|\*\*|\||\%|==) *(\S*)$/.exec(input)
 
     let [, expr1_text, operator, expr2_text] = matches
-    const dual_operand = ["+", "-", "/", "*", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", ">>", "<<"]
+    const dual_operand = ["+", "-", "/", "*", "**", "^", "%", ">", "<","==","!=", "&", ">=", "<=", "|", ">>", "<<"]
     const single_operand = ["!"]
 
     if (dual_operand.includes(operator)) {
@@ -1799,7 +1799,7 @@ function translate(token, ctx_type) {
       }
     } break
 
-    case "^": {
+    case "**": {
       type = find_type_priority(args.expr1, args.expr2, ctx_type)
       switch (type) {
         case "s32":
@@ -1807,6 +1807,19 @@ function translate(token, ctx_type) {
         case "s16":
         case "u16": {
           [prefix, registers] = function_call(`sys.${ctx_type}_exponent`, [args.expr1,args.expr2], type)
+        } break
+
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+      }
+    } break
+
+    case "^": {
+      type = find_type_priority(args.expr1, args.expr2, ctx_type)
+      switch (type) {
+        case "bool":
+        case "s16":
+        case "u16": {
+          [prefix, registers] = function_call(`sys.u16_xor`, [args.expr1,args.expr2], type)
         } break
 
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)

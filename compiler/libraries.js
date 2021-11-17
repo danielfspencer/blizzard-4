@@ -110,6 +110,13 @@ const libs = {
     "    {write [alu.+] &__return}",
     "  return __return"
   ],
+  "sys.u16_xor": [
+    "def sys.u16_xor(u16 a, u16 b) -> u16",
+    "  let u16 _1 = a | b",
+    "  let u16 _2 = a & b",
+    "  _2 = !_2",
+    "  return _1 & _2",
+  ],
   "sys.u32_add": [
     "def sys.u32_add(u32 a, u32 b) -> u32",
     "  let u16 carry",
@@ -1597,6 +1604,7 @@ const libs = {
     "sig sys.s16_exponent(s16 a, s16 b) -> s16",
     "sig sys.s16_modulo(s16 a, s16 b) -> s16",
     "sig sys.s16_rshift(s16 a) -> s16",
+    "sig sys.u16_xor(u16 a, u16 b) -> u16",
     "sig sys.u32_add(u32 a, u32 b) -> u32",
     "sig sys.u32_subtract(u32 a, u32 b) -> u32",
     "sig sys.u32_multiply(u32 a, u32 b) -> u32",
