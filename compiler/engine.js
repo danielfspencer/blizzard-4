@@ -1429,11 +1429,14 @@ function translate(token, ctx_type) {
         throw new CompError(`Functions of type '${func_type}' cannot return values`)
       }
 
+      // record that the function has a return statement (this can be checked later on)
+      table_entry.return_present = true
+
       // if the return statement should have an expression, evaluate it
       if (func_type !== "none") {
 
         if (args.expr === undefined) {
-          throw new CompError(`${state.scope}() is of type '${func_type}' and must return a value`)
+          throw new CompError(`${state.scope}() must return a value of type '${func_type}', but got 'none'`)
         }
 
         if (args.expr.name === "var_or_const" && args.expr.arguments.name == "__return") {
@@ -1449,7 +1452,7 @@ function translate(token, ctx_type) {
           log.warn(`line ${token.line}:\nCasting return expression of type '${expr_type}' to '${func_type}'`)
         } else {
           assert_compatable_types(func_type, expr_type, token.line, () => {
-            throw new CompError(`${state.scope}() is of type '${func_type}', but return statement got '${expr_type}'`)
+            throw new CompError(`${state.scope}() must return a value of type '${func_type}', but got '${expr_type}'`)
           })
         }
 
@@ -2737,7 +2740,8 @@ function translate(token, ctx_type) {
         data_type: args.type,
         force_cast: args.force_cast,
         arguments: {},
-        fully_defined: is_full_definition
+        fully_defined: is_full_definition,
+        return_present: false
       }
 
       // process argument definitions
@@ -2835,6 +2839,11 @@ function translate(token, ctx_type) {
       if (is_full_definition) {
         // translate the body of the function
         target.push(...translate_body(token.body))
+
+        // check for missing return statement
+        if (args.type !== "none" && !table_entry.return_present) {
+          throw new CompError(`${args.name}() must return a value of type '${table_entry.data_type}'`)
+        }
       }
 
       // restore previous state.scope

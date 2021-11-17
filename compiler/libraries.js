@@ -448,7 +448,8 @@ const libs = {
     "  {write [alu.&] &__return}",
     "  {write 0 alu.2}",
     "  {write $__return alu.1}",
-    "  {write [alu.>] &__return}"
+    "  {write [alu.>] &__return}",
+    "  return __return"
   ],
   "sys.vram.render_char": [
     "def sys.vram.render_char(u16 char_code, u16 x, u16 y, bool dont_render_spaces = true)",
