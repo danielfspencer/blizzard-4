@@ -28,3 +28,10 @@
 #copyright {
   width: 200px;
 }
+
+#update {
+  cursor: pointer;
+  color: #bd7a00;
+  font-weight: bold;
+  text-decoration: underline;
+}
