@@ -44,7 +44,7 @@ function link_handler() {
     return true
   }
 
-  if (this.href.startsWith("http")) {
+  if (!this.pathname.endsWith(".md")) {
     // this is a link to the web, so open with web browser
     windows.open_external(this.href)
     return false
