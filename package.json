@@ -15,11 +15,12 @@
   "build": {
     "productName": "Blizzard 4",
     "artifactName": "${name}-v${version}-${os}.${ext}",
-    "icon": "assets/icon_512.icns",
+    "icon": "assets/icon.icns",
     "directories": {
       "output": "electron_dist"
     },
     "win": {
+      "icon": "assets/icon@2x.png",
       "target": [
         "portable"
       ]

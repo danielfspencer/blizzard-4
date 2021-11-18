@@ -18,7 +18,7 @@ app.on('ready', () => {
     minWidth: 350,
     minHeight: 200,
     frame: false,
-    icon: path.join(__dirname, 'assets/icon_512.png'),
+    icon: path.join(__dirname, 'assets/icon.png'),
     webPreferences: {
       nativeWindowOpen: true,
       nodeIntegration: true,

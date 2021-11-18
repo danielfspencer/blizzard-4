@@ -1,4 +1,4 @@
-const DEFAULT_PAGE = "demo"
+const DEFAULT_PAGE = "manual"
 
 var interface = {
   message: null,

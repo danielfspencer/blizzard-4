@@ -13,6 +13,14 @@
 A \# before the name of a &micro; instruction means that is is active low.
 
 ### Load/fetch controller
+
+| Dest. Select <sub>10</sub> | Store data bus value to: |
+| --- | --- |
+| 0 | Command register |
+| 1 | Operand. 1 |
+| 2 | Operand. 2 |
+| 3 | Direct register |
+
 <table>
   <tr>
     <td colspan="3">Address<sub>2</sub></td>
@@ -21,8 +29,8 @@ A \# before the name of a &micro; instruction means that is is active low.
     <td colspan="8">&micro; instruction</td>
   </tr>
   <tr>
-    <td><div class="rotate">bit 4 <br> Op. 1 addr. mode</div></td>
-    <td><div class="rotate">bit 3 <br> Op. 2 addr. mode</div></td>
+    <td><div class="rotate">bit 4 <br> Op. 1 direct addr. mode</div></td>
+    <td><div class="rotate">bit 3 <br> Op. 2 direct addr. mode</div></td>
     <td>bits 2:0 <br> &micro;PC</td>
     <td><div class="rotate"># pc -> read bus</div></td>
     <td><div class="rotate"># op. 3 -> read bus</div></td>
