@@ -52,6 +52,7 @@ iframe {
 #button-container {
   margin-left: auto;
   display: flex;
+  white-space: nowrap;
 }
 
 #button-container > .button {
@@ -62,6 +63,10 @@ iframe {
 
 #button-container > .button > a {
   margin-left: 6px;
+}
+
+#button-container > .button > img {
+  width: 24px;
 }
 
 #overflow-menu {

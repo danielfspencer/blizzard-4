@@ -13,6 +13,10 @@ body {
   background: #182027;
 }
 
+.button img {
+  filter: invert(100%);
+}
+
 /* parts of the frame (toolbar, window buttons etc) */
 
 div#frame #dim.active {
@@ -52,10 +56,6 @@ div#frame #toolbar > div.material-design-hamburger {
 }
 
 div#frame #toolbar> #overflow-menu {
-  filter: invert(100%);
-}
-
-div#frame #toolbar > #button-container > .button img {
   filter: invert(100%);
 }
 
@@ -101,6 +101,15 @@ div#log > div.item.warn {
 
 div#log > div.item.error {
   background: #2f0c0c;
+}
+
+div#front_panel > .panel h1 {
+  background: #214145;
+  color: #ffffff;
+}
+
+div#front_panel #opcodes {
+  filter: invert(100%);
 }
 
 /* manual page */

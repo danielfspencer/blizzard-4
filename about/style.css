@@ -1,5 +1,7 @@
-pre {
-  font-family: 'DejaVu Sans Mono';
+#logo {
+  float: left;
+  width: 202px;
+  margin: -13px -8px 0 -2px;
 }
 
 #version-string {
@@ -25,4 +27,11 @@ pre {
 
 #copyright {
   width: 200px;
+}
+
+#update {
+  cursor: pointer;
+  color: #bd7a00;
+  font-weight: bold;
+  text-decoration: underline;
 }

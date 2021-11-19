@@ -1,4 +1,4 @@
-const DEFAULT_PAGE = "docs/introduction.md"
+const DEFAULT_PAGE = "introduction.md"
 
 const converter = new showdown.Converter()
 converter.setFlavor('github')
@@ -21,7 +21,7 @@ function gen_button(icon) {
 
 function render_page(path, position) {
   $.ajax({
-    url: path,
+    url: `docs/${path}`,
     dataType: "text",
     success: (data) => {
       $("#content").html(converter.makeHtml(data))
@@ -44,10 +44,18 @@ function link_handler() {
     return true
   }
 
+  if (!this.pathname.endsWith(".md")) {
+    // this is a link to the web, so open with web browser
+    windows.open_external(this.href)
+    return false
+  }
+
   // extract the "docs/page.md" path of the link URL as it may be prefixed on electron
-  let matches = /\/manual\/(.*)/.exec(this.pathname)
+  let relative = /\/manual\/(.*)/.exec(this.pathname)[1]
+  let path = /(?:docs\/)?(.*\.md)/.exec(relative)[1]
+
   back_history.push(current_page())
-  render_page(matches[1], 0)
+  render_page(path, 0)
 
   forward_history = []
   return false // prevent default action

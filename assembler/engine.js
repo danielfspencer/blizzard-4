@@ -1,4 +1,7 @@
+"use strict"
+
 let debug = false
+let state
 
 onmessage = (event) => {
   let message = event.data
@@ -26,13 +29,13 @@ function assemble_wrapped(input) {
   }
 }
 
-function AsmError(message, location) {
+function AsmError(message, line) {
   this.message = message
-  this.location = location
+  this.line = line
 }
 
 AsmError.prototype.toString = function() {
-  return `${this.location}:\n${this.message}`
+  return `line ${this.line}:\n${this.message}`
 }
 
 const log = {
@@ -56,221 +59,688 @@ function send_log(message, level) {
   postMessage(["log", level, text])
 }
 
-const opDefs = {
-  "stop":0,
-  "return":1,
-  "goto":2,
-  "call":3,
-  "write":4,
-  "copy":5
-}
+const BITS = 16
+const NUMBER_REGEX = /^(\d+|0b[10]+|0x[0-9a-fA-F]+)$/
+const INSTRUCTION_REGEX = /^(stop|return|goto|call|write|copy)/
+const SQUARE_BRACKET_REGEX = /\[(.*)\]/
+const RELATIVE_ADDRESS_REGEX = /(pc|sp)([+-].+)/
+const LABEL_REFERENCE_REGEX = /^([~#])([^+-\s]*)([\+-]\d+)?$/
+const ADDRESS_MNEMONIC_REGEX = /(ram|vram).(\d+)/
 
-const defs = {
-  "ctl.sp" : 2,
+const RAM_BASE = 0x4000
+const VRAM_BASE = 0x1800
+const BASE_ADDRESS = RAM_BASE
+
+const MNEMONICS = {
   "timer.high" : 3,
   "timer.low" : 4,
   "alu.1" : 8,
   "alu.2" : 9,
+  "alu.1&2": 10,
   "alu.+" : 10,
   "alu.-" : 11,
   "alu.>>" : 12,
-  "alu.<<" : 13,
   "alu.&" : 14,
   "alu.|" : 15,
-  "alu.!" : 16,
   "alu.>" : 17,
   "alu.<" : 18,
   "alu.=" : 19,
   "alu.ov" : 20,
   "io.inp1" : 4096,
   "io.inp2" : 4097,
-  "io.inp3" : 4098,
   "io.out1" : 4099,
   "io.out2" : 4100,
-  "io.out3" : 4101,
   "io.kbd": 4102
 }
 
-function regToCode(id) {
-  if (id.toLowerCase().startsWith("ram.")) { //it's a direct ram address
-    var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
-    if ( number >= 0 && number < 16384) {
-      return number+16384//it's valid
-    } else {
-      return false
-    }
-  } else if (id.toLowerCase().startsWith("stack.")) { //it's a stack address
-    var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
-    if ( number >= 0 && number < 2048) {
-      return number+2048//it's valid
-    } else {
-      return false
-    }
-  } else if (id.toLowerCase().startsWith("rom.")) { //it's rom
-    var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
-    if ( number >= 0 && number <= 32767) {
-      return number + 32768 //it's valid
-    } else {
-      return false
-    }
-  } else if (id.toLowerCase().startsWith("vram.")) { //it's vram
-    var number = parseInt(id.match(/[^.]*$/)[0], 10) // this is the bits after the dot
-    if ( number >= 0 && number <= 1023) {
-      return number + 6144 //it's valid
-    } else {
-      return false
-    }
+function init_state() {
+  state = {
+    labels: {},
+    ast: [],
+    block_name: "unknown",
+    b4_line_map: {},
+    asm_line_map: {}
+  }
+}
+
+function twos_complement_encode(number) {
+  const max = (2**BITS)
+  if (number < 0) {
+    return max+number
   } else {
-    if (id.toLowerCase() in defs) {
-      return defs[id.toLowerCase()]
+    return number
+  }
+}
+
+function padded_binary(number) {
+  const zeros = '0'.repeat(BITS)
+  return `${zeros}${number.toString(2)}`.slice(-BITS)
+}
+
+function parse_int(string) {
+  let value
+  if (string.startsWith("0b")) {
+    value = parseInt(string.substring(2),2)
+  } else if (string.startsWith("0x")) {
+    value = parseInt(string)
+  } else {
+    value = parseInt(string)
+  }
+
+  if (isNaN(value)) {
+    throw new AsmError(`Invalid integer '${string}'`)
+  }
+
+  return value
+}
+
+class AddressingMode {
+  constructor(direct, relative, program_counter) {
+    this.direct = direct
+    this.relative = relative
+    this.program_counter = program_counter
+  }
+
+  toString() {
+    let string = ""
+    if (this.direct) {
+      string += "direct"
     } else {
-      return false
+      string += "imm."
     }
-  }
-}
 
-function opToCode(id) {
-  if (id.toLowerCase() in opDefs) {
-    return opDefs[id.toLowerCase()]
-  } else {
-    return false
-  }
-}
-
-function pad(num) {
-  return ("0000000000000000" + num).slice(-16)
-}
-
-function isSquareBracktes(str) {
-  var matches = str.match(/\[(.*?)\]/)
-  if (matches) {
-    return matches[1]
-  } else {
-    return false
-  }
-}
-
-function numToBin(num) {
-  if (num.startsWith("0b")) { //it's already in binary
-    return pad(num.substring(2))
-  } else if (num.startsWith("0x")) { //it's in hexadeciamal
-    var dec = parseInt(num.substring(2),16)
-    return pad(dec.toString(2))
-  } else {  //it's in decimal
-    var dec = parseInt(num,10)
-    return pad(dec.toString(2))
-  }
-}
-
-function assemble(lines) {
-  var assembled = []
-  var adr = 0
-  var labels = {}
-
-  log.info("1st Pass...")
-  let changed_count = 0
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i]
-
-    // replace any `write [addr1] addr2` instructions with `copy addr1 addr2`
-    if (/^\s*write \[\S*\]/.test(line)) {
-      let matches = /^\s*write \[(\S*)\] (\S*)/.exec(line)
-      changed_count++
-
-      line = `copy ${matches[1]} ${matches[2]}`
-
-      lines[i] = line
-    }
-  }
-  log.info(`↳ success, ${changed_count} instruction(s) optimised`)
-
-  log.info("2nd Pass...")
-  for (var i = 0; i < lines.length; i++) {
-    if (lines[i] === "" ) {continue} // skip empty lines
-    if (/\s*\/\//.test(lines[i])) {continue} // skip comments
-    var line = lines[i].trim()
-    line = line.split(" ") // turns "copy ram1" into ["copy", "ram1"]
-    line.map(function(str){str.replace(/(\r|\n)/g,"")}) // strips trailing whitespace
-
-    if (line.length === 1 && !(line[0] in opDefs)) { // if it's one string
-      if (line[0].endsWith(":")) { // ends with : means it is a label
-        let label = line[0].substr(0, line[0].length - 1)
-        if (label in labels) {
-          throw new AsmError(`Label '${label}' has already been defined`,`line ${i}`)
-        }
-        labels[label] = adr + 32768
-        log.debug("addr 0x" +  adr.toString(16) + " new label '" + label + "'")
-        continue
-      } else if (line[0].match(/[a-z]/) && !line[0].startsWith("0")) { // label
-        assembled[i] = line[0] + "\n"
-        adr++
-      } else { // if not it's just a number
-        assembled[i] = numToBin(line[0]) + "\n"
-        adr++
+    if (this.relative) {
+      string += ", "
+      if (this.program_counter) {
+        string += "PC-rel"
+      } else {
+        string += "SP-rel"
       }
-    } else {
-      // it's a command
-      var op = line[0]
-      var args = []
-      var pointerMap = ""
+    }
 
-      // assemble the op code
-        var decimal = opToCode(op)
-        if (op in opDefs) {
-          op = ("000" + opToCode(op).toString(2)).slice(-3)
-        } else {
-          op = "---"
-        }
-      // assemble the args
-      for (var y = 1; y < line.length; y++) {
-        var item = line[y]
-        if (isSquareBracktes(item) !== false) {
-          var item = isSquareBracktes(item)
-          pointerMap += "1"
-        } else {
-          pointerMap += "0"
-        }
+    return string
+  }
 
-        if (regToCode(item) !== false) {  // regular reg         -if returns number (!==) prevents a zero being false
-          args[y-1] = numToBin(regToCode(item).toString())
-        } else if (item.match(/[a-z]/) && !item.startsWith("0")) { // label
-          args[y-1] = item // dealt with on 2nd pass
-        } else { // number
-          args[y-1] =  numToBin(item)
-        }
+  get_value() {
+    const relative_bit = this.relative ? 1 : 0
+    const program_counter_bit = this.program_counter ? 1 : 0
+    const direct_bit = this.direct ? 1 : 0
+    return (relative_bit << 2) + (program_counter_bit << 1) + (direct_bit)
+  }
+}
+
+class Argument {
+  constructor(content, addressing_mode) {
+    this.content = content
+    this.addressing_mode = addressing_mode
+  }
+
+  set_address(address) {
+    this.address = address
+  }
+
+  toString() {
+    return `${this.content} ${this.addressing_mode}`
+  }
+
+  get_value() {
+    if (this.content instanceof Literal) {
+      return this.content.get_value()
+    } else if (this.content instanceof Label) {
+      let value = this.content.get_value()
+
+      if (this.addressing_mode.relative && this.addressing_mode.program_counter) {
+        // pc-relative addressing, so the offset instead of absoulute value should be used
+        value -= this.address
       }
 
-      //now assemble the whole command
-      var header = op + pointerMap + "00000000000"
-      if (args.length !== 0) {var body = "\n" + args.join("\n") } else {var body = ""}
-      assembled.push( header + body + "\n" )
-      adr += args.length +1
+      return value
     }
   }
-  log.info("↳ success, " + lines.length + " lines(s) parsed")
+}
 
-  var asm_string = assembled.join("") //join it all into one string
-
-  log.info("3rd Pass...")
-  for (var key in labels) {
-    var bin = numToBin(labels[key].toString())
-    asm_string = asm_string.replace( RegExp("\\b"+key+"\\b","gi") , bin)
+class Literal {
+  constructor(content) {
+    let parsed = parse_int(content)
+    if (parsed < 0 || parsed > 0xffff) {
+      throw new AsmError(`Data values must be in the range 0-65535`)
+    }
+    this.value = parsed
   }
-  log.info("↳ success, " + Object.keys(labels).length + " label(s) replaced")
 
-  log.info("4th Pass...")
-  var as_list = asm_string.split("\n")
-  for (let i = 0; i < as_list.length; i++) {
-    let line = as_list[i]
-    if (!   /^[0-1]{16}\n?$/.test(line) && line != "") {
-      throw new AsmError(`'${line}' is not defined`,`word ${i}`)
+  get_value() {
+    return this.value
+  }
+
+  toString() {
+    return `${this.get_value()}`
+  }
+}
+
+class Label {
+  constructor(name, offset) {
+    this.name = name
+    if (offset !== undefined) {
+      this.offset = parse_int(offset)
+    } else {
+      this.offset = 0
     }
   }
-  log.info("↳ success, " + (as_list.length - 1) + " word(s) checked")
 
-  size_bytes = (as_list.length - 1) * 2;
-  log.info("Output size: "+ size_bytes +" bytes")
-  return asm_string
+  toString() {
+    return this.name
+  }
+
+  get_value() {
+    if (this.name in state.labels) {
+      return state.labels[this.name].address + this.offset
+    } else {
+      throw new AsmError(`Label '${this.name}' is undefined`)
+    }
+  }
+}
+
+class AsmEntry {
+  set_address(address) {
+    this.address = address
+  }
+
+  set_line(line) {
+    this.line = line
+  }
+
+  get_size() {
+    throw new Error("Must be overridden")
+  }
+
+  generate(address) {
+    return []
+  }
+}
+
+class Align extends AsmEntry {
+  constructor(alignment) {
+    super()
+    this.alignment = parse_int(alignment)
+
+    if (this.alignment < 2) {
+      throw new AsmError(`Alignments must be at least 2 words`, this.line)
+    }
+  }
+
+  set_address(address) {
+    let old_address = address - BASE_ADDRESS
+
+    let remainder = old_address % this.alignment
+
+    let new_address
+    if (remainder === 0) {
+      new_address = old_address
+    } else {
+      new_address = old_address + this.alignment - remainder
+    }
+
+    this.difference = new_address - old_address
+  }
+
+  get_size() {
+    return this.difference
+  }
+
+  toString() {
+    return `<Align: ${this.alignment}>`
+  }
+
+  generate() {
+    return Array(this.difference).fill(0)
+  }
+}
+
+class BlockName extends AsmEntry {
+  constructor(tag) {
+    super()
+    this.tag = tag
+  }
+
+  set_address(address) {
+    state.block_name = this.tag
+  }
+
+  get_size() {
+    return 0
+  }
+
+  toString() {
+    return `<BlockName: ${this.tag}>`
+  }
+}
+
+class LineNumber extends AsmEntry {
+  constructor(tag) {
+    super()
+    this.tag = tag
+  }
+
+  set_address(address) {
+    state.b4_line_map[address - BASE_ADDRESS] = `${state.block_name}:${this.tag}`
+  }
+
+  get_size() {
+    return 0
+  }
+
+  toString() {
+    return `<LineNumber: ${this.tag}>`
+  }
+}
+
+class LabelDefinition extends AsmEntry {
+  constructor(name) {
+    super()
+    this.name = name
+  }
+
+  get_size() {
+    return 0
+  }
+
+  toString() {
+    return `<LabelDefinition: ${this.name}>`
+  }
+
+  set_address(address) {
+    if (this.name in state.labels) {
+      const previous_definition = state.labels[this.name].line
+      throw new AsmError(`Label '${this.name}' has already been defined on line ${previous_definition}`, this.line)
+    }
+
+    log.debug(`Register label ${this.name} at 0x${address.toString(16)}`)
+    state.labels[this.name] = {
+      address: address,
+      line: this.line
+    }
+  }
+}
+
+class LabelReference extends AsmEntry {
+  constructor(name, addressing_mode) {
+    super()
+    this.label = new Argument(new Label(name), addressing_mode)
+  }
+
+  set_address(address) {
+    this.label.set_address(address)
+  }
+
+  get_size() {
+    return 1
+  }
+
+  toString() {
+    return `<LabelReference: ${this.name}>`
+  }
+
+  generate() {
+    return [this.label.get_value()]
+  }
+}
+
+class Data extends AsmEntry {
+  constructor(literral) {
+    super()
+
+    if (literral instanceof Literal) {
+      this.literral = literral
+    } else {
+      throw new Error("Data must be constructed from a Literal")
+    }
+  }
+
+  get_size() {
+    return 1
+  }
+
+  generate() {
+    return [this.literral.get_value()]
+  }
+
+  toString() {
+    return `<Data: ${this.literral.toString()}>`
+  }
+}
+
+class Instruction extends AsmEntry {
+  constructor(args) {
+    super()
+
+    this.args = args
+
+    let arg_number = this.get_num_arguments()
+    if (!arg_number.includes(this.args.length)) {
+      throw new AsmError(`Instruction requires ${arg_number} argument(s)`)
+    }
+  }
+
+  set_address(address) {
+    this.address = address
+
+    let offset = 1
+    for (const argument of this.args) {
+      argument.set_address(this.address + offset)
+      offset++
+    }
+  }
+
+  get_size() {
+    return 3
+  }
+
+  get_num_arguments() {
+    return [2]
+  }
+
+  toString() {
+    let string = `<${this.constructor.name}:`
+    for (const arg of this.args) {
+      string += ` <${arg}>`
+    }
+    return `${string}>`
+  }
+
+  get_opcode() {
+    throw new Error("Must be overridden")
+  }
+
+  generate() {
+    let command_word = this.get_opcode() << 13
+
+    let position = 10
+    for (const argument of this.args) {
+      command_word += argument.addressing_mode.get_value() << position
+      position -= 3
+    }
+
+    let argument_words = []
+    for (const argument of this.args) {
+      argument_words.push(argument.get_value())
+    }
+
+    let result = [command_word]
+    result.push(...argument_words)
+
+    return result
+  }
+}
+
+class StopInstruction extends Instruction {
+  get_num_arguments() {return [0]}
+
+  get_opcode() {return 0}
+
+  generate() {return [0,0,0]}
+}
+
+class ReturnInstruction extends Instruction {
+  get_opcode() {return 1}
+}
+
+class GotoInstruction extends Instruction {
+  get_num_arguments() {return [1,2]}
+  get_opcode() {return 2}
+  generate() {
+    // if second argument not specified, the last argument word should be 0 (unconditional jump)
+    let result = super.generate()
+    if (result.length === 2) {
+      result.push(0)
+    }
+
+    return result
+  }
+}
+
+class CallInstruction extends Instruction {
+  get_opcode() {return 3}
+}
+
+class WriteInstruction extends Instruction {
+  get_opcode() {return 4}
+}
+
+class CopyInstruction extends Instruction {
+  get_opcode() {return 5}
+}
+
+
+function optimise_addressing_mode(instruction) {
+  let replacement_instruction = null
+
+  if (instruction instanceof WriteInstruction) {
+    let [arg_1, arg_2] = instruction.args
+    let arg_1_mode = arg_1.addressing_mode
+
+    if (arg_1_mode.direct) {
+      arg_1.addressing_mode.direct = false
+      replacement_instruction = new CopyInstruction([arg_1, arg_2])
+      replacement_instruction.set_address(instruction.address)
+      replacement_instruction.set_line(instruction.line)
+    }
+  }
+
+  return replacement_instruction
+}
+
+function parse_mnemonic(string) {
+  if (ADDRESS_MNEMONIC_REGEX.test(string)) {
+    let [,area,value] = ADDRESS_MNEMONIC_REGEX.exec(string)
+    value = parse_int(value)
+
+    switch (area) {
+      case "ram":
+        if (value >= 0 && value <= 49151) {
+          return RAM_BASE + value
+        } else {
+          throw new AsmError(`Address '${value}' out of range [0, 49151]`)
+        }
+        break;
+      case "vram":
+        if (value >= 0 && value <= 1023) {
+          return VRAM_BASE + value
+        } else {
+          throw new AsmError(`Address '${value}' out of range [0, 1023]`)
+        }
+        break;
+      default:
+        throw new AsmError(`Unknown mnemonic prefix '${area}'`)
+        break;
+    }
+  } else if (string in MNEMONICS) {
+    return MNEMONICS[string]
+  } else {
+    throw new AsmError(`Unknown mnemonic '${string}'`)
+  }
+}
+
+function parse(input) {
+  input = input.trim()
+
+  if (input.startsWith("//") || input == "") {
+    // comment / whitespace
+    return null
+
+  } else if (input.endsWith(":")) {
+    // label definition
+    return new LabelDefinition(input.slice(0,-1))
+
+  } else if (input.startsWith("$align")) {
+    return new Align(input.slice(7))
+
+  } else if (input.startsWith("$line")) {
+    return new LineNumber(input.slice(6))
+
+  } else if (input.startsWith("$name")) {
+    return new BlockName(input.slice(6))
+
+  } else if (input.startsWith("#") || input.startsWith("~")) {
+    // label reference as data
+    let relative = input.slice(0,1) == "~"
+
+    return new LabelReference(input.slice(1),  new AddressingMode(false, relative, relative))
+
+  } else if (NUMBER_REGEX.test(input)) {
+    // data
+    return new Data(new Literal(input))
+
+  } else if (INSTRUCTION_REGEX.test(input)) {
+    // instruction
+
+    let strings = input.split(" ")
+    let instruction_string = strings[0]
+    let arg_strings = strings.slice(1)
+
+
+    let args = []
+    for (let string of arg_strings) {
+      let content
+      let is_direct = SQUARE_BRACKET_REGEX.test(string)
+
+      if (is_direct) {
+        string = string.slice(1,-1)
+      }
+      let is_relative = false
+      let program_counter_relative = false
+
+      if (RELATIVE_ADDRESS_REGEX.test(string)) {
+        // pc±literal, sp±literal
+        is_relative = true
+        let [,mode,value] = RELATIVE_ADDRESS_REGEX.exec(string)
+
+        program_counter_relative = mode === "pc"
+        content = new Literal(value)
+
+      } else if (LABEL_REFERENCE_REGEX.test(string)) {
+        // #label, ~label
+        let [,mode,label,offset] = LABEL_REFERENCE_REGEX.exec(string)
+
+        if (mode === "~") {
+          // ~label = relative mode
+          is_relative = true
+          program_counter_relative = true
+        }
+        // otherwise, absolute mode
+        content = new Label(label, offset)
+
+      } else if (NUMBER_REGEX.test(string)) {
+        // literal
+        content = new Literal(string)
+
+      } else {
+        content = new Literal(parse_mnemonic(string).toString())
+      }
+
+      let addressing_mode = new AddressingMode(is_direct, is_relative, program_counter_relative)
+      args.push(new Argument(content, addressing_mode))
+    }
+
+    let instruction
+    switch (instruction_string) {
+      case "stop": instruction = StopInstruction; break
+      case "return": instruction = ReturnInstruction; break
+      case "goto": instruction = GotoInstruction; break
+      case "call": instruction = CallInstruction; break
+      case "write": instruction = WriteInstruction; break
+      case "copy": instruction = CopyInstruction; break
+      default:
+        throw new AsmError(`Unknown instruction '${instruction_string}'`)
+    }
+    return new instruction(args)
+
+  } else {
+    throw new AsmError("Syntax error")
+  }
+}
+
+function add_line_number(operation, line_num) {
+  try {
+    operation()
+  } catch (error) {
+    if (error instanceof AsmError) {
+      throw new AsmError(error.message, line_num)
+    } else {
+      throw error
+    }
+  }
+}
+
+function assemble(input) {
+  init_state()
+
+  log.info("Tokenising...")
+
+  for (let i = 0; i < input.length; i++) {
+    let line_num = i + 1
+    let result
+
+    // if there is an error add the line number before throwing it
+    add_line_number(() => {
+      result = parse(input[i])
+    }, line_num)
+
+    // not all AsmEntries produce an output
+    if (result !== null) {
+      result.set_line(line_num)
+      state.ast.push(result)
+    }
+  }
+  log.info(`↳ success, ${input.length} line(s)`)
+
+  log.info("Optimising...")
+
+  // replace write instructions that use direct addressing with copy instructions
+  let replacements = 0
+  for (let i = 0; i < state.ast.length; i++) {
+    let replacement = optimise_addressing_mode(state.ast[i])
+
+    if (replacement !== null) {
+      state.ast[i] = replacement
+      replacements++
+    }
+  }
+  log.info(`↳ success, ${replacements} instruction(s) optimised`)
+
+
+  log.info("Translating...")
+
+  // give each AsmEntry its current address
+  let address = BASE_ADDRESS
+  for (const token of state.ast) {
+    token.set_address(address)
+
+    // associate current (relative) address with the token's line number
+    state.asm_line_map[address - BASE_ADDRESS] = token.line.toString()
+
+    address += token.get_size()
+  }
+
+  // generate machine code from each AsmEntry
+  let output = []
+  for (const token of state.ast) {
+    let result
+
+    add_line_number(() => {
+      result = token.generate()
+    }, token.line)
+
+    output.push(...result)
+  }
+  log.info(`↳ success, ${state.ast.length} tokens(s)`)
+
+  // 2 bytes per word
+  log.info(`Output size: ${output.length * 2} bytes`)
+
+  // two's complement encode and convert to strings of 1/0s
+  output = output.map(twos_complement_encode).map(padded_binary)
+
+  return output.join("\n")
 }
 
 log.info("Assembler thread started")

@@ -1,7 +1,8 @@
 # Introduction
-**Blizzard 4 Compiled Language** (file extension `.b4`) is a statically & strongly typed, general purpose, procedural programming language. Much like C, it is designed to efficiently map high-level constructs to machine code instructions. Blocks are indented with two spaces, therefore whitespace at the start of lines is significant.
+**Blizzard 4 Compiled Language** (file extension `.b4`) is a statically & strongly typed, general purpose, call-by-value, procedural programming language. Much like C, it is designed to efficiently map high-level constructs to machine code instructions. Blocks are indented with two spaces, therefore whitespace at the start of lines is significant.
 
-Compiled programs contain no runtime environment.
+Compiled programs do not contain nor require a runtime environment.
+By default, generated programs can be booted directly by the computer.
 
 ### Scope
 local scope:
@@ -37,7 +38,7 @@ Variables, arguments, constants and functions are all referred to by alphanumeri
 - must not be the name of a data type
 
 ### Reserved Keywords
-`if` `for` `while` `repeat` `struct` `def` `true` `false` `sys` `return` `break` `continue` `include` `__root` `__global`  `__return`
+`if` `for` `while` `repeat` `struct` `def` `true` `false` `sys` `return` `break` `continue` `pass` `include` `__root` `__global`  `__return`
 
 # Syntax
 Each line in a `b4` program must be one of the following:
@@ -74,13 +75,6 @@ const u16 speed = 340
 Declare a global variable of the specified type with the specified name. e.g.
 ```javascript
 global bool shift_key_pressed = true
-```
-
-+ **free** [name]
-
-De-allocated the memory assigned to a local or global variable. The variable cannot then be refered to after this command.
-```javascript
-free my_array
 ```
 
 + **include** [name]
@@ -121,6 +115,17 @@ for let u16 i = 0; i < 5; i++
   if i == 3
     continue
   some_func(i)
+```
+
++ **pass**
+
+Used as a no-op when the language requires an indent.
+
+```javascript
+// wait for a keypress
+while sys.kbd.get_charcode() == 0
+  pass
+
 ```
 
 + [name] **=** [value]
@@ -195,7 +200,7 @@ Decrement *name* by 1.
 my_num--
 ```
 
-+ **sig** [name]( <args> ) < -> type>
++ **sig** \[name\]( <args> ) < -> type>
 
 Defines the signature of function *name*. This gives the compiler all the information it needs to compile calls to the function. The function can then either be defined later in the program or it can be linked at assembly time.
 
@@ -366,7 +371,7 @@ def sys.u16_multiply(u16 a, u16 b) -> u16
   let u16 ans = 0
   while b > 0
     if b
-      ans += a  
+      ans += a
     a = a <<
     b = b >>
   return ans
@@ -397,11 +402,12 @@ def shift_right(u16 start = 6144, u16 end = 7167)
 | `-` | subtraction | `u16 s16 u32 s32` | (same as input) |
 | `/` | division | `u16 s16 u32 s32` | (same as input) |
 | `*` | multiplication | `u16 s16 u32 s32` | (same as input) |
-| `^` | exponentiation | `u16 s16 u32 s32` | (same as input) |
+| `**` | exponentiation | `u16 s16 u32 s32` | (same as input) |
 | `%` | modulo | `u16 s16 u32 s32` | (same as input) |
 | `&` | bit-wise AND | `bool u16 s16 u32 s32` | (same as input) |
 | `\|` | bit-wise OR | `bool u16 s16 u32 s32` | (same as input) |
 | `!` | bit-wise NOT | `bool u16 s16 u32 s32` | (same as input) |
+| `^` | bit-wise XOR | `u16 s16` | (same as input) |
 | `>>` |  arithmetic bit-shift 1 bit right | `u16 s16 u32 s32` | (same as input) |
 | `<<` |  arithmetic bit-shift 1 bit left | `u16 s16 u32 s32` | (same as input) |
 | `>` | greater than | `u16 s16 u32 s32` | `bool` |
@@ -470,7 +476,7 @@ optional_block_label:
 | `u32` | (see numerical types) |
 | `s32` | (see numerical types) |
 
-*see [charcode listing](/manual/docs/charcode.md) for more details.
+*see [charcode listing](/manual/docs/programming/charcode.md) for more details.
 
 #### Numerical types
 

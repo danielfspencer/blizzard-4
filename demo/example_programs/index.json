@@ -44,11 +44,6 @@
     "desc":"A simple program that imports the entire standard library and then draws the contents of the ROM to the display (VRAM).",
     "clock_speed": 20000
   },
-  "clock_measure": {
-    "name":"Clock Speed Measurement",
-    "desc":"This program displays the current clock speed of the computer. Try changing the 'clock set' paramater in the emulator too see the number change. Works best between 10 kHz and 1200 kHz.",
-    "clock_speed": 100000
-  },
   "int_tests": {
     "name":"Integer Tests",
     "desc":"Runs a series of sanity checks on the four different integer data types to check they behave as expected.",

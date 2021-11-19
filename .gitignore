@@ -3,3 +3,4 @@
 node_modules/
 electron_dist/
 package-lock.json
+desktop.ini

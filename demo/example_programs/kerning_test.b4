@@ -17,8 +17,7 @@ while spacing < 4
   xpos += 5
   xpos += spacing
 
-  free i
-  for let u16 i = 15; i < 30; i++
+  for i = 15; i < 30; i++
     x = x_coords[i]
     y = y_coords[i]
     sys.vram.set_pixel(x+xpos,y+ypos)
@@ -26,8 +25,7 @@ while spacing < 4
   xpos += 5
   xpos += spacing
 
-  free i
-  for let u16 i = 30; i < 39; i++
+  for i = 30; i < 39; i++
     x = x_coords[i]
     y = y_coords[i]
     sys.vram.set_pixel(x+xpos,y+ypos)
@@ -35,8 +33,7 @@ while spacing < 4
   xpos += 3
   xpos += spacing
 
-  free i
-  for let u16 i = 30; i < 39; i++
+  for i = 30; i < 39; i++
     x = x_coords[i]
     y = y_coords[i]
     sys.vram.set_pixel(x+xpos,y+ypos)
@@ -44,8 +41,7 @@ while spacing < 4
   xpos += 3
   xpos += spacing
 
-  free i
-  for let u16 i = 39; i < 51; i++
+  for i = 39; i < 51; i++
     x = x_coords[i]
     y = y_coords[i]
     sys.vram.set_pixel(x+xpos,y+ypos)

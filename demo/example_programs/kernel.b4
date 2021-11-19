@@ -2,15 +2,15 @@ struct k_process
   u16 pc
   u16 sp
 
-const u16 STACK_BASE = 2048
+const u16 STACK_BASE = 0x5000
 const u16 STACK_SIZE = 128
-global u16 MAX_STACK_ADDR = 16384 - STACK_SIZE
+global u16 MAX_STACK_ADDR = 0xffff - STACK_SIZE
 
 const u16 MAX_PROCESSES = 16
 global u16 current_process_id = 0
 global array process_table = (k_process, MAX_PROCESSES)[]
 
-global u16 k_pc = 32768
+global u16 k_pc = 0x4000
 global u16 k_sp = 0
 
 sig new_process(u16 pc, u16 sp)
@@ -22,7 +22,7 @@ main()
 def main()
   for let u16 i = 0; i < 16; i++
     let u16 offset = STACK_SIZE * i
-    new_process(#func_program_main#, STACK_BASE + offset)
+    new_process(#~func_program_main#, STACK_BASE + offset)
 
   while true
     schedule_process()
@@ -31,7 +31,7 @@ def panic(str error)
   sys.vram.clear()
   sys.print_string("- kernel panic -")
   sys.print_string(error, 0, 1)
-  {stop 0 0}
+  {stop}
 
 def new_process(u16 pc, u16 sp)
   if process_table.len() == MAX_PROCESSES
@@ -45,8 +45,8 @@ def new_process(u16 pc, u16 sp)
 
 def schedule_process()
   // save kernel state
-  {write [stack.0] &k_pc}
-  {write [stack.1] &k_sp}
+  {write [sp+0] &k_pc}
+  {write [sp+1] &k_sp}
 
   // find next process
   current_process_id++
@@ -57,25 +57,25 @@ def schedule_process()
   let k_process process = process_table[current_process_id]
 
   // enter program by overwriting PC/SP of caller and returning
-  {write $process[0] stack.0}
-  {write $process[1] stack.1}
-  {write 0 io.out3}
+  {write $process[0] sp+0}
+  {write $process[1] sp+1}
+  {write 0 io.out1}
   return
 
 def kernel.get_pid() -> u16
   return current_process_id
 
 def kernel.yield()
-  {write 0xffff io.out3}
+  {write 0xffff io.out1}
 
   // save state of process
-  // stack.0 - holds caller's PC
-  // stack.1 - holds caller's SP
-  process_table[current_process_id] = <#[stack.0]#,#[stack.1]#>
+  // sp+0 - holds caller's PC
+  // sp+1 - holds caller's SP
+  process_table[current_process_id] = <#[sp+0]#,#[sp+1]#>
 
   // enter kernel by overwriting PC/SP of caller and returning
-  {write $k_pc stack.0}
-  {write $k_sp stack.1}
+  {write $k_pc sp+0}
+  {write $k_sp sp+1}
   return
 
 ///////////////////////////////////

@@ -1,4 +1,9 @@
+const BULK_CHANGES_CHUNK_SIZE = 1000
+
 let counter = 0
+var ready = false
+var ram_changes_buffer = []
+var bulk_changes_buffer = []
 
 $(document).ready( () => {
   canvas = document.getElementById("memory")
@@ -7,19 +12,14 @@ $(document).ready( () => {
   $( "#close" ).click(() => window.close())
   pixel_on_colours = [255,255,255]
   pixel_off_colours = [0,0,0]
-  ram_changes_buffer = []
 
   start_updates()
+  ready = true
 })
 
 function benchmark() {
-  for (let i = 0; i < 16384; i++) {
-    if ( i % 1024 == 0) {
-      num = 65535
-    } else {
-      num = i
-    }
-    ram_changes_buffer.push([i,num])
+  for (let i = 0; i < 0xC000; i++) {
+    ram_changes_buffer.push([i, Math.round(Math.random() * 0xffff)])
   }
 
   console.time('benchmark')
@@ -32,7 +32,12 @@ function start_updates() {
 }
 
 function animation_frame_handler() {
-  if (counter > 1) {
+  if (counter > 3) {
+    // bulk changes are applied in small batches spread through time to avoid lag spikes
+    if (bulk_changes_buffer.length > 0) {
+      ram_changes_buffer.push(...bulk_changes_buffer.splice(0, BULK_CHANGES_CHUNK_SIZE))
+    }
+
     draw_screen_updates()
     counter = 0
   }
@@ -90,7 +95,7 @@ function draw_screen_updates() {
 function clear_screen() {
   let [red, green, blue] = pixel_off_colours
   canvas_context.fillStyle = `rgb(${red}, ${green}, ${blue})`
-  canvas_context.fillRect(0, 0, 512, 512)
+  canvas_context.fillRect(0, 0, canvas.width, canvas.height)
 }
 
 function set_theme(name) {

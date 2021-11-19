@@ -26,7 +26,10 @@ $( document ).ready( () => {
         .done( data => {
           let latest_version = data.version
           if (version !== latest_version) {
-            $("#version-status").html(` (version ${latest_version} available)`)
+            $("#version-status").html(` (version ${latest_version} available <a id="update">here</a></div>)`)
+            $("#update").click( () => {
+              windows.open_external("https://github.com/danielfspencer/blizzard-4/releases/latest")
+            })
           } else {
             $("#version-status").html(" (up to date)")
           }

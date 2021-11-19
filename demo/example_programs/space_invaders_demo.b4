@@ -27,6 +27,15 @@ def draw_8x8(u16 rom_addr, u16 x, u16 y)
     rom_addr++
     vram_addr += 8
 
+def draw_16x8(u16 rom_addr, u16 x, u16 y)
+  let u16 vram_addr = SYS_VRAM_ADDR
+  vram_addr += x
+  vram_addr += y
+  repeat 8
+    {copy $rom_addr $vram_addr}
+    rom_addr++
+    vram_addr += 8
+
 def shift_right(u16 start, u16 end)
   // shift a portion of the screen right one pixel
   while end > start
@@ -40,19 +49,18 @@ def shift_right(u16 start, u16 end)
 def shift_left(u16 start, u16 end)
   // shift a portion of the screen left one pixel
   while start < end
-    {write 1 alu.2}
     repeat 8
-      {copy $start alu.1}
-      {copy alu.<< $start}
-      {write $start alu.1}
-      {write [alu.+] &start}
+      {copy $start alu.1&2}
+      {copy alu.+ $start}
+      start++
 
 def shift_down(u16 start, u16 end)
-  // shift a portion of the screen down 3 pixels
+  // shift a portion of the screen down 3 pixels (x 8 words = 24)
+  const u16 TEST = 24
   while end > start
     repeat 8
       {write $end alu.1}
-      {write 32 alu.2}
+      {write $TEST alu.2}
       {copy $end [alu.+]}
       {write 1 alu.2}
       {write [alu.-] &end}
@@ -83,8 +91,8 @@ def shift_sprite_right(u16 start)
 def shift_sprite_left(u16 start)
   let u16 end = start + 65
   while start < end
-    {copy $start alu.1}
-    {copy alu.<< $start}
+    {copy $start alu.1&2}
+    {copy alu.+ $start}
     start++
     {copy $start alu.1}
     {write 0b1000000000000000 alu.2}
@@ -95,8 +103,8 @@ def shift_sprite_left(u16 start)
       {copy alu.| $start}
       start++
 
-    {copy $start alu.1}
-    {copy alu.<< $start}
+    {copy $start alu.1&2}
+    {copy alu.+ $start}
     start += 7
     {copy $start alu.1}
     {write 0b1000000000000000 alu.2}
@@ -114,7 +122,7 @@ def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
   y += word_x
   y += SYS_VRAM_ADDR
 
-  let u16 scratch = #sys.vram.shifted_pixels#
+  let u16 scratch = #~sys.vram.shifted_pixels#
   scratch += sub_x
 
   if data
@@ -122,17 +130,24 @@ def fast_set_pixel(u16 word_x, u16 sub_x, u16 y, bool data = true)
     {copy $y alu.2}
     {write [alu.|] $y}
   else
-    {copy $scratch alu.1}
-    {copy alu.! &scratch}
+    {write 0xffff alu.1}
+    {copy $scratch alu.2}
+    {copy alu.- &scratch}
     {copy $scratch alu.1}
     {copy $y alu.2}
     {write [alu.&] $y}
 
-// lower numbers = faster
+// lower = faster
 const u16 ALIEN_SPEED = 8
 const u16 SHOT_SPEED = 1
+const u16 TITLE_SCREEN_FLASH_SPEED = 1000
 
-const u16 SPRITE_ADDR = #space_invaders_aliens#
+// higher = longer before exploded aliens are erased
+const u16 EXPLOSION_TIME = 4
+
+const u16 SPRITE_ADDR = #~space_invaders_aliens#
+const u16 MAX_EXPLODED_ALEINS = 10
+const u16 START_LIVES = 3
 
 // status of the input buttons
 global bool button_left = false
@@ -146,7 +161,9 @@ global u16 cannon_x = 7
 global u16 cannon_x_sub = 0
 
 // the player's score
-global u16 game_score = 0
+global u16 score = 0
+
+global u16 lives = START_LIVES
 
 // vram addresses for start and end of the block of invaders
 global u16 start_row = 88
@@ -170,6 +187,8 @@ global bool invader_has_shifted_down = true
 // the alive/dead status of each alien
 global array alien_status = (bool,18)[]
 
+global u16 aliens_alive = 0
+
 // is the shot on screen?
 global bool shot_present = false
 
@@ -191,6 +210,13 @@ global u16 lowest_invader_above_player_shot = end_row / 8
 // which row the alien above the shot is in (0-2)
 global u16 row_of_invader_above_shot
 
+struct erase_struct
+  u16 age
+  u16 x
+  u16 y
+
+global array erase_queue = (erase_struct, MAX_EXPLODED_ALEINS)[]
+
 def wait_time(u16 iterations)
   // just wait for a configurable about of time
   while iterations > 0
@@ -204,7 +230,7 @@ def read_inputs()
 
   while scancode > 0
     if scancode == 0xAA
-      // pass
+      pass
     else if scancode == 0xF0
       scancode = *SYS_KEYBOARD_ADDR
     else if scancode == 0xE0
@@ -261,7 +287,7 @@ def update_cannon()
 
 def draw_aliens(u16 start_column, u16 alien_row)
   let u16 invader_sprite = 16 * alien_row
-  invader_sprite += SPRITE_ADDR
+  invader_sprite += #~space_invaders_aliens#
 
   let u16 invader_index = 6 * alien_row
   let u16 row = 88 * alien_row
@@ -276,25 +302,28 @@ def draw_aliens(u16 start_column, u16 alien_row)
       else
         draw_8x8(invader_sprite + 8 , col, row)
     else
-      // erase invader if it is not alive
-      draw_8x8(SPRITE_ADDR + 64, col, row)
+      draw_8x8(#~space_invaders_blank#, col, row)
     invader_index++
 
 def move_aliens()
+  // 11 rows (8px aliens, 3px padding) x 8 words = 88
   let u16 addr_offset = 88 * selected_row
   // start_addr holds the vram address of the top of the block of invaders
   let u16 start_addr = start_row + SYS_VRAM_ADDR
   start_addr += addr_offset
   // end_addr holds the vram address of the bottom of the block of invaders
-  let u16 end_addr = start_addr + 68
+  // 8 rows x 8 words = 64
+  let u16 end_addr = start_addr + 64
 
   if invader_shift_down
-    shift_down(start_addr-29, end_addr)
+    // start 3 rows above the aliens (3 x 8 words = 24)
+    shift_down(start_addr-24, end_addr)
     if selected_row > 0
       selected_row--
+      move_aliens()
     else
-      start_row += 32
-      end_row += 32
+      start_row += 24
+      end_row += 24
       invader_shift_down = false
       invader_has_shifted_down = true
   else
@@ -332,10 +361,20 @@ def move_aliens()
       else
         invader_x_pos--
 
-def update_score()
-  sys.print_u16(game_score,6,0)
+def finish_shift_down()
+  // There is an edge case where a sprite needs to be drawn on an alien while
+  // not all of the rows have finished moving down. In this state, the start_row
+  // and end_row variables will not reflect the position of each row. This means
+  // sprites may be drawn with the wrong y-coord. This is worked around by
+  // calling move_aliens() until all rows have finished moving down.
+  while invader_shift_down
+    move_aliens()
 
-def erase_invader(u16 x, u16 y)
+def draw_score()
+  sys.print_u16(score, 6, 0)
+  sys.print_u16(lives, 13, 0)
+
+def hit_alien(u16 x, u16 y)
   // erase the space invader at the given coords
   // check invader status
   let u16 tmp = 6 * y
@@ -343,34 +382,53 @@ def erase_invader(u16 x, u16 y)
   if alien_status[tmp + x]
     // set invader as dead
     alien_status[tmp + x] = false
+    aliens_alive--
   else
     // invader is already dead
     return
-  free tmp
 
-  // calculate the vram address of the top of the invader
-  let u16 vram_addr = x + 1
-  vram_addr += start_row
+  // calculate the vram offset of the top of the invader
   // rows are 11 pixels high and 8 words wide
-  let u16 tmp = 88 * y
-  vram_addr += tmp
-  free tmp
+  let u16 offset = 88 * y
+  offset += start_row
 
-  // erase the invader (TODO make this faster & better)
-  let u16 abs_addr = SYS_VRAM_ADDR + vram_addr
-  for let u16 i = 0; i < 64; i += 8
-    *abs_addr = 0
-    abs_addr += 8
+  let u16 explosion_sprite = invader_x_pos * 8
+  explosion_sprite += #~space_invaders_explosion#
+  draw_16x8(explosion_sprite, x + 1, offset)
+
+  // queue the expolsion for erasure
+  let erase_struct entry
+  entry.x = x
+  entry.y = y
+  entry.age = 0
+  erase_queue.insert(0, entry)
 
   // score is 10 for bottom row, 20 for middle and 30 for top
-  let u16 tmp = 3 - y
-  tmp = 10 * tmp
-  game_score += tmp
-  update_score()
-  free tmp
+  let u16 increase = 3 - y
+  increase = 10 * increase
+  score += increase
+  draw_score()
+
+def erase_aliens()
+  if erase_queue.len() > 0
+    let erase_struct entry = erase_queue[erase_queue.len() - 1]
+    if entry.age > EXPLOSION_TIME
+      finish_shift_down()
+
+      // erase the exploded alien
+      let u16 vram_offset = 88 * entry.y
+      draw_16x8(#~space_invaders_blank#, entry.x + 1, start_row + vram_offset)
+      // bin the entry
+      entry = erase_queue.pop()
+    else
+      // just age the entry
+      entry.age = entry.age + 1
+      erase_queue[erase_queue.len() - 1] = entry
 
 def update_shot()
   if shot_present
+    finish_shift_down()
+
     if shot_y > lowest_invader_above_player_shot
       // while we are still below the invaders, move the shot up
       fast_set_pixel(shot_x_word, shot_x_sub, shot_y + 8, false)
@@ -387,8 +445,7 @@ def update_shot()
             let u16 tmp = invader_x_pos + 8
             if shot_x_sub < tmp
               // if it has hit then delete the alien
-              erase_invader(shot_x_word-1,row_of_invader_above_shot)
-            free tmp
+              hit_alien(shot_x_word-1,row_of_invader_above_shot)
       shot_present = false
       fast_set_pixel(shot_x_word, shot_x_sub, shot_y, false)
       fast_set_pixel(shot_x_word, shot_x_sub, shot_y + 4, false)
@@ -432,21 +489,34 @@ def update_shot()
 // mark all invaders as alive
 for let u16 i = 0; i < alien_status.max_len(); i++
   alien_status[i] = true
-free i
+  aliens_alive++
 
 // draw title screen
-sys.mem_copy(#space_invaders_title_screen#, SYS_VRAM_ADDR, 1024)
+sys.mem_copy_fast(#~space_invaders_title_screen#, SYS_VRAM_ADDR, 1024)
 
+let bool flip = false
+let u16 wait = 0xffff
 // wait for keypress
 while sys.kbd.get_charcode() == 0
-  // pass
+  // switch between 2 frames of "press any key to start"
+  if wait > TITLE_SCREEN_FLASH_SPEED
+    if flip
+      sys.mem_copy_fast(#~space_invaders_title_screen_animation#, SYS_VRAM_ADDR + 465, 104)
+    else
+      sys.mem_copy_fast(#~space_invaders_title_screen# + 465, SYS_VRAM_ADDR + 465, 104)
+    flip = !flip
+    wait = 0
+
+  wait++
 
 // clear screen
 sys.vram.clear()
 
 // draw cannon and score title
-draw_8x8(#space_invaders_cannon#, cannon_x, 960)
-sys.print_string("SCORE 0")
+draw_8x8(#~space_invaders_cannon#, cannon_x, 960)
+
+sys.mem_copy_fast(#~space_invaders_header#, SYS_VRAM_ADDR, 56)
+draw_score()
 
 // draw aliens starting in column 2
 draw_aliens(2,0)
@@ -461,6 +531,7 @@ while true
   update_cannon()
   if cycle > ALIEN_SPEED
     move_aliens()
+    erase_aliens()
     cycle = 0
 
   if cycle2 > SHOT_SPEED
@@ -471,7 +542,6 @@ while true
   cycle2++
 
 ### space_invaders_cannon:
-// sprites are defined below
 0b0001100000011000
 0b0001100000011000
 0b0001100000011000
@@ -480,6 +550,17 @@ while true
 0b0111111001111110
 0b0111111001111110
 0b0111111001111110
+###
+
+### space_invaders_shield:
+0b0000000000000000
+0b1111110000111111
+0b1111111001111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b0001111111111000
+0b0000011111100000
 ###
 
 ### space_invaders_aliens:
@@ -539,15 +620,93 @@ while true
 0b1011110101011010
 0b1001100101000010
 0b0010010011000011
-0b0000100000001000
-0b1000100110001001
-0b0100001001000010
-0b0010000000100000
-0b0000010000000100
-0b0100001001000010
-0b1001000110010001
-0b0001000000010000
-// blank space for erasing
+###
+
+### space_invaders_explosion:
+// 0
+0b0000100000000000
+0b1000100100000000
+0b0100001000000000
+0b0010000000000000
+0b0000010000000000
+0b0100001000000000
+0b1001000100000000
+0b0001000000000000
+// 1
+0b0000010000000000
+0b0100010010000000
+0b0010000100000000
+0b0001000000000000
+0b0000001000000000
+0b0010000100000000
+0b0100100010000000
+0b0000100000000000
+// 2
+0b0000001000000000
+0b0010001001000000
+0b0001000010000000
+0b0000100000000000
+0b0000000100000000
+0b0001000010000000
+0b0010010001000000
+0b0000010000000000
+// 3
+0b0000000100000000
+0b0001000100100000
+0b0000100001000000
+0b0000010000000000
+0b0000000010000000
+0b0000100001000000
+0b0001001000100000
+0b0000001000000000
+// 4
+0b0000000010000000
+0b0000100010010000
+0b0000010000100000
+0b0000001000000000
+0b0000000001000000
+0b0000010000100000
+0b0000100100010000
+0b0000000100000000
+// 5
+0b0000000001000000
+0b0000010001001000
+0b0000001000010000
+0b0000000100000000
+0b0000000000100000
+0b0000001000010000
+0b0000010010001000
+0b0000000010000000
+// 6
+0b0000000000100000
+0b0000001000100100
+0b0000000100001000
+0b0000000010000000
+0b0000000000010000
+0b0000000100001000
+0b0000001001000100
+0b0000000001000000
+// 7
+0b0000000000010000
+0b0000000100010010
+0b0000000010000100
+0b0000000001000000
+0b0000000000001000
+0b0000000010000100
+0b0000000100100010
+0b0000000000100000
+// 8
+0b0000000000001000
+0b0000000010001001
+0b0000000001000010
+0b0000000000100000
+0b0000000000000100
+0b0000000001000010
+0b0000000010010001
+0b0000000000010000
+###
+
+### space_invaders_blank:
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
@@ -556,6 +715,170 @@ while true
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
+###
+
+### space_invaders_header:
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b1110001110001110
+0b0111100111100000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0110000000000000
+0b0000000000000000
+0b0000000000000001
+0b0001010001010001
+0b0100010100000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0110000000000000
+0b0000000000000000
+0b0000000000000000
+0b1100010000010001
+0b0100010111000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b1111000000000000
+0b0000000000000000
+0b0000000000000000
+0b0010010000010001
+0b0111100100000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000001
+0b1111100000000000
+0b0000000000000000
+0b0000000000000001
+0b0001010001010001
+0b0100100100000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000001
+0b1111100000000000
+0b0000000000000000
+0b0000000000000000
+0b1110001110001110
+0b0100010111100000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000001
+0b1111100000000000
+0b0000000000000000
+###
+
+### space_invaders_title_screen_animation:
+0b0011111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111100
+0b0000000000000000
+0b0000000000000000
+0b0010000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000100
+0b0000000000000000
+0b0000000000000000
+0b0010111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111110100
+0b0000000000000000
+0b0000000000000000
+0b0010111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111110111111
+0b1111111111110100
+0b0000000000000000
+0b0000000000000000
+0b0010110000111010
+0b0111100011110000
+0b1110000111111111
+0b0001110100110111
+0b0111111110110111
+0b0001101110110100
+0b0000000000000000
+0b0000000000000000
+0b0010110111011001
+0b1011011101101111
+0b1101111111111111
+0b1110110011010111
+0b0111111110101110
+0b1110101110110100
+0b0000000000000000
+0b0000000000000000
+0b0010110111011011
+0b1111000001110001
+0b1110001111111111
+0b0000110111011000
+0b0111111110011110
+0b0000110000110100
+0b0000000000000000
+0b0000000000000000
+0b0010110000111011
+0b1111011111111110
+0b1111110111111110
+0b1110110111011111
+0b0111111110101110
+0b1111111110110100
+0b0000000000000000
+0b0000000000000000
+0b0010110111111011
+0b1111100011100001
+0b1100001111111111
+0b0000110111011000
+0b1111111110110111
+0b0001110001110100
+0b0000000000000000
+0b0000000000000000
+0b0010110111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111110100
+0b0000000000000000
+0b0000000000000000
+0b0010111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111110100
+0b0000000000000000
+0b0000000000000000
+0b0010000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000000
+0b0000000000000100
+0b0000000000000000
+0b0000000000000000
+0b0011111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111111
+0b1111111111111100
 ###
 
 ### space_invaders_title_screen:
@@ -1032,92 +1355,92 @@ while true
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
-0b0000001111111111
+0b0001111111111111
 0b1111111111111111
 0b1111111111111111
 0b1111111111111111
 0b1111111111111111
-0b1111111111000000
+0b1111111111111000
+0b0000000000000000
+0b0000000000000000
+0b0001000000000000
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
+0b0000000000001000
 0b0000000000000000
 0b0000000000000000
-0b0000000000000000
-0b0000000000000000
-0b0000000000000000
-0b0000000000000000
-0b0000000000000000
+0b0001000000000000
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
 0b0000000001000000
+0b0000000000001000
 0b0000000000000000
 0b0000000000000000
-0b0000000000000000
-0b0000001111000101
+0b0001001111000101
 0b1000011100001111
 0b0001111000000000
 0b1110001011001000
 0b1000000001001000
-0b1110010001000000
+0b1110010001001000
 0b0000000000000000
 0b0000000000000000
-0b0000001000100110
+0b0001001000100110
 0b0100100010010000
 0b0010000000000000
 0b0001001100101000
 0b1000000001010001
-0b0001010001000000
+0b0001010001001000
 0b0000000000000000
 0b0000000000000000
-0b0000001000100100
+0b0001001000100100
 0b0000111110001110
 0b0001110000000000
 0b1111001000100111
 0b1000000001100001
-0b1111001111000000
+0b1111001111001000
 0b0000000000000000
 0b0000000000000000
-0b0000001111000100
+0b0001001111000100
 0b0000100000000001
 0b0000001000000001
 0b0001001000100000
 0b1000000001010001
-0b0000000001000000
+0b0000000001001000
 0b0000000000000000
 0b0000000000000000
-0b0000001000000100
+0b0001001000000100
 0b0000011100011110
 0b0011110000000000
 0b1111001000100111
 0b0000000001001000
-0b1110001110000000
+0b1110001110001000
 0b0000000000000000
 0b0000000000000000
-0b0000001000000000
-0b0000000000000000
-0b0000000000000000
-0b0000000000000000
+0b0001001000000000
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
+0b0000000000001000
+0b0000000000000000
+0b0000000000000000
+0b0001000000000000
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
+0b0000000000001000
 0b0000000000000000
 0b0000000000000000
-0b0000000000000000
-0b0000000000000000
-0b0000001111111111
+0b0001111111111111
 0b1111111111111111
 0b1111111111111111
 0b1111111111111111
 0b1111111111111111
-0b1111111111000000
+0b1111111111111000
 0b0000000000000000
 0b0000000000000000
 0b0000000000000000
