@@ -4,6 +4,11 @@
     "desc":"Displays \"Hello world!\"",
     "clock_speed": 100000
   },
+  "chess": {
+    "name":"Chess Game",
+    "desc":"Has computer vs player & computer vs computer modes. There are two difficulty settings for the AI (default is fast but poor moves). Features a randomised opening book with 2188 variations. Does not detect checkmate or any end of game.",
+    "clock_speed": 2000000
+  },
   "space_invaders_demo": {
     "name":"Space Invaders",
     "desc":"A space-invaders style game. Use the ← left and right → arrow keys to move the cannon. Press the ↑ up arrow key to fire. This game currently has no victory condition or shields for the player.",
