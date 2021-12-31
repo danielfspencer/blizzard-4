@@ -1593,7 +1593,7 @@ const libs = {
   ],
   "sys.get_lib_version":[
     "def sys.get_lib_version() -> str",
-    "  return \"1.0.0\"",
+    "  return \"1.1.0\"",
   ],
   "sys.signatures": [
     "sig sys.u16_multiply(u16 a, u16 b) -> u16",
