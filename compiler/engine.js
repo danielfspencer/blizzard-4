@@ -89,7 +89,7 @@ function init_state() {
     data: [],
     code: {},
     required_libs: [],
-    inner_structure_label: null,
+    inner_structure_label: { break: null, continue: null },
     labels: {__main: {if:0, for:0, while:0, str:0, expr_array:0}},
     ast: []
   }
@@ -1485,17 +1485,17 @@ function translate(token, ctx_type) {
     } break
 
     case "break": {
-      if (state.inner_structure_label === null) {
+      if (state.inner_structure_label.break === null) {
         throw new CompError("'break' can only be used in for/while loops")
       }
-      result.push(`goto ~${state.inner_structure_label}_end`)
+      result.push(`goto ~${state.inner_structure_label.break}`)
     } break
 
     case "continue": {
-      if (state.inner_structure_label === null) {
+      if (state.inner_structure_label.continue === null) {
         throw new CompError("'continue' can only be used in for/while loops")
       }
-      result.push(`goto ~${state.inner_structure_label}_start`)
+      result.push(`goto ~${state.inner_structure_label.continue}`)
     } break
 
     case "signature_def": {
@@ -2645,10 +2645,15 @@ function translate(token, ctx_type) {
       result.push(`goto ~${label}_end ${expr_value}`)
 
       let prev_state = state.inner_structure_label
-      state.inner_structure_label = label
+      state.inner_structure_label = {
+        break: `${label}_end`,
+        continue: `${label}_continue`,
+      }
+
       result.push(...translate_body(token.body))
       state.inner_structure_label = prev_state
 
+      result.push(`${label}_continue:`)
       let cmd_prefix = translate(args.cmd)
       result.push(...cmd_prefix)
 
@@ -2673,7 +2678,11 @@ function translate(token, ctx_type) {
       }
 
       let prev_state = state.inner_structure_label
-      state.inner_structure_label = label
+      state.inner_structure_label = {
+        break: `${label}_end`,
+        continue: `${label}_start`,
+      }
+
       result.push(...translate_body(token.body))
       state.inner_structure_label = prev_state
 
