@@ -1869,17 +1869,15 @@ function translate(token, ctx_type) {
       let operand_type = find_type_priority(args.expr1, args.expr2)
       switch (operand_type) {
         case "u16": {
-          let temp_vars = [get_temp_word(), get_temp_word()]
+          let temp_var = get_temp_word()
 
           prefix = write_operands(args.expr1, args.expr2, operand_type)
-          prefix.push(`write [alu.=] ${temp_vars[0].label}`)
-          prefix.push(`write [alu.>] ${temp_vars[1].label}`)
-          prefix.push(`write [${temp_vars[0].label}] alu.1`)
-          prefix.push(`write [${temp_vars[1].label}] alu.2`)
-          registers = ["[alu.|]"]
+          prefix.push(`write [alu.<] ${temp_var.label}`)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write [${temp_var.label}] alu.2`)
+          registers = ["[alu.-]"]
 
-          temp_vars[0].free()
-          temp_vars[1].free()
+          temp_var.free()
           } break
 
         case "s16": {
@@ -1901,23 +1899,13 @@ function translate(token, ctx_type) {
 
         case "s32":
         case "u32": {
-          let temp_vars = [get_temp_word(), get_temp_word()]
-
-          let prefix_and_value = function_call(`sys.${operand_type}_greater`, [args.expr1,args.expr2], operand_type)
+          let prefix_and_value = function_call(`sys.${operand_type}_less`, [args.expr1,args.expr2], operand_type)
           prefix = prefix_and_value[0]
 
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
+          prefix.push(`write ${prefix_and_value[1][0]} alu.2`)
 
-          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2], operand_type)
-          prefix.push(...prefix_and_value[0])
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
-
-          prefix.push(`write [${temp_vars[0].label}] alu.1`)
-          prefix.push(`write [${temp_vars[1].label}] alu.2`)
-          registers = ["[alu.|]"]
-
-          temp_vars[0].free()
-          temp_vars[1].free()
+          prefix.push(`write 0xffff alu.1`)
+          registers = ["[alu.-]"]
           } break
 
         default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
@@ -1929,17 +1917,15 @@ function translate(token, ctx_type) {
       let operand_type = find_type_priority(args.expr1, args.expr2)
       switch (operand_type) {
         case "u16": {
-          let temp_vars = [get_temp_word(), get_temp_word()]
+          let temp_var = get_temp_word()
 
           prefix = write_operands(args.expr1, args.expr2, operand_type)
-          prefix.push(`write [alu.=] ${temp_vars[0].label}`)
-          prefix.push(`write [alu.<] ${temp_vars[1].label}`)
-          prefix.push(`write [${temp_vars[0].label}] alu.1`)
-          prefix.push(`write [${temp_vars[1].label}] alu.2`)
-          registers = ["[alu.|]"]
+          prefix.push(`write [alu.>] ${temp_var.label}`)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write [${temp_var.label}] alu.2`)
+          registers = ["[alu.-]"]
 
-          temp_vars[0].free()
-          temp_vars[1].free()
+          temp_var.free()
           } break
 
         case "s16": {
@@ -1961,23 +1947,13 @@ function translate(token, ctx_type) {
 
         case "s32":
         case "u32": {
-          let temp_vars = [get_temp_word(), get_temp_word()]
-
-          let prefix_and_value = function_call(`sys.${operand_type}_less`, [args.expr1,args.expr2], operand_type)
+          let prefix_and_value = function_call(`sys.${operand_type}_greater`, [args.expr1,args.expr2], operand_type)
           prefix = prefix_and_value[0]
 
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
+          prefix.push(`write ${prefix_and_value[1][0]} alu.2`)
 
-          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2], operand_type)
-          prefix.push(...prefix_and_value[0])
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
-
-          prefix.push(`write [${temp_vars[0].label}] alu.1`)
-          prefix.push(`write [${temp_vars[1].label}] alu.2`)
-          registers = ["[alu.|]"]
-
-          temp_vars[0].free()
-          temp_vars[1].free()
+          prefix.push(`write 0xffff alu.1`)
+          registers = ["[alu.-]"]
           } break
 
         default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
