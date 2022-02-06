@@ -483,6 +483,6 @@ optional_block_label:
 | Name | Size | Type | Format | Range |
 | ---- | ---- | ---- | ------ | :---: |
 | `u16` | 16 bit | integer | unsigned | 0 to 65535 |
-| `s16` | 16 bit | integer | two's complement | -32767 to 32767 |
-| `u32` | 32 bit | integer | unsigned | 0 to 4.29 x 10⁹ |
-| `s32` | 32 bit | integer | two's complement| -2.15 x 10⁹ to 2.15 x 10⁹ |
+| `s16` | 16 bit | integer | two's complement | -32,768 to 32,767 |
+| `u32` | 32 bit | integer | unsigned | 0 to 4,294,967,295 |
+| `s32` | 32 bit | integer | two's complement| -2,147,483,648 to 2,147,483,647 |

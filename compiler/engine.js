@@ -1564,7 +1564,7 @@ function translate(token, ctx_type) {
       let dec_val = parse_int(args.value)
 
       if (dec_val > 65535) {
-        throw new CompError("Integer too large (2^16 / 65535 max)")
+        throw new CompError("Integer out of range [0, 65535]")
       }
 
       type = "u16"
@@ -1584,8 +1584,8 @@ function translate(token, ctx_type) {
 
       let dec_val = parse_int(args.value)
 
-      if (dec_val > 32767) {
-        throw new CompError("Signed integer out of range (± 2^15 / 32767 max)")
+      if ((!negative && dec_val > 32767) || (negative && dec_val > 32768)) {
+        throw new CompError("Signed integer out of range [-32768, 32767]")
       }
 
       if (dec_val === 0) {
@@ -1613,7 +1613,7 @@ function translate(token, ctx_type) {
       let dec_val = parse_int(args.value)
 
       if (dec_val > 4294967295) {
-        throw new CompError("Integer out of range (2^32 / 4.29bn max)")
+        throw new CompError("Integer out of range [0, 4294967295]")
       }
       let bin = pad(dec_val.toString(2),32)
       let high = `0b${bin.substring(0,16)}`
@@ -1640,8 +1640,8 @@ function translate(token, ctx_type) {
         negative = false
       }
 
-      if (dec_val > 2147483647) {
-        throw new CompError("Signed integer out of range (± 2^31 / 2.15bn max)")
+      if ((!negative && dec_val > 2147483647) || (negative && dec_val > 2147483648)) {
+        throw new CompError("Signed integer out of range [-2147483648, 2147483647]")
       }
 
       let bin = 0
