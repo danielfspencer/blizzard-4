@@ -1884,15 +1884,19 @@ function translate(token, ctx_type) {
 
         case "s16": {
           let [temp1, temp2] = [get_temp_word(),  get_temp_word()]
-          prefix.push(`write 0b1000000000000001 alu.2`)
+          prefix.push(`write 0b1000000000000000 alu.2`)
           prefix.push(...write_operand(args.expr1, operand_type))
           prefix.push(`write [alu.+] ${temp1.label}`)
-          prefix.push(`write 0b1000000000000000 alu.2`)
           prefix.push(...write_operand(args.expr2, operand_type))
           prefix.push(`write [alu.+] ${temp2.label}`)
           prefix.push(`write [${temp1.label}] alu.1`)
           prefix.push(`write [${temp2.label}] alu.2`)
-          registers = ["[alu.>]"]
+          prefix.push(`write [alu.<] ${temp1.label}`)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write [${temp1.label}] alu.2`)
+          registers = ["[alu.-]"]
+          temp1.free()
+          temp2.free()
           } break
 
         case "s32":
@@ -1943,12 +1947,14 @@ function translate(token, ctx_type) {
           prefix.push(`write 0b1000000000000000 alu.2`)
           prefix.push(...write_operand(args.expr1, operand_type))
           prefix.push(`write [alu.+] ${temp1.label}`)
-          prefix.push(`write 0b1000000000000001 alu.2`)
           prefix.push(...write_operand(args.expr2, operand_type))
           prefix.push(`write [alu.+] ${temp2.label}`)
           prefix.push(`write [${temp1.label}] alu.1`)
           prefix.push(`write [${temp2.label}] alu.2`)
-          registers = ["[alu.<]"]
+          prefix.push(`write [alu.>] ${temp1.label}`)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write [${temp1.label}] alu.2`)
+          registers = ["[alu.-]"]
           temp1.free()
           temp2.free()
           } break
