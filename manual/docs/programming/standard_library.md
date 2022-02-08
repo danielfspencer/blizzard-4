@@ -36,6 +36,10 @@ sys.**kbd.scancode_to_charcode**(u16 scancode, bool shifted = false) -> u16
 
 sys.**kbd.get_charcode**() -> u16
 
+sys.**random**() -> u16
+
+sys.**random_seed**(u16 seed)
+
 sys.**get_lib_version**() -> str
 
 ### Internal

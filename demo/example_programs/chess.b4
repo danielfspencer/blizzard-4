@@ -57,7 +57,7 @@ global u16 book_pointer
 global bool book_known_line
 global array book_moves = (u16, BOOK_MAX_BRANCH_FACTOR)[]
 
-global u16 random
+global u16 seed
 
 def reset()
   // jump to the entry point to restart program
@@ -81,19 +81,6 @@ def book_pack_move(t_move unpacked) -> u16
   let u16 move = unpacked.dest
   unpacked.source = unpacked.source << 8
   return move | unpacked.source
-
-def xor(u16 a, u16 b) -> u16
-  let u16 _1 = a | b
-  let u16 _2 = a & b
-  _2 = !_2
-  return _1 & _2
-
-def get_random() -> u16
-  // George Marsaglia's 16-bit xorshift pseudorandom algorithm
-  random = xor(random, random << 7)
-  random = xor(random, random >> 9)
-  random = xor(random, random << 8)
-  return random
 
 def book_reset()
   book_pointer = BOOK_BASE
@@ -426,7 +413,7 @@ def make_engine_move(u16 side) -> s16
 
   if book_moves.len() > 0
     // book move
-    let u16 selection = get_random()
+    let u16 selection = sys.random()
 
     // choose between the top 2 options
     selection = selection % 2
@@ -860,7 +847,8 @@ while true
       game_mode = HELP_MENU
       break
 
-    random++
+    seed++
+    sys.random_seed(seed)
 
   // when item chosen
   if game_mode == AI_VS_AI

@@ -836,6 +836,23 @@ const libs = {
     "",
     "  return 0"
   ],
+  "sys.random": [
+    "global u16 SYS_RANDOM_STATE = 1",
+    "def sys.random() -> u16",
+    "  // George Marsaglia's 16-bit xorshift pseudorandom algorithm",
+    "  // algorithm requires seed > 0",
+    "  if SYS_RANDOM_STATE == 0",
+    "    SYS_RANDOM_STATE = 1",
+    "  SYS_RANDOM_STATE = sys.u16_xor(SYS_RANDOM_STATE, SYS_RANDOM_STATE << 7)",
+    "  SYS_RANDOM_STATE = sys.u16_xor(SYS_RANDOM_STATE, SYS_RANDOM_STATE >> 9)",
+    "  SYS_RANDOM_STATE = sys.u16_xor(SYS_RANDOM_STATE, SYS_RANDOM_STATE << 8)",
+    "  return SYS_RANDOM_STATE"
+  ],
+  "sys.random_seed": [
+    "def sys.random_seed(u16 seed)",
+    "  include sys.random",
+    "  SYS_RANDOM_STATE = seed"
+  ],
   "sys.vram.glyphs": [
     "### sys.vram.glyphs:",
     "0b0000000000000000",
@@ -1647,6 +1664,8 @@ const libs = {
     "sig sys.print_s32(s32 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
     "sig sys.kbd.scancode_to_charcode(u16 scancode, bool shifted = false) -> u16",
     "sig sys.kbd.get_charcode() -> u16",
+    "sig sys.random() -> u16",
+    "sig sys.random_seed(u16 seed)",
     "sig sys.get_lib_version() -> str"
   ]
 }
