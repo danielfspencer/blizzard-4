@@ -90,6 +90,8 @@ sys.**u32_greater**(u32 a, u32 b) -> bool
 
 sys.**u32_less**(u32 a, u32 b) -> bool
 
+sys.**u32_xor**(u32 a, u32 b) -> u32
+
 sys.**s32_multiply**(s32 a, s32 b) -> s32
 
 sys.**s32_divide**(s32 a, s32 b) -> s32

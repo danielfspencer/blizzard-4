@@ -269,6 +269,13 @@ const libs = {
     "",
     "  return false"
   ],
+  "sys.u32_xor": [
+    "def sys.u32_xor(u32 a, u32 b) -> u32",
+    "  let u32 _1 = a | b",
+    "  let u32 _2 = a & b",
+    "  _2 = !_2",
+    "  return _1 & _2",
+  ],
   "sys.s32_multiply": [
     "def sys.s32_multiply(s32 a, s32 b) -> s32",
     "  let bool sign = false",
@@ -1641,6 +1648,7 @@ const libs = {
     "sig sys.u32_equal(u32 a, u32 b) -> bool",
     "sig sys.u32_greater(u32 a, u32 b) -> bool",
     "sig sys.u32_less(u32 a, u32 b) -> bool",
+    "sig sys.u32_xor(u32 a, u32 b) -> u32",
     "sig sys.s32_multiply(s32 a, s32 b) -> s32",
     "sig sys.s32_divide(s32 a, s32 b) -> s32",
     "sig sys.s32_exponent(s32 a, s32 b) -> s32",

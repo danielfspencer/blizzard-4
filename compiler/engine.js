@@ -1783,6 +1783,11 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call(`sys.u16_xor`, [args.expr1,args.expr2], type)
         } break
 
+        case "s32":
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_xor", [args.expr1,args.expr2], type)
+        } break
+
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
       }
     } break
@@ -2007,13 +2012,73 @@ function translate(token, ctx_type) {
     } break
 
     case "&": {
-      prefix = write_operands(args.expr1,args.expr2,ctx_type)
-      registers = ["[alu.&]"]
+      type = find_type_priority(args.expr1, args.expr2, ctx_type)
+      switch (type) {
+        case "bool":
+        case "s16":
+        case "u16": {
+          prefix = write_operands(args.expr1, args.expr2, type)
+          registers = ["[alu.&]"]
+        } break
+
+        case "u32":
+        case "s32": {
+          // leaks stack memory
+          let buffer = alloc_stack(2)
+          let buffer_values = buffer.map((addr) => {return `[sp+${addr}]`})
+
+          let [expr_1_prefix, expr_1_regs] = translate(args.expr1, type)
+          let [expr_2_prefix, expr_2_regs] = translate(args.expr2, type)
+
+          prefix.push(...expr_1_prefix)
+          prefix.push(...expr_2_prefix)
+          prefix.push(`write ${expr_1_regs[0]} alu.1`)
+          prefix.push(`write ${expr_2_regs[0]} alu.2`)
+          prefix.push(`write [alu.&] sp+${buffer[0]}`)
+          prefix.push(`write ${expr_1_regs[1]} alu.1`)
+          prefix.push(`write ${expr_2_regs[1]} alu.2`)
+          prefix.push(`write [alu.&] sp+${buffer[1]}`)
+
+          registers = buffer_values
+        } break
+
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+      }
     } break
 
     case "|": {
-      prefix = write_operands(args.expr1,args.expr2,ctx_type)
-      registers = ["[alu.|]"]
+      type = find_type_priority(args.expr1, args.expr2, ctx_type)
+      switch (type) {
+        case "bool":
+        case "s16":
+        case "u16": {
+          prefix = write_operands(args.expr1, args.expr2, type)
+          registers = ["[alu.|]"]
+        } break
+
+        case "u32":
+        case "s32": {
+          // leaks stack memory
+          let buffer = alloc_stack(2)
+          let buffer_values = buffer.map((addr) => {return `[sp+${addr}]`})
+
+          let [expr_1_prefix, expr_1_regs] = translate(args.expr1, type)
+          let [expr_2_prefix, expr_2_regs] = translate(args.expr2, type)
+
+          prefix.push(...expr_1_prefix)
+          prefix.push(...expr_2_prefix)
+          prefix.push(`write ${expr_1_regs[0]} alu.1`)
+          prefix.push(`write ${expr_2_regs[0]} alu.2`)
+          prefix.push(`write [alu.|] sp+${buffer[0]}`)
+          prefix.push(`write ${expr_1_regs[1]} alu.1`)
+          prefix.push(`write ${expr_2_regs[1]} alu.2`)
+          prefix.push(`write [alu.|] sp+${buffer[1]}`)
+
+          registers = buffer_values
+        } break
+
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+      }
     } break
 
     case ">>": {
@@ -2151,11 +2216,37 @@ function translate(token, ctx_type) {
     } break
 
     case "!": {
-      let [expr_prefix, expr_reg] = translate(args.expr, ctx_type)
-      prefix = expr_prefix
-      prefix.push(`write 0xffff alu.1`)
-      prefix.push(`write ${expr_reg} alu.2`)
-      registers = ["[alu.-]"]
+      switch (ctx_type) {
+        case "bool":
+        case "s16":
+        case "u16": {
+          let [expr_prefix, expr_reg] = translate(args.expr, ctx_type)
+          prefix = expr_prefix
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write ${expr_reg} alu.2`)
+          registers = ["[alu.-]"]
+        } break
+
+        case "u32":
+        case "s32": {
+          // leaks stack memory
+          let buffer = alloc_stack(2)
+          let buffer_values = buffer.map((addr) => {return `[sp+${addr}]`})
+
+          let [expr_prefix, expr_regs] = translate(args.expr, ctx_type)
+
+          prefix.push(...expr_prefix)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write ${expr_regs[0]} alu.2`)
+          prefix.push(`write [alu.-] sp+${buffer[0]}`)
+          prefix.push(`write ${expr_regs[1]} alu.2`)
+          prefix.push(`write [alu.-] sp+${buffer[1]}`)
+
+          registers = buffer_values
+        } break
+
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+      }
     } break
 
     case "expr_array": {
