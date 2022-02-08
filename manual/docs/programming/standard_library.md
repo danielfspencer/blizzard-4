@@ -40,6 +40,8 @@ sys.**random**() -> u16
 
 sys.**random_seed**(u16 seed)
 
+sys.**restart**()
+
 sys.**get_lib_version**() -> str
 
 ### Internal

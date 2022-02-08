@@ -853,6 +853,12 @@ const libs = {
     "  include sys.random",
     "  SYS_RANDOM_STATE = seed"
   ],
+  "sys.restart": [
+    "def sys.restart()",
+    "  // jump to the entry point to restart program",
+    "  // -6 jumps to the call to the entry point (so that the right stack pointer is set)",
+    "  {goto ~func__main-6 0}"
+  ],
   "sys.vram.glyphs": [
     "### sys.vram.glyphs:",
     "0b0000000000000000",
@@ -1666,6 +1672,7 @@ const libs = {
     "sig sys.kbd.get_charcode() -> u16",
     "sig sys.random() -> u16",
     "sig sys.random_seed(u16 seed)",
+    "sig sys.restart()",
     "sig sys.get_lib_version() -> str"
   ]
 }

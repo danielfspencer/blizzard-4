@@ -59,11 +59,6 @@ global array book_moves = (u16, BOOK_MAX_BRANCH_FACTOR)[]
 
 global u16 seed
 
-def reset()
-  // jump to the entry point to restart program
-  // -6 jumps to the call to the entry point (so that the right stack pointer is set)
-  {goto ~func__main-6 0}
-
 def wait(u16 time)
   while time > 0
     time--
@@ -687,7 +682,7 @@ def draw_pause_menu()
         draw_move_list()
         break
       else if keycode == 0x33
-        reset()
+        sys.restart()
 
 def draw_end_of_game_menu()
   while true
@@ -713,7 +708,7 @@ def draw_end_of_game_menu()
         draw_move_list()
         break
       else if keycode == 0x32
-        reset()
+        sys.restart()
 
 def draw_title_screen()
   sys.mem_copy_fast(#~title_screen#, SYS_VRAM_ADDR, 1024)
