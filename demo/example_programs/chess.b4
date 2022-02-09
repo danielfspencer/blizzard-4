@@ -5,7 +5,7 @@
 include sys.consts
 
 global u16 search_depth = 2
-const u16 MAX_MOVE_HIST = 100
+const u16 MAX_MOVE_HIST = 198
 const u16 BOOK_MOVE_DELAY = 4000
 
 const u16 WHITE = 8
@@ -186,7 +186,7 @@ def eval_position(s16 side) -> s16
 def search_position(s16 side, s16 depth, s16 alpha, s16 beta, bool check_legal = false) -> s16
   search_position_calls++
   {write $search_position_calls io.out1}
-  {write $search_position_calls vram.7}
+  {write $search_position_calls vram.1023}
 
   if sys.kbd.get_charcode() == 32
     draw_pause_menu()
@@ -605,6 +605,13 @@ def draw_move_list_internal(u16 start_ply)
 
   sys.mem_copy_fast(#~moves_list_header#, SYS_VRAM_ADDR, 62)
 
+  // draw up and down arrows if needed
+  if ply < move_list.len()
+    draw_16x14(#~down#, 7, 8, false)
+
+  if start_ply >= 30
+    draw_16x14(#~up#, 7, 0, false)
+
   let u16 length = 0
   while ply < move_list.len()
     let t_move move = move_list[ply]
@@ -630,12 +637,6 @@ def draw_move_list_internal(u16 start_ply)
 
     length++
     ply++
-
-  if ply < move_list.len()
-    draw_16x14(#~down#, 7, 8, false)
-
-  if start_ply >= 30
-    draw_16x14(#~up#, 7, 0, false)
 
 def draw_move_list()
   let u16 ply = 0
