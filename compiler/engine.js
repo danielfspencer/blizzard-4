@@ -2768,10 +2768,8 @@ function translate(token, ctx_type) {
         throw new CompError("Number of times to repeat must be static & of type 'u16'")
       })
 
-      let body = translate_body(token.body)
-
       while (times_to_repeat > 0) {
-        result.push(...body)
+        result.push(...translate_body(token.body))
         times_to_repeat--
       }
     } break

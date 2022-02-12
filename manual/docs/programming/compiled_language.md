@@ -379,7 +379,7 @@ def sys.u16_multiply(u16 a, u16 b) -> u16
 
 + **repeat** [number]
 
-**NOTE this is not for general use, only for unrolling performance-critical loops.** Repeat a block of code the specified number of times. This causes the compiler to emit the contained commands *number* times. Therefore large numbers will result in very large program sizes. Also, *number* must be static and known at compile time.
+**NOTE this is not for general use, only for unrolling performance-critical loops.** Repeat a block of code the specified number of times. This causes the compiler to emit the contained commands *number* times. Therefore large numbers will result in very large program sizes. As declarations cannot be repeated in the same scope, `repeat` blocks cannot contain declarations. Also, *number* must be static and known at compile time.
 
 ```javascript
 def shift_right(u16 start = 6144, u16 end = 7167)
