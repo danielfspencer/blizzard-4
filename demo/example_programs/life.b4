@@ -1,0 +1,177 @@
+// Inspired by Ilmari Karonen's activity list algorithm
+// Source: https://codereview.stackexchange.com/a/42790
+// Some peformance-critical parts of this program may seem strange as they have been manually optimised
+
+// series of deltas to visit self then all 8-connected neighbourhood
+const array OFFSETS = (s16)[0, -128, 1, 128, 128, -1, -1, -128, -128]
+
+// pixel buffer format:
+// bit
+// 0 = active
+// 1 = is alive?
+// 5:2 = active neighbour count
+global array pixels = (u16, 16384)[]
+
+// queue format:
+// stores index into buffer
+global array queue = (u16, 16384)[]
+global u16 active_cells
+
+// copied from sys.vram.set_pixel() but without y coord for speed
+def fast_set_pixel(u16 x, bool data = true)
+  include sys.consts
+  include sys.vram.shifted_pixels
+  let u16 addr = x >> 4
+  let u16 table_addr
+  {write ~sys.vram.shifted_pixels &table_addr}
+
+  let u16 pixel = x & 0xf
+  table_addr += pixel
+  addr += SYS_VRAM_ADDR
+  if data
+    {copy $table_addr alu.1}
+    {copy $addr alu.2}
+    {write [alu.|] $addr}
+  else
+    {write 0xffff alu.1}
+    {copy $table_addr alu.2}
+    {copy alu.- &table_addr}
+    {copy &table_addr alu.1}
+    {copy $addr alu.2}
+    {write [alu.&] $addr}
+
+def evolve()
+  let u16 changed_cells = 0
+
+  {write $active_cells io.out1}
+  for let u16 i = 0; i < active_cells; i++
+    let u16 index = queue[i]
+    let u16 packed_state = pixels[index]
+
+    let u16 _old_state = packed_state & 2
+    let bool was_alive = _old_state > 0
+
+    let bool is_alive = false
+
+    if 9 < packed_state
+      if packed_state < 16
+        is_alive = true
+
+    if is_alive == was_alive
+      pixels[index] = packed_state - 1
+    else
+      queue[changed_cells] = index
+      changed_cells++
+
+      // performance hack: set_pixel internally does these operations so feed index directly into x coord
+      // let u16 y = index >> 7
+      // let u16 x = index & 0b1111111
+      fast_set_pixel(index, is_alive)
+
+  active_cells = changed_cells
+
+  {write $changed_cells io.out2}
+  for i = 0; i < changed_cells; i++
+    index = queue[i]
+
+    _old_state = pixels[index] & 2
+
+    let s16 delta
+    let s16 half_delta
+
+    if _old_state > 0
+      delta = -4
+      half_delta = -2
+    else
+      delta = 4
+      half_delta = 2
+
+    let s16 neighbour_index = index
+    for let u16 j = 0; j < OFFSETS.max_len(); j++
+      neighbour_index += OFFSETS[j]
+      neighbour_index = neighbour_index & 0b11111111111111
+
+      let u16 _new_state = pixels[neighbour_index]
+      if _new_state
+        // performance hack for fast logical NOT
+      else
+        queue[active_cells] = neighbour_index
+        active_cells++
+        _new_state++
+
+      pixels[neighbour_index] = _new_state + delta
+
+    pixels[index] = pixels[index] - half_delta
+
+def init()
+  for let u16 i = 0; i < pixels.max_len(); i++
+    // mark cell as dead + inactive
+    pixels[i] = 0
+
+def init_neighbour_count()
+  for let u16 i = 0; i < pixels.max_len(); i++
+    // for all active cells
+    if pixels[i]
+      let u16 count = 0
+      let s16 index = i
+      for let u16 j = 1; j < OFFSETS.max_len(); j++
+        index += OFFSETS[j]
+        index = index & 0b11111111111111
+
+        let u16 packed_state = pixels[index] & 2
+
+        if packed_state > 0
+          count += 4
+
+      packed_state = pixels[i] & 3
+      packed_state += count
+      pixels[i] = packed_state
+
+  for i = 0; i < pixels.max_len(); i++
+    // make cell active
+    pixels[i] = pixels[i] | 1
+    // put cell in the active queue
+    queue[i] = i
+
+  // all cells are active
+  active_cells = queue.max_len()
+
+def draw_shape(u16 base_x, u16 base_y)
+  // glider gun
+  const array x_coords = [24, 22, 24, 12, 13, 20, 21, 34, 35, 11, 15, 20, 21, 34, 35, 0, 1, 10, 16, 20, 21, 0, 1, 10, 14, 16, 17, 22, 24, 10, 16, 24, 11, 15, 12, 13]
+  const array y_coords = [0, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7, 8, 8]
+
+  for let u16 i = 0; i < x_coords.len(); i++
+    let u16 x = x_coords[i]
+    x += base_x
+
+    let u16 y = y_coords[i]
+    y += base_y
+
+    let u16 addr = y << 7
+    addr += x
+
+    fast_set_pixel(addr, true)
+
+    // set cell to alive + active
+    pixels[addr] = 3
+
+    // make all 8-connected neighbours active
+    let s16 neighbour_index = addr
+    for let u16 j = 1; j < OFFSETS.max_len(); j++
+      neighbour_index += OFFSETS[j]
+      neighbour_index = neighbour_index & 0b11111111111111
+      pixels[neighbour_index] = pixels[neighbour_index] | 1
+
+  init_neighbour_count()
+
+def main()
+  sys.vram.clear()
+
+  init()
+  draw_shape(8,8)
+
+  while true
+    evolve()
+
+main()
