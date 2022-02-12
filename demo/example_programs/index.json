@@ -59,6 +59,11 @@
     "desc":"A simple program that imports the entire standard library and then draws the contents of the ROM to the display (VRAM).",
     "clock_speed": 20000
   },
+  "life_slow": {
+    "name":"(Slow) Conway's Game of Life",
+    "desc":"A simple implementation of Game of Life for reference.",
+    "clock_speed": 2000000
+  },
   "int_tests": {
     "name":"Integer Tests",
     "desc":"Runs a series of sanity checks on the four different integer data types to check they behave as expected.",

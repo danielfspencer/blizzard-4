@@ -1,0 +1,106 @@
+global array pixels = (bool, 32768)[]
+global bool flip
+
+def evolve()
+  let u16 base
+  for let u16 y = 1; y < 127; y++
+    base = y << 7
+
+    if flip
+      base += 16384
+
+    for let u16 x = 1; x < 127; x++
+      let u16 addr = base + x
+
+      let u16 count = 0
+      // N
+      if pixels[addr - 128]
+        count++
+      // NE
+      if pixels[addr - 127]
+        count++
+      // E
+      if pixels[addr + 1]
+        count++
+      // SE
+      if pixels[addr + 129]
+        count++
+      // S
+      if pixels[addr + 128]
+        count++
+      // SW
+      if pixels[addr + 127]
+        count++
+      // W
+      if pixels[addr - 1]
+        count++
+      // NW
+      if pixels[addr - 129]
+        count++
+
+      let bool old_state = pixels[addr]
+
+      if old_state
+        count++
+
+      let bool new_state
+
+      if count == 3
+        new_state = true
+      else if count == 4
+        new_state = old_state
+      else
+        new_state = false
+
+      if flip
+        addr -= 16384
+      else
+        addr += 16384
+
+      pixels[addr] = new_state
+
+      if old_state != new_state
+        sys.vram.set_pixel(x, y, new_state)
+
+def update_screen()
+  for let u16 x = 1; x < 127; x++
+    for let u16 y = 1; y < 127; y++
+      let u16 addr =  y << 7
+      addr += x
+
+      if flip
+        addr += 16384
+
+      sys.vram.set_pixel(x, y, pixels[addr])
+
+def draw_shape(u16 base_x, u16 base_y)
+  // glider gun
+  const array x_coords = [24, 22, 24, 12, 13, 20, 21, 34, 35, 11, 15, 20, 21, 34, 35, 0, 1, 10, 16, 20, 21, 0, 1, 10, 14, 16, 17, 22, 24, 10, 16, 24, 11, 15, 12, 13]
+  const array y_coords = [0, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7, 8, 8]
+
+  for let u16 i = 0; i < x_coords.len(); i++
+    let u16 x = x_coords[i]
+    x += base_x
+
+    let u16 y = y_coords[i]
+    y += base_y
+
+    let u16 addr = y << 7
+    addr += x
+
+    pixels[addr] = true
+
+def init()
+  for let u16 i = 0; i < pixels.max_len(); i++
+    pixels[i] = false
+
+def main()
+  init()
+  draw_shape(8,8)
+  update_screen()
+
+  while true
+    evolve()
+    flip = !flip
+
+main()
