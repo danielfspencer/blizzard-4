@@ -1,6 +1,6 @@
 // The chess engine is heavily inspired by Maksim Korzh's "Bare minimum chess program"
 // Source: https://github.com/maksimKorzh/bmcp
-// Some peformance-critical parts of this program may seem strange as they have been manually optimised
+// Some performance-critical parts of this program may seem strange as they have been manually optimised
 
 include sys.consts
 

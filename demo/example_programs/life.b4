@@ -1,6 +1,6 @@
 // Inspired by Ilmari Karonen's activity list algorithm
 // Source: https://codereview.stackexchange.com/a/42790
-// Some peformance-critical parts of this program may seem strange as they have been manually optimised
+// Some performance-critical parts of this program may seem strange as they have been manually optimised
 
 // series of deltas to visit self then all 8-connected neighbourhood
 const array OFFSETS = (s16)[0, -128, 1, 128, 128, -1, -1, -128, -128]
