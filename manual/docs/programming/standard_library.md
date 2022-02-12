@@ -36,6 +36,12 @@ sys.**kbd.scancode_to_charcode**(u16 scancode, bool shifted = false) -> u16
 
 sys.**kbd.get_charcode**() -> u16
 
+sys.**random**() -> u16
+
+sys.**random_seed**(u16 seed)
+
+sys.**restart**()
+
 sys.**get_lib_version**() -> str
 
 ### Internal
@@ -83,6 +89,8 @@ sys.**u32_equal**(u32 a, u32 b) -> bool
 sys.**u32_greater**(u32 a, u32 b) -> bool
 
 sys.**u32_less**(u32 a, u32 b) -> bool
+
+sys.**u32_xor**(u32 a, u32 b) -> u32
 
 sys.**s32_multiply**(s32 a, s32 b) -> s32
 

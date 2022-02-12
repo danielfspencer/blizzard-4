@@ -87,6 +87,42 @@ assert_true(u16_tmp == 36750)
 u16_tmp = 9 ** 5
 assert_true(u16_tmp == 59049)
 
+u16_tmp = 0x5555 & 0xaaaa
+assert_true(u16_tmp == 0)
+
+u16_tmp = 0x5555 | 0xaaaa
+assert_true(u16_tmp == 0xffff)
+
+u16_tmp = 0x5555 ^ 0xaaaa
+assert_true(u16_tmp == 0xffff)
+
+u16_tmp = 0 ^ 0xffff
+assert_true(u16_tmp == 0xffff)
+
+u16_tmp = 0xffff ^ 0xffff
+assert_true(u16_tmp == 0)
+
+u16_tmp = !0
+assert_true(u16_tmp == 0xffff)
+
+u16_tmp = !0xaaaa
+assert_true(u16_tmp == 0x5555)
+
+const u16 U16_MIN = 0
+const u16 U16_MAX = 65535
+
+assert_true(U16_MIN < U16_MAX)
+assert_true(U16_MIN <= U16_MAX)
+
+assert_true(U16_MAX > U16_MIN)
+assert_true(U16_MAX >= U16_MIN)
+
+assert_false(U16_MAX < U16_MIN)
+assert_false(U16_MAX <= U16_MIN)
+
+assert_false(U16_MIN > U16_MAX)
+assert_false(U16_MIN >= U16_MAX)
+
 u16_tmp = 0xffff + 1
 let bool overflow
 {write [alu.ov] &overflow}
@@ -200,6 +236,36 @@ assert_true(s16_tmp > -32760)
 
 assert_false(s16_tmp < -32760)
 
+const s16 S16_MIN = -32768
+const s16 S16_MAX = 32767
+
+assert_true(S16_MIN < S16_MAX)
+assert_true(S16_MIN <= S16_MAX)
+
+assert_true(S16_MAX > S16_MIN)
+assert_true(S16_MAX >= S16_MIN)
+
+assert_false(S16_MAX < S16_MIN)
+assert_false(S16_MAX <= S16_MIN)
+
+assert_false(S16_MIN > S16_MAX)
+assert_false(S16_MIN >= S16_MAX)
+
+const s16 S16_A = -1
+const s16 S16_B = 1
+
+assert_true(S16_A < S16_B)
+assert_true(S16_A <= S16_B)
+
+assert_true(S16_B > S16_A)
+assert_true(S16_B >= S16_A)
+
+assert_false(S16_B < S16_A)
+assert_false(S16_B <= S16_A)
+
+assert_false(S16_A > S16_B)
+assert_false(S16_A >= S16_B)
+
 s16_tmp = -2 >> 1
 assert_true(s16_tmp == -1)
 
@@ -280,6 +346,27 @@ assert_true(u32_tmp == 0b00101010101010101010101010101010)
 u32_tmp = 0b10101010101010101010101010101010 << 1
 assert_true(u32_tmp == 0b01010101010101010101010101010100)
 
+u32_tmp = 0x55555555 & 0xaaaaaaaa
+assert_true(u32_tmp == 0)
+
+u32_tmp = 0x55555555 | 0xaaaaaaaa
+assert_true(u32_tmp == 0xffffffff)
+
+u32_tmp = 0x55555555 ^ 0xaaaaaaaa
+assert_true(u32_tmp == 0xffffffff)
+
+u32_tmp = 0 ^ 0xffffffff
+assert_true(u32_tmp == 0xffffffff)
+
+u32_tmp = 0xffffffff ^ 0xffffffff
+assert_true(u32_tmp == 0)
+
+u32_tmp = !0
+assert_true(u32_tmp == 0xffffffff)
+
+u32_tmp = !0xaaaaaaaa
+assert_true(u32_tmp == 0x55555555)
+
 u32_tmp = 4294967290
 assert_false(u32_tmp > u32_tmp)
 
@@ -295,6 +382,20 @@ assert_true(u32_tmp > 5)
 
 assert_false(u32_tmp < 5)
 
+const u32 U32_MIN = 0
+const u32 U32_MAX = 0xffffffff
+
+assert_true(U32_MIN < U32_MAX)
+assert_true(U32_MIN <= U32_MAX)
+
+assert_true(U32_MAX > U32_MIN)
+assert_true(U32_MAX >= U32_MIN)
+
+assert_false(U32_MAX < U32_MIN)
+assert_false(U32_MAX <= U32_MIN)
+
+assert_false(U32_MIN > U32_MAX)
+assert_false(U32_MIN >= U32_MAX)
 
 // s32 tests
 current_type = "s32"
@@ -400,6 +501,36 @@ assert_false(-2147483643 > s32_tmp)
 assert_true(s32_tmp > -2147483643)
 
 assert_false(s32_tmp < -2147483643)
+
+const s32 S32_MIN = -2147483648
+const s32 S32_MAX = 2147483647
+
+assert_true(S32_MIN < S32_MAX)
+assert_true(S32_MIN <= S32_MAX)
+
+assert_true(S32_MAX > S32_MIN)
+assert_true(S32_MAX >= S32_MIN)
+
+assert_false(S32_MAX < S32_MIN)
+assert_false(S32_MAX <= S32_MIN)
+
+assert_false(S32_MIN > S32_MAX)
+assert_false(S32_MIN >= S32_MAX)
+
+const s32 S32_A = -1
+const s32 S32_B = 1
+
+assert_true(S32_A < S32_B)
+assert_true(S32_A <= S32_B)
+
+assert_true(S32_B > S32_A)
+assert_true(S32_B >= S32_A)
+
+assert_false(S32_B < S32_A)
+assert_false(S32_B <= S32_A)
+
+assert_false(S32_A > S32_B)
+assert_false(S32_A >= S32_B)
 
 // print summary
 sys.print_u16(tests_passed, 0, line)

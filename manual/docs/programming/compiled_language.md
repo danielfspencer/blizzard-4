@@ -372,14 +372,14 @@ def sys.u16_multiply(u16 a, u16 b) -> u16
   while b > 0
     if b
       ans += a
-    a = a <<
-    b = b >>
+    a = a << 1
+    b = b >> 1
   return ans
 ```
 
 + **repeat** [number]
 
-**NOTE this is not for general use, only for unrolling performance-critical loops.** Repeat a block of code the specified number of times. This causes the compiler to emit the contained commands *number* times. Therefore large numbers will result in very large program sizes. Also, *number* must be static and known at compile time.
+**NOTE this is not for general use, only for unrolling performance-critical loops.** Repeat a block of code the specified number of times. This causes the compiler to emit the contained commands *number* times. Therefore large numbers will result in very large program sizes. As declarations cannot be repeated in the same scope, `repeat` blocks cannot contain declarations. Also, *number* must be static and known at compile time.
 
 ```javascript
 def shift_right(u16 start = 6144, u16 end = 7167)
@@ -407,7 +407,7 @@ def shift_right(u16 start = 6144, u16 end = 7167)
 | `&` | bit-wise AND | `bool u16 s16 u32 s32` | (same as input) |
 | `\|` | bit-wise OR | `bool u16 s16 u32 s32` | (same as input) |
 | `!` | bit-wise NOT | `bool u16 s16 u32 s32` | (same as input) |
-| `^` | bit-wise XOR | `u16 s16` | (same as input) |
+| `^` | bit-wise XOR | `u16 s16 bool` | (same as input) |
 | `>>` |  arithmetic bit-shift 1 bit right | `u16 s16 u32 s32` | (same as input) |
 | `<<` |  arithmetic bit-shift 1 bit left | `u16 s16 u32 s32` | (same as input) |
 | `>` | greater than | `u16 s16 u32 s32` | `bool` |
@@ -431,7 +431,7 @@ In this mode there are special symbols that can be used to refer to variables th
 
 | ```.b4``` becomes -> | assembly |
 | :------------------- | :------- |
-| `let u16 test = 0xffff`<br>`{write &test vram.0}`<br>`{write $test vram.0}` | `write 0xffff stack.0`<br>`write stack.0 vram.0`<br>`write [stack.0] vram.0` |
+| `let u16 test = 0xffff`<br>`{write &test vram.0}`<br>`{write $test vram.0}` | `write 0xffff sp+2`<br>`write sp+2 vram.0`<br>`write [sp+2] vram.0` |
 
 If the variable's data type is more than one word long, a (zero-based) index in square brackets can be added to specify which word in should be referred to:
 
@@ -440,7 +440,7 @@ If the variable's data type is more than one word long, a (zero-based) index in 
 
 | ```.b4``` becomes -> | assembly |
 | :------------------- | :------- |
-| `let u16 u32 = 0xffffffff`<br>`{write &test[1] vram.0}`<br>`{write $test[1] vram.0}` | `write 0xffff stack.0`<br>`write 0xffff stack.1`<br>`write stack.1 vram.0`<br>`write [stack.1] vram.0` |
+| `let u16 u32 = 0xffffffff`<br>`{write &test[1] vram.0}`<br>`{write $test[1] vram.0}` | `write 0xffff sp+2`<br>`write 0xffff sp+3`<br>`write sp+3 vram.0`<br>`write [sp+3] vram.0` |
 
 
 
@@ -483,6 +483,6 @@ optional_block_label:
 | Name | Size | Type | Format | Range |
 | ---- | ---- | ---- | ------ | :---: |
 | `u16` | 16 bit | integer | unsigned | 0 to 65535 |
-| `s16` | 16 bit | integer | two's complement | -32767 to 32767 |
-| `u32` | 32 bit | integer | unsigned | 0 to 4.29 x 10⁹ |
-| `s32` | 32 bit | integer | two's complement| -2.15 x 10⁹ to 2.15 x 10⁹ |
+| `s16` | 16 bit | integer | two's complement | -32,768 to 32,767 |
+| `u32` | 32 bit | integer | unsigned | 0 to 4,294,967,295 |
+| `s32` | 32 bit | integer | two's complement| -2,147,483,648 to 2,147,483,647 |

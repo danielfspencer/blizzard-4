@@ -89,7 +89,7 @@ function init_state() {
     data: [],
     code: {},
     required_libs: [],
-    inner_structure_label: null,
+    inner_structure_label: { break: null, continue: null },
     labels: {__main: {if:0, for:0, while:0, str:0, expr_array:0}},
     ast: []
   }
@@ -1485,17 +1485,17 @@ function translate(token, ctx_type) {
     } break
 
     case "break": {
-      if (state.inner_structure_label === null) {
+      if (state.inner_structure_label.break === null) {
         throw new CompError("'break' can only be used in for/while loops")
       }
-      result.push(`goto ~${state.inner_structure_label}_end`)
+      result.push(`goto ~${state.inner_structure_label.break}`)
     } break
 
     case "continue": {
-      if (state.inner_structure_label === null) {
+      if (state.inner_structure_label.continue === null) {
         throw new CompError("'continue' can only be used in for/while loops")
       }
-      result.push(`goto ~${state.inner_structure_label}_start`)
+      result.push(`goto ~${state.inner_structure_label.continue}`)
     } break
 
     case "signature_def": {
@@ -1564,7 +1564,7 @@ function translate(token, ctx_type) {
       let dec_val = parse_int(args.value)
 
       if (dec_val > 65535) {
-        throw new CompError("Integer too large (2^16 / 65535 max)")
+        throw new CompError("Integer out of range [0, 65535]")
       }
 
       type = "u16"
@@ -1584,8 +1584,8 @@ function translate(token, ctx_type) {
 
       let dec_val = parse_int(args.value)
 
-      if (dec_val > 32767) {
-        throw new CompError("Signed integer out of range (± 2^15 / 32767 max)")
+      if ((!negative && dec_val > 32767) || (negative && dec_val > 32768)) {
+        throw new CompError("Signed integer out of range [-32768, 32767]")
       }
 
       if (dec_val === 0) {
@@ -1613,7 +1613,7 @@ function translate(token, ctx_type) {
       let dec_val = parse_int(args.value)
 
       if (dec_val > 4294967295) {
-        throw new CompError("Integer out of range (2^32 / 4.29bn max)")
+        throw new CompError("Integer out of range [0, 4294967295]")
       }
       let bin = pad(dec_val.toString(2),32)
       let high = `0b${bin.substring(0,16)}`
@@ -1640,8 +1640,8 @@ function translate(token, ctx_type) {
         negative = false
       }
 
-      if (dec_val > 2147483647) {
-        throw new CompError("Signed integer out of range (± 2^31 / 2.15bn max)")
+      if ((!negative && dec_val > 2147483647) || (negative && dec_val > 2147483648)) {
+        throw new CompError("Signed integer out of range [-2147483648, 2147483647]")
       }
 
       let bin = 0
@@ -1783,6 +1783,11 @@ function translate(token, ctx_type) {
           [prefix, registers] = function_call(`sys.u16_xor`, [args.expr1,args.expr2], type)
         } break
 
+        case "s32":
+        case "u32": {
+          [prefix, registers] = function_call("sys.u32_xor", [args.expr1,args.expr2], type)
+        } break
+
         default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
       }
     } break
@@ -1869,51 +1874,43 @@ function translate(token, ctx_type) {
       let operand_type = find_type_priority(args.expr1, args.expr2)
       switch (operand_type) {
         case "u16": {
-          let temp_vars = [get_temp_word(), get_temp_word()]
+          let temp_var = get_temp_word()
 
           prefix = write_operands(args.expr1, args.expr2, operand_type)
-          prefix.push(`write [alu.=] ${temp_vars[0].label}`)
-          prefix.push(`write [alu.>] ${temp_vars[1].label}`)
-          prefix.push(`write [${temp_vars[0].label}] alu.1`)
-          prefix.push(`write [${temp_vars[1].label}] alu.2`)
-          registers = ["[alu.|]"]
+          prefix.push(`write [alu.<] ${temp_var.label}`)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write [${temp_var.label}] alu.2`)
+          registers = ["[alu.-]"]
 
-          temp_vars[0].free()
-          temp_vars[1].free()
+          temp_var.free()
           } break
 
         case "s16": {
           let [temp1, temp2] = [get_temp_word(),  get_temp_word()]
-          prefix.push(`write 0b1000000000000001 alu.2`)
+          prefix.push(`write 0b1000000000000000 alu.2`)
           prefix.push(...write_operand(args.expr1, operand_type))
           prefix.push(`write [alu.+] ${temp1.label}`)
-          prefix.push(`write 0b1000000000000000 alu.2`)
           prefix.push(...write_operand(args.expr2, operand_type))
           prefix.push(`write [alu.+] ${temp2.label}`)
           prefix.push(`write [${temp1.label}] alu.1`)
           prefix.push(`write [${temp2.label}] alu.2`)
-          registers = ["[alu.>]"]
+          prefix.push(`write [alu.<] ${temp1.label}`)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write [${temp1.label}] alu.2`)
+          registers = ["[alu.-]"]
+          temp1.free()
+          temp2.free()
           } break
 
         case "s32":
         case "u32": {
-          let temp_vars = [get_temp_word(), get_temp_word()]
-
-          let prefix_and_value = function_call(`sys.${operand_type}_greater`, [args.expr1,args.expr2], operand_type)
+          let prefix_and_value = function_call(`sys.${operand_type}_less`, [args.expr1,args.expr2], operand_type)
           prefix = prefix_and_value[0]
 
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
+          prefix.push(`write ${prefix_and_value[1][0]} alu.2`)
 
-          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2], operand_type)
-          prefix.push(...prefix_and_value[0])
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
-
-          prefix.push(`write [${temp_vars[0].label}] alu.1`)
-          prefix.push(`write [${temp_vars[1].label}] alu.2`)
-          registers = ["[alu.|]"]
-
-          temp_vars[0].free()
-          temp_vars[1].free()
+          prefix.push(`write 0xffff alu.1`)
+          registers = ["[alu.-]"]
           } break
 
         default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
@@ -1925,17 +1922,15 @@ function translate(token, ctx_type) {
       let operand_type = find_type_priority(args.expr1, args.expr2)
       switch (operand_type) {
         case "u16": {
-          let temp_vars = [get_temp_word(), get_temp_word()]
+          let temp_var = get_temp_word()
 
           prefix = write_operands(args.expr1, args.expr2, operand_type)
-          prefix.push(`write [alu.=] ${temp_vars[0].label}`)
-          prefix.push(`write [alu.<] ${temp_vars[1].label}`)
-          prefix.push(`write [${temp_vars[0].label}] alu.1`)
-          prefix.push(`write [${temp_vars[1].label}] alu.2`)
-          registers = ["[alu.|]"]
+          prefix.push(`write [alu.>] ${temp_var.label}`)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write [${temp_var.label}] alu.2`)
+          registers = ["[alu.-]"]
 
-          temp_vars[0].free()
-          temp_vars[1].free()
+          temp_var.free()
           } break
 
         case "s16": {
@@ -1943,35 +1938,27 @@ function translate(token, ctx_type) {
           prefix.push(`write 0b1000000000000000 alu.2`)
           prefix.push(...write_operand(args.expr1, operand_type))
           prefix.push(`write [alu.+] ${temp1.label}`)
-          prefix.push(`write 0b1000000000000001 alu.2`)
           prefix.push(...write_operand(args.expr2, operand_type))
           prefix.push(`write [alu.+] ${temp2.label}`)
           prefix.push(`write [${temp1.label}] alu.1`)
           prefix.push(`write [${temp2.label}] alu.2`)
-          registers = ["[alu.<]"]
+          prefix.push(`write [alu.>] ${temp1.label}`)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write [${temp1.label}] alu.2`)
+          registers = ["[alu.-]"]
           temp1.free()
           temp2.free()
           } break
 
         case "s32":
         case "u32": {
-          let temp_vars = [get_temp_word(), get_temp_word()]
-
-          let prefix_and_value = function_call(`sys.${operand_type}_less`, [args.expr1,args.expr2], operand_type)
+          let prefix_and_value = function_call(`sys.${operand_type}_greater`, [args.expr1,args.expr2], operand_type)
           prefix = prefix_and_value[0]
 
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[0].label}`)
+          prefix.push(`write ${prefix_and_value[1][0]} alu.2`)
 
-          prefix_and_value = function_call("sys.u32_equal", [args.expr1,args.expr2], operand_type)
-          prefix.push(...prefix_and_value[0])
-          prefix.push(`write ${prefix_and_value[1][0]} ${temp_vars[1].label}`)
-
-          prefix.push(`write [${temp_vars[0].label}] alu.1`)
-          prefix.push(`write [${temp_vars[1].label}] alu.2`)
-          registers = ["[alu.|]"]
-
-          temp_vars[0].free()
-          temp_vars[1].free()
+          prefix.push(`write 0xffff alu.1`)
+          registers = ["[alu.-]"]
           } break
 
         default: throw new CompError(`Unsupported datatype '${operand_type}' for operation '${token.name}'`)
@@ -2025,13 +2012,73 @@ function translate(token, ctx_type) {
     } break
 
     case "&": {
-      prefix = write_operands(args.expr1,args.expr2,ctx_type)
-      registers = ["[alu.&]"]
+      type = find_type_priority(args.expr1, args.expr2, ctx_type)
+      switch (type) {
+        case "bool":
+        case "s16":
+        case "u16": {
+          prefix = write_operands(args.expr1, args.expr2, type)
+          registers = ["[alu.&]"]
+        } break
+
+        case "u32":
+        case "s32": {
+          // leaks stack memory
+          let buffer = alloc_stack(2)
+          let buffer_values = buffer.map((addr) => {return `[sp+${addr}]`})
+
+          let [expr_1_prefix, expr_1_regs] = translate(args.expr1, type)
+          let [expr_2_prefix, expr_2_regs] = translate(args.expr2, type)
+
+          prefix.push(...expr_1_prefix)
+          prefix.push(...expr_2_prefix)
+          prefix.push(`write ${expr_1_regs[0]} alu.1`)
+          prefix.push(`write ${expr_2_regs[0]} alu.2`)
+          prefix.push(`write [alu.&] sp+${buffer[0]}`)
+          prefix.push(`write ${expr_1_regs[1]} alu.1`)
+          prefix.push(`write ${expr_2_regs[1]} alu.2`)
+          prefix.push(`write [alu.&] sp+${buffer[1]}`)
+
+          registers = buffer_values
+        } break
+
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+      }
     } break
 
     case "|": {
-      prefix = write_operands(args.expr1,args.expr2,ctx_type)
-      registers = ["[alu.|]"]
+      type = find_type_priority(args.expr1, args.expr2, ctx_type)
+      switch (type) {
+        case "bool":
+        case "s16":
+        case "u16": {
+          prefix = write_operands(args.expr1, args.expr2, type)
+          registers = ["[alu.|]"]
+        } break
+
+        case "u32":
+        case "s32": {
+          // leaks stack memory
+          let buffer = alloc_stack(2)
+          let buffer_values = buffer.map((addr) => {return `[sp+${addr}]`})
+
+          let [expr_1_prefix, expr_1_regs] = translate(args.expr1, type)
+          let [expr_2_prefix, expr_2_regs] = translate(args.expr2, type)
+
+          prefix.push(...expr_1_prefix)
+          prefix.push(...expr_2_prefix)
+          prefix.push(`write ${expr_1_regs[0]} alu.1`)
+          prefix.push(`write ${expr_2_regs[0]} alu.2`)
+          prefix.push(`write [alu.|] sp+${buffer[0]}`)
+          prefix.push(`write ${expr_1_regs[1]} alu.1`)
+          prefix.push(`write ${expr_2_regs[1]} alu.2`)
+          prefix.push(`write [alu.|] sp+${buffer[1]}`)
+
+          registers = buffer_values
+        } break
+
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+      }
     } break
 
     case ">>": {
@@ -2169,11 +2216,37 @@ function translate(token, ctx_type) {
     } break
 
     case "!": {
-      let [expr_prefix, expr_reg] = translate(args.expr, ctx_type)
-      prefix = expr_prefix
-      prefix.push(`write 0xffff alu.1`)
-      prefix.push(`write ${expr_reg} alu.2`)
-      registers = ["[alu.-]"]
+      switch (ctx_type) {
+        case "bool":
+        case "s16":
+        case "u16": {
+          let [expr_prefix, expr_reg] = translate(args.expr, ctx_type)
+          prefix = expr_prefix
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write ${expr_reg} alu.2`)
+          registers = ["[alu.-]"]
+        } break
+
+        case "u32":
+        case "s32": {
+          // leaks stack memory
+          let buffer = alloc_stack(2)
+          let buffer_values = buffer.map((addr) => {return `[sp+${addr}]`})
+
+          let [expr_prefix, expr_regs] = translate(args.expr, ctx_type)
+
+          prefix.push(...expr_prefix)
+          prefix.push(`write 0xffff alu.1`)
+          prefix.push(`write ${expr_regs[0]} alu.2`)
+          prefix.push(`write [alu.-] sp+${buffer[0]}`)
+          prefix.push(`write ${expr_regs[1]} alu.2`)
+          prefix.push(`write [alu.-] sp+${buffer[1]}`)
+
+          registers = buffer_values
+        } break
+
+        default: throw new CompError(`Unsupported datatype '${ctx_type}' for operation '${token.name}'`)
+      }
     } break
 
     case "expr_array": {
@@ -2645,10 +2718,15 @@ function translate(token, ctx_type) {
       result.push(`goto ~${label}_end ${expr_value}`)
 
       let prev_state = state.inner_structure_label
-      state.inner_structure_label = label
+      state.inner_structure_label = {
+        break: `${label}_end`,
+        continue: `${label}_continue`,
+      }
+
       result.push(...translate_body(token.body))
       state.inner_structure_label = prev_state
 
+      result.push(`${label}_continue:`)
       let cmd_prefix = translate(args.cmd)
       result.push(...cmd_prefix)
 
@@ -2673,7 +2751,11 @@ function translate(token, ctx_type) {
       }
 
       let prev_state = state.inner_structure_label
-      state.inner_structure_label = label
+      state.inner_structure_label = {
+        break: `${label}_end`,
+        continue: `${label}_start`,
+      }
+
       result.push(...translate_body(token.body))
       state.inner_structure_label = prev_state
 
@@ -2686,10 +2768,8 @@ function translate(token, ctx_type) {
         throw new CompError("Number of times to repeat must be static & of type 'u16'")
       })
 
-      let body = translate_body(token.body)
-
       while (times_to_repeat > 0) {
-        result.push(...body)
+        result.push(...translate_body(token.body))
         times_to_repeat--
       }
     } break

@@ -269,6 +269,13 @@ const libs = {
     "",
     "  return false"
   ],
+  "sys.u32_xor": [
+    "def sys.u32_xor(u32 a, u32 b) -> u32",
+    "  let u32 _1 = a | b",
+    "  let u32 _2 = a & b",
+    "  _2 = !_2",
+    "  return _1 & _2",
+  ],
   "sys.s32_multiply": [
     "def sys.s32_multiply(s32 a, s32 b) -> s32",
     "  let bool sign = false",
@@ -835,6 +842,29 @@ const libs = {
     "    scancode = *SYS_KEYBOARD_ADDR",
     "",
     "  return 0"
+  ],
+  "sys.random": [
+    "global u16 SYS_RANDOM_STATE = 1",
+    "def sys.random() -> u16",
+    "  // George Marsaglia's 16-bit xorshift pseudorandom algorithm",
+    "  // algorithm requires seed > 0",
+    "  if SYS_RANDOM_STATE == 0",
+    "    SYS_RANDOM_STATE = 1",
+    "  SYS_RANDOM_STATE = sys.u16_xor(SYS_RANDOM_STATE, SYS_RANDOM_STATE << 7)",
+    "  SYS_RANDOM_STATE = sys.u16_xor(SYS_RANDOM_STATE, SYS_RANDOM_STATE >> 9)",
+    "  SYS_RANDOM_STATE = sys.u16_xor(SYS_RANDOM_STATE, SYS_RANDOM_STATE << 8)",
+    "  return SYS_RANDOM_STATE"
+  ],
+  "sys.random_seed": [
+    "def sys.random_seed(u16 seed)",
+    "  include sys.random",
+    "  SYS_RANDOM_STATE = seed"
+  ],
+  "sys.restart": [
+    "def sys.restart()",
+    "  // jump to the entry point to restart program",
+    "  // -6 jumps to the call to the entry point (so that the right stack pointer is set)",
+    "  {goto ~func__main-6 0}"
   ],
   "sys.vram.glyphs": [
     "### sys.vram.glyphs:",
@@ -1593,7 +1623,7 @@ const libs = {
   ],
   "sys.get_lib_version":[
     "def sys.get_lib_version() -> str",
-    "  return \"1.1.0\"",
+    "  return \"1.2.0\"",
   ],
   "sys.signatures": [
     "sig sys.u16_multiply(u16 a, u16 b) -> u16",
@@ -1618,6 +1648,7 @@ const libs = {
     "sig sys.u32_equal(u32 a, u32 b) -> bool",
     "sig sys.u32_greater(u32 a, u32 b) -> bool",
     "sig sys.u32_less(u32 a, u32 b) -> bool",
+    "sig sys.u32_xor(u32 a, u32 b) -> u32",
     "sig sys.s32_multiply(s32 a, s32 b) -> s32",
     "sig sys.s32_divide(s32 a, s32 b) -> s32",
     "sig sys.s32_exponent(s32 a, s32 b) -> s32",
@@ -1647,6 +1678,9 @@ const libs = {
     "sig sys.print_s32(s32 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
     "sig sys.kbd.scancode_to_charcode(u16 scancode, bool shifted = false) -> u16",
     "sig sys.kbd.get_charcode() -> u16",
+    "sig sys.random() -> u16",
+    "sig sys.random_seed(u16 seed)",
+    "sig sys.restart()",
     "sig sys.get_lib_version() -> str"
   ]
 }
