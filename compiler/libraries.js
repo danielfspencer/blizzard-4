@@ -578,7 +578,7 @@ const libs = {
     "  sys.vram.set_pixel(x - radius, y, data)",
     "  ",
     "  while x1 < y1",
-    "    if f >= 0",
+    "    if f > -1",
     "      y1--",
     "      dy -= 2",
     "      f -= dy",
