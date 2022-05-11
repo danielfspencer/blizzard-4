@@ -20,9 +20,15 @@ sys.**vram.clear**()
 
 sys.**vram.draw_square**(u16 x, u16 y, u16 length, bool data = true)
 
+sys.**vram.draw_square_filled**(u16 x, u16 y, u16 length, bool data = true)
+
 sys.**vram.draw_rect**(u16 x, u16 y, u16 width, u16 height, bool data = true)
 
+sys.**vram.draw_rect_filled**(u16 x, u16 y, u16 width, u16 height, bool data = true)
+
 sys.**vram.draw_circle**(u16 x, u16 y, u16 radius, bool data = true)
+
+sys.**vram.draw_circle_filled**(u16 x, u16 y, u16 radius, bool data = true)
 
 sys.**vram.draw_line**(u16 x0, u16 y0, u16 x1, u16 y1, bool data = true)
 

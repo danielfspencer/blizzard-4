@@ -653,6 +653,10 @@ const libs = {
     "def sys.vram.draw_square(u16 x, u16 y, u16 length, bool data = true)",
     "  sys.vram.draw_rect(x, y, length, length, data)"
   ],
+  "sys.vram.draw_square_filled": [
+    "def sys.vram.draw_square_filled(u16 x, u16 y, u16 length, bool data = true)",
+    "  sys.vram.draw_rect_filled(x, y, length, length, data)"
+  ],
   "sys.vram.draw_rect": [
     "def sys.vram.draw_rect(u16 x, u16 y, u16 width, u16 height, bool data = true)",
     "  width--",
@@ -663,6 +667,15 @@ const libs = {
     "  sys.vram.draw_hline_fast(x, x1, y1, data)",
     "  sys.vram.draw_vline_fast(y, y1, x, data)",
     "  sys.vram.draw_vline_fast(y, y1, x1, data)",
+  ],
+  "sys.vram.draw_rect_filled": [
+    "def sys.vram.draw_rect_filled(u16 x, u16 y, u16 width, u16 height, bool data = true)",
+    "  width--",
+    "  let u16 x1 = x + width",
+    "  let u16 y1 = y + height",
+    "  while y < y1",
+    "    sys.vram.draw_hline_fast(x, x1, y, data)",
+    "    y++",
   ],
   "sys.vram.draw_circle": [
     "def sys.vram.draw_circle(u16 x, u16 y, u16 radius, bool data = true)",
@@ -694,6 +707,74 @@ const libs = {
     "    sys.vram.set_pixel(x - y1, y - x1, data)",
     "    sys.vram.set_pixel(x + y1, y - x1, data)",
     "    sys.vram.set_pixel(x + x1, y - y1, data)"
+  ],
+/*
+draw_circle_filled licence:
+
+Copyright (c) 2013 Adafruit Industries.  All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+- Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+*/
+  "sys.vram.draw_circle_filled": [
+    "def sys.vram.draw_circle_filled(u16 x0, u16 y0, u16 radius, bool data = true)",
+    "  let s16 f = 1 - radius",
+    "  let u16 ddF_x = 1",
+    "  let u16 ddF_y = radius << 1",
+    "  let u16 x = 0",
+    "  let u16 y = radius",
+    "  let u16 px = x",
+    "  let u16 py = y",
+    "  let u16 y_1 = y + 1",
+    "",
+    "  sys.vram.draw_hline_fast(x0 - radius, x0 + radius, y0, data)",
+    "",
+    "  while x < y",
+    "    if f > -1",
+    "      y--",
+    "      y_1--",
+    "      ddF_y -= 2",
+    "      f -= ddF_y",
+    "",
+    "    x++",
+    "    ddF_x += 2",
+    "    f += ddF_x",
+    "",
+    "    if x < y_1",
+    "      let u16 _y = y0 - y",
+    "      let u16 _y2 = y0 + y",
+    "      let u16 _x = x0 + x",
+    "      let u16 _x2 = x0 - x",
+    "      sys.vram.draw_hline_fast(_y, _y2, _x, data)",
+    "      sys.vram.draw_hline_fast(_y, _y2, _x2, data)",
+    "",
+    "    if y != py",
+    "      _y = y0 - px",
+    "      _y2 = y0 + px",
+    "      _x = x0 + py",
+    "      _x2 = x0 - py",
+    "      sys.vram.draw_hline_fast(_y, _y2, _x, data)",
+    "      sys.vram.draw_hline_fast(_y, _y2, _x2, data)",
+    "      py = y",
+    "",
+    "    px = x",
   ],
   "sys.vram.draw_line": [
     "def sys.vram.draw_line(u16 x0, u16 y0, u16 x1, u16 y1, bool data = true)",
@@ -1810,8 +1891,11 @@ const libs = {
     "sig sys.vram.fast_fill(u16 data)",
     "sig sys.vram.clear()",
     "sig sys.vram.draw_square(u16 x, u16 y, u16 length, bool data = true)",
+    "sig sys.vram.draw_square_filled(u16 x, u16 y, u16 length, bool data = true)",
     "sig sys.vram.draw_rect(u16 x, u16 y, u16 width, u16 height, bool data = true)",
+    "sig sys.vram.draw_rect_filled(u16 x, u16 y, u16 width, u16 height, bool data = true)",
     "sig sys.vram.draw_circle(u16 x, u16 y, u16 radius, bool data = true)",
+    "sig sys.vram.draw_circle_filled(u16 x0, u16 y0, u16 radius, bool data = true)",
     "sig sys.vram.draw_line(u16 x0, u16 y0, u16 x1, u16 y1, bool data = true)",
     "sig sys.print_string(str string, u16 x = 0, u16 y = 0)",
     "sig sys.print_u16(u16 num, u16 x = 0, u16 y = 0, bool print_all_places = false)",
