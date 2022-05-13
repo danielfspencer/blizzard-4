@@ -10,13 +10,25 @@ sys.**vram.render_char**(u16 char_code, u16 x, u16 y, bool dont_render_spaces = 
 
 sys.**vram.draw_hex_digit**(u16 num, u16 x, u16 y)
 
+sys.**vram.draw_hline_fast**(u16 x0, u16 x1, u16 y, bool data = true)
+
+sys.**vram.draw_vline_fast**(u16 y0, u16 y1, u16 x, bool data = true)
+
 sys.**vram.fast_fill**(u16 data)
 
 sys.**vram.clear**()
 
 sys.**vram.draw_square**(u16 x, u16 y, u16 length, bool data = true)
 
+sys.**vram.draw_square_filled**(u16 x, u16 y, u16 length, bool data = true)
+
+sys.**vram.draw_rect**(u16 x, u16 y, u16 width, u16 height, bool data = true)
+
+sys.**vram.draw_rect_filled**(u16 x, u16 y, u16 width, u16 height, bool data = true)
+
 sys.**vram.draw_circle**(u16 x, u16 y, u16 radius, bool data = true)
+
+sys.**vram.draw_circle_filled**(u16 x, u16 y, u16 radius, bool data = true)
 
 sys.**vram.draw_line**(u16 x0, u16 y0, u16 x1, u16 y1, bool data = true)
 
