@@ -1844,7 +1844,7 @@ POSSIBILITY OF SUCH DAMAGE.
   ],
   "sys.get_lib_version":[
     "def sys.get_lib_version() -> str",
-    "  return \"1.2.0\"",
+    "  return \"1.3.0\"",
   ],
   "sys.signatures": [
     "sig sys.u16_multiply(u16 a, u16 b) -> u16",
