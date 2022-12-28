@@ -57,6 +57,8 @@ global u16 book_pointer
 global bool book_known_line
 global array book_moves = (u16, BOOK_MAX_BRANCH_FACTOR)[]
 
+const u16 PAUSE_KEY = 32
+
 global u16 seed
 
 def wait(u16 time)
@@ -188,7 +190,7 @@ def search_position(s16 side, s16 depth, s16 alpha, s16 beta, bool check_legal =
   {write $search_position_calls io.out1}
   {write $search_position_calls vram.1023}
 
-  if sys.kbd.get_charcode() == 32
+  if sys.kbd.get_charcode() == PAUSE_KEY
     draw_pause_menu()
 
   if depth == 0
@@ -539,50 +541,7 @@ def print_position(u16 position, u16 x, u16 y)
   sys.vram.render_char(file_ascii + file, x, y)
   sys.vram.render_char(rank_ascii - rank, x + 1, y)
 
-def get_user_position(u16 x, u16 y) -> t_position
-  let u16 code = 0
-
-  sys.vram.render_char(127,x,y)
-  while true
-    code = sys.kbd.get_charcode()
-
-    if code == 32
-      draw_pause_menu()
-
-    if code >= 0x61
-      if code < 0x69
-        sys.vram.render_char(code, x, y)
-        break
-
-  let u16 file = code - 0x61
-  x++
-
-  sys.vram.render_char(127,x,y)
-  while true
-    code = sys.kbd.get_charcode()
-
-    if code == 32
-      draw_pause_menu()
-
-    if code >= 0x31
-      if code < 0x39
-        sys.vram.render_char(code, x, y)
-        break
-
-  let u16 rank = code - 0x31
-
-  return <file, rank>
-
-def get_user_move(u16 x, u16 y) -> t_move
-  clear_info_bar(y)
-
-  sys.print_string("Enter move: ", x, y)
-  x += 12
-
-  let t_position source = get_user_position(x, y)
-  x += 2
-  let t_position dest = get_user_position(x, y)
-
+def encode_move(t_position source, t_position dest) -> t_move
   let u16 source_encoded = source.rank << 4
   source_encoded = 112 - source_encoded
   source_encoded += source.file
@@ -592,6 +551,68 @@ def get_user_move(u16 x, u16 y) -> t_move
   dest_encoded += dest.file
 
   return <source_encoded, dest_encoded>
+
+def get_user_move(u16 x, u16 y) -> t_move
+  clear_info_bar(y)
+
+  sys.print_string("Enter move: ", x, y)
+  x += 12
+
+  let t_position source
+  let t_position dest
+
+  // 1 source file
+  // 2 source rank
+  // 3 dest file
+  // 4 dest rank
+  let u16 index = 1
+
+  while index < 5
+    let u16 code = sys.kbd.get_charcode()
+
+    if code == PAUSE_KEY
+      draw_pause_menu()
+
+    if code == 8
+      // backspace
+      if index > 1
+        sys.vram.render_char(32,x,y,false)
+        index--
+        x--
+
+    sys.vram.render_char(127,x,y)
+
+    if index
+      // file
+      if code >= 0x61
+        if code < 0x69
+          sys.vram.render_char(code, x, y)
+
+          let u16 file = code - 0x61
+          if index == 1
+            source.file = file
+          else
+            dest.file = file
+
+          index++
+          x++
+
+    else
+      // rank
+      if code >= 0x31
+        if code < 0x39
+          sys.vram.render_char(code, x, y)
+
+          let u16 rank = code - 0x31
+          if index == 2
+            source.rank = rank
+          else
+            dest.rank = rank
+
+          index++
+          x++
+
+  return encode_move(source, dest)
 
 def save()
   sys.mem_copy_fast(#vram.0#, #$display_buffer[0]# , 1024)

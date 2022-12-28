@@ -112,8 +112,12 @@ const libs = {
   ],
   "sys.u16_xor": [
     "def sys.u16_xor(u16 a, u16 b) -> u16",
-    "  let u16 _1 = a | b",
-    "  let u16 _2 = a & b",
+    "  let u16 _1",
+    "  let u16 _2",
+    "  {write $a alu.1}",
+    "  {write $b alu.2}",
+    "  {write [alu.|] &_1}",
+    "  {write [alu.&] &_2}",
     "  _2 = !_2",
     "  return _1 & _2",
   ],
@@ -1844,7 +1848,7 @@ POSSIBILITY OF SUCH DAMAGE.
   ],
   "sys.get_lib_version":[
     "def sys.get_lib_version() -> str",
-    "  return \"1.3.0\"",
+    "  return \"1.3.1\"",
   ],
   "sys.signatures": [
     "sig sys.u16_multiply(u16 a, u16 b) -> u16",
