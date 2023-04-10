@@ -443,24 +443,25 @@ function draw_front_panel() {
 
   display_number_on_leds("proc_mode_leds", 2 - front_panel_info.control_mode)
 
-  switch (command_string.slice(0,3)) {
-    case "000":
-      display_number_on_leds("opcode_leds", 0b100000)
+  let opcode = front_panel_info.command_word >> 13
+  switch (opcode) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+      display_number_on_leds("opcode_leds", 1 << 4)
       break
-    case "001":
-      display_number_on_leds("opcode_leds", 0b010000)
+    case 4: // write
+    display_number_on_leds("opcode_leds", 1 << 0)
       break
-    case "010":
-      display_number_on_leds("opcode_leds", 0b001000)
+    case 5: // copy
+      display_number_on_leds("opcode_leds", 1 << 1)
       break
-    case "011":
-      display_number_on_leds("opcode_leds", 0b000100)
+    case 6: // call/return
+      display_number_on_leds("opcode_leds", 1 << 2)
       break
-    case "100":
-      display_number_on_leds("opcode_leds", 0b000010)
-      break
-    case "101":
-      display_number_on_leds("opcode_leds", 0b000001)
+    case 7: // goto
+      display_number_on_leds("opcode_leds", 1 << 3)
       break
   }
 
