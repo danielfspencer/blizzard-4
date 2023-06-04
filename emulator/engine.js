@@ -775,6 +775,8 @@ function run_execute_microcode(control_clock) {
         break
     }
 
+    total_instructions += 1
+
   } else {
     micro_instructions.both.increment_mode()
   }
@@ -826,7 +828,6 @@ const micro_instructions = {
   both: {
     increment_mode: () => {
       control_mode = (control_mode + 1) & 1
-      total_instructions += 0.5
       micro_program_counter = 0
     }
   }
