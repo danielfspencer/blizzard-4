@@ -136,6 +136,9 @@ function handle_message(message) {
         }
       }
       } break
+    case "message" : {
+      console.log(message[1])
+    } break
     default:
       console.error(`Unknown command '${message[0]}'`)
       break

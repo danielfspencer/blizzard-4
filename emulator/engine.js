@@ -450,6 +450,10 @@ function stop() {
     clearInterval(frequency_measurement_timer)
     actual_cycles_per_second = 0
     postMessage(["stopped"])
+    postMessage(["message", {
+      "cycles": total_cycles,
+      "instructions": total_instructions
+    }])
   } else {
     postMessage(["stop"])
   }
