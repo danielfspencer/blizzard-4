@@ -185,7 +185,7 @@ function get_flash_image(callback) {
   let image = tools.storage.get_key("emulator_flash")
 
   if (image === undefined) {
-    console.log("No flash image in localStorage, loading default...")
+    console.debug("No flash image in localStorage, loading default...")
 
     $.ajax({
       url: `../assets/flash_images/default.base64`,
@@ -194,7 +194,7 @@ function get_flash_image(callback) {
     .then(callback)
   } else {
 
-    console.log("Using flash image in localStorage")
+    console.debug("Using flash image in localStorage")
     callback(image)
   }
 }
