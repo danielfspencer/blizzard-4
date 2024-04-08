@@ -769,7 +769,7 @@ POSSIBILITY OF SUCH DAMAGE.
     "      sys.vram.draw_hline_fast(_y, _y2, _x, data)",
     "      sys.vram.draw_hline_fast(_y, _y2, _x2, data)",
     "",
-    "    if y != py",
+    "    if y < py",
     "      _y = y0 - px",
     "      _y2 = y0 + px",
     "      _x = x0 + py",
