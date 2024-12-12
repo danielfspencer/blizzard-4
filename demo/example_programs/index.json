@@ -1,4 +1,9 @@
 {
+  "engine": {
+    "name": "RPG",
+    "desc": "",
+    "clock_speed": 6000000
+  },
   "hello_world": {
     "name":"Hello World",
     "desc":"Displays \"Hello world!\"",
