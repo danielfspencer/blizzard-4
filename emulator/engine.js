@@ -589,7 +589,6 @@ function simulate_effect_of_read_bus_change() {
         switch (address) {
           case 0: // input switches
           case 1:
-          case 2:
             data_bus = user_input[address]
             break
           case 6: // keyboard fifo
@@ -601,9 +600,6 @@ function simulate_effect_of_read_bus_change() {
             break
           default:
             break
-        }
-        if (address < 3) {
-          data_bus = user_input[address]
         }
         break
       case 3:                                                             //video adapter
