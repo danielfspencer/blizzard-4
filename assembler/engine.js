@@ -691,21 +691,6 @@ function assemble(input) {
   }
   log.info(`↳ success, ${input.length} line(s)`)
 
-  log.info("Optimising...")
-
-  // replace write instructions that use direct addressing with copy instructions
-  let replacements = 0
-  for (let i = 0; i < state.ast.length; i++) {
-    let replacement = optimise_addressing_mode(state.ast[i])
-
-    if (replacement !== null) {
-      state.ast[i] = replacement
-      replacements++
-    }
-  }
-  log.info(`↳ success, ${replacements} instruction(s) optimised`)
-
-
   log.info("Translating...")
 
   // give each AsmEntry its current address
