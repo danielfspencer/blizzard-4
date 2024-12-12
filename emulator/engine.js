@@ -174,6 +174,8 @@ function init_state() {
   user_input = [0,0]
   user_output = [0,0,0]
 
+  old_total_cycles = 0
+  old_total_instructions = 0
   // emulator values
   debug = false
   total_cycles = 0
@@ -454,6 +456,14 @@ function stop() {
       "cycles": total_cycles,
       "instructions": total_instructions
     }])
+
+    postMessage(["message", {
+      "delta_cycles": total_cycles-old_total_cycles,
+      "deltainstructions": total_instructions-old_total_instructions
+    }])
+
+    old_total_cycles = total_cycles
+    old_total_instructions = total_instructions
   } else {
     postMessage(["stop"])
   }
