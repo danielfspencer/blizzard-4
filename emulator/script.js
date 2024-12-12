@@ -239,7 +239,9 @@ function set_screen_theme(theme) {
     "white-grey":  [[255,255,255],[21,21,21]],
     "black-white": [[0,0,0],[250,250,250]],
     "green-black": [[51,248,150],[0,0,0]],
-    "green-grey":  [[51,248,150],[21,21,21]]
+    "green-grey":  [[51,248,150],[21,21,21]],
+    "blue-black": [[125,204,195],[0,0,0]],
+    "blue-grey": [[125,204,195],[21,21,21]],
   }
   let [red_on, green_on, blue_on] = mapping[theme][0]
   let [red_off, green_off, blue_off] = mapping[theme][1]
