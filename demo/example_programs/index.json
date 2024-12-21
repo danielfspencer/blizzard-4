@@ -9,14 +9,14 @@
     "desc":"RPG with smooth scrolling.",
     "clock_speed": 5000000
   },
-  "life": {
-    "name":"Conway's Game of Life",
-    "desc":"A fast (active cell list based) simulation of Conway's Game of Life. A \"Glider Gun\" generates gliders which eventually wrap around because of the torus topology.",
-    "clock_speed": 5000000
-  },
   "chess": {
     "name":"Chess Game",
     "desc":"Has computer vs player & computer vs computer modes. There are two difficulty settings for the AI (default is fast but poor moves). Features a randomised opening book with 2188 variations. Does not detect checkmate or any end of game.",
+    "clock_speed": 5000000
+  },
+  "life": {
+    "name":"Conway's Game of Life",
+    "desc":"A fast (active cell list based) simulation of Conway's Game of Life. A \"Glider Gun\" generates gliders which eventually wrap around because of the torus topology.",
     "clock_speed": 5000000
   },
   "space_invaders_demo": {
