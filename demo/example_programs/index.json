@@ -19,6 +19,11 @@
     "desc":"A space-invaders style game. Use the ← left and right → arrow keys to move the cannon. Press the ↑ up arrow key to fire. This game currently has no victory condition or shields for the player.",
     "clock_speed": 100000
   },
+  "small_font": {
+    "name":"Smaller Font",
+    "desc":"A comparison between a small 4px font and the standard library's 8px font.",
+    "clock_speed": 100000
+  },
   "kernel": {
     "name":"Cooperative Multitasking Kernel",
     "desc":"A simple kernel allows 16 programs to run concurrently. Each program simply displays an increasing counter alongside its PID. All LEDs in out#3 are lit when in kernel mode, visualising the time spent in the kernel.",
