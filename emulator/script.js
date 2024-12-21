@@ -6,6 +6,7 @@ let led_strips = {}
 let front_panel_info = {}
 let updates_running = false
 let vram_changes_buffer = []
+let screenshot_counter = 0
 
 let flash_data
 let store = parent.interface.window_ref_store
@@ -86,10 +87,18 @@ $(document).ready(() => {
   }
 
   parent.interface.child_page_loaded(inter_page_message_handler)
+  parent.interface.add_button(gen_button("picture.svg", "screenshot"), do_screenshot)
   parent.interface.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
   parent.interface.add_button(gen_button("fullscreen.svg", "fullscreen"), go_fullscreen)
   // parent.interface.add_button(gen_button("stats.svg", "statistics"), open_stats)
 })
+
+function do_screenshot() {
+  canvas.toBlob((blob) => {
+    saveAs(blob, `screenshot_${screenshot_counter}.png`)
+    screenshot_counter++
+  });
+}
 
 function handle_message(message) {
   switch(message[0]) {
