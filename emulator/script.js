@@ -6,6 +6,7 @@ let led_strips = {}
 let front_panel_info = {}
 let updates_running = false
 let vram_changes_buffer = []
+let screenshot_counter = 0
 
 let flash_data
 let store = parent.interface.window_ref_store
@@ -86,10 +87,18 @@ $(document).ready(() => {
   }
 
   parent.interface.child_page_loaded(inter_page_message_handler)
+  parent.interface.add_button(gen_button("picture.svg", "screenshot"), do_screenshot)
   parent.interface.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
   parent.interface.add_button(gen_button("fullscreen.svg", "fullscreen"), go_fullscreen)
   // parent.interface.add_button(gen_button("stats.svg", "statistics"), open_stats)
 })
+
+function do_screenshot() {
+  canvas.toBlob((blob) => {
+    saveAs(blob, `screenshot_${screenshot_counter}.png`)
+    screenshot_counter++
+  });
+}
 
 function handle_message(message) {
   switch(message[0]) {
@@ -136,6 +145,9 @@ function handle_message(message) {
         }
       }
       } break
+    case "message" : {
+      console.log(message[1])
+    } break
     default:
       console.error(`Unknown command '${message[0]}'`)
       break
@@ -148,8 +160,8 @@ function gen_button(icon, text) {
 
 function open_visualiser() {
   if (store.visualiser === undefined || store.visualiser.parent === null) {
-    let width = 512
-    let height = 512 + tools.style.get_scrollbar_width() + 24 // (header bar size)
+    let width = 512 * 3
+    let height = 512 + 24 // (header bar size)
     windows.open('emulator/visualiser/visualiser.html', width, height, ref => {
       store.visualiser = ref
 
@@ -182,7 +194,7 @@ function get_flash_image(callback) {
   let image = tools.storage.get_key("emulator_flash")
 
   if (image === undefined) {
-    console.log("No flash image in localStorage, loading default...")
+    console.debug("No flash image in localStorage, loading default...")
 
     $.ajax({
       url: `../assets/flash_images/default.base64`,
@@ -191,7 +203,7 @@ function get_flash_image(callback) {
     .then(callback)
   } else {
 
-    console.log("Using flash image in localStorage")
+    console.debug("Using flash image in localStorage")
     callback(image)
   }
 }
@@ -236,7 +248,9 @@ function set_screen_theme(theme) {
     "white-grey":  [[255,255,255],[21,21,21]],
     "black-white": [[0,0,0],[250,250,250]],
     "green-black": [[51,248,150],[0,0,0]],
-    "green-grey":  [[51,248,150],[21,21,21]]
+    "green-grey":  [[51,248,150],[21,21,21]],
+    "blue-black": [[125,204,195],[0,0,0]],
+    "blue-grey": [[125,204,195],[21,21,21]],
   }
   let [red_on, green_on, blue_on] = mapping[theme][0]
   let [red_off, green_off, blue_off] = mapping[theme][1]
@@ -443,24 +457,25 @@ function draw_front_panel() {
 
   display_number_on_leds("proc_mode_leds", 2 - front_panel_info.control_mode)
 
-  switch (command_string.slice(0,3)) {
-    case "000":
-      display_number_on_leds("opcode_leds", 0b100000)
+  let opcode = front_panel_info.command_word >> 13
+  switch (opcode) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+      display_number_on_leds("opcode_leds", 1 << 4)
       break
-    case "001":
-      display_number_on_leds("opcode_leds", 0b010000)
+    case 4: // write
+    display_number_on_leds("opcode_leds", 1 << 0)
       break
-    case "010":
-      display_number_on_leds("opcode_leds", 0b001000)
+    case 5: // copy
+      display_number_on_leds("opcode_leds", 1 << 1)
       break
-    case "011":
-      display_number_on_leds("opcode_leds", 0b000100)
+    case 6: // call/return
+      display_number_on_leds("opcode_leds", 1 << 2)
       break
-    case "100":
-      display_number_on_leds("opcode_leds", 0b000010)
-      break
-    case "101":
-      display_number_on_leds("opcode_leds", 0b000001)
+    case 7: // goto
+      display_number_on_leds("opcode_leds", 1 << 3)
       break
   }
 

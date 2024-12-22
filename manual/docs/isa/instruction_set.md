@@ -3,16 +3,17 @@
 
 `SP = stack pointer`
 
-| Opcode<sub>2</sub> | Opcode<sub>10</sub> | Name | Operands | Description | Cycles |
-| ------------------ | ------------------- | ---- | --------- | ----------- | ------ |
-| 000 | 0 | `stop` | none | Stops the clock. | 4 |
-| 001 | 1 | `return` | PC value, SP value | Sets PC & SP to the given values.\* | 4 |
-| 010 | 2 | `goto` | PC value, condition value | Sets PC to *PC value* if the least-significant bit of *condition value* is 0. | 4 |
-| 011 | 3 | `call` | PC value, SP value | Stores the PC of the next instruction to the address *SP value*, then sets the PC and SP to the new values.\* | 5 |
-| 100 | 4 | `write` | value, dest. address | Writes *value* to the destination *address* | 4 |
-| 101 | 5 | `copy` | source address, dest. address | Copies 1 word from the source to the destination address. | 4 |
-| 110 | 6 | `invalid` | none | Stops the clock. | 4 |
-| 111 | 7 | `invalid` | none | Stops the clock. | 4 |
+| Opcode<sub>2</sub> | Opcode<sub>10</sub> | Name | Operands | Description |
+| ------------------ | ------------------- | ---- | --------- | ----------- |
+| 000 | 0 | `stop` | none | Stops the clock. |
+| 001 | 1 | `invalid` | none | Stops the clock. |
+| 010 | 2 | `invalid` | none | Stops the clock. |
+| 011 | 3 | `invalid` | none | Stops the clock. |
+| 100 | 4 | `write` | value, dest. address | Writes *value* to the destination *address* |
+| 101 | 5 | `copy` | source address, dest. address | Copies 1 word from the source to the destination address. |
+| 110 | 6 | `call/return` | PC value, SP value | Sets PC to *PC value* if\* the least-significant bit of *SP value* is 0. Sets SP to the new value. |
+| 111 | 7 | `goto` | PC value, condition value | Sets PC to *PC value* if the least-significant bit of *condition value* is 0. |
+
 
 \* Stack pointer values must be 2-word aligned (even).
 This is because the PC setting operation is always predicated on the 2nd operand's least significant bit equalling 0.

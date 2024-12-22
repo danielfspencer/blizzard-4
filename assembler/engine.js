@@ -481,12 +481,12 @@ class StopInstruction extends Instruction {
 }
 
 class ReturnInstruction extends Instruction {
-  get_opcode() {return 1}
+  get_opcode() {return 6}
 }
 
 class GotoInstruction extends Instruction {
   get_num_arguments() {return [1,2]}
-  get_opcode() {return 2}
+  get_opcode() {return 7}
   generate() {
     // if second argument not specified, the last argument word should be 0 (unconditional jump)
     let result = super.generate()
@@ -498,9 +498,7 @@ class GotoInstruction extends Instruction {
   }
 }
 
-class CallInstruction extends Instruction {
-  get_opcode() {return 3}
-}
+class CallInstruction extends ReturnInstruction {}
 
 class WriteInstruction extends Instruction {
   get_opcode() {return 4}

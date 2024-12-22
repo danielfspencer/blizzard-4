@@ -8,3 +8,4 @@
 * [DejaVuSans font](https://dejavu-fonts.github.io/) - Bitstream Vera Fonts Copyright
 * [Google Material Design Icons](https://github.com/google/material-design-icons) - Apache License, Version 2.0
 * [Adafruit GFX Library](https://github.com/adafruit/Adafruit-GFX-Library) - MIT License
+* [FileSaver.js](https://github.com/eligrey/FileSaver.js) - MIT License

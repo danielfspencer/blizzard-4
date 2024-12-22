@@ -2555,6 +2555,7 @@ function translate(token, ctx_type) {
       }
 
       // actually call the function
+      prefix.push(`write pc+8 sp+${current_frame_size}`)
       prefix.push(`write sp+0 sp+${current_frame_size+1}`)
       prefix.push(`call ~${entry_point} sp+${current_frame_size}`)
 
@@ -3122,6 +3123,8 @@ function compile(input, nested) {
 
   output.push("$name [entry point]")
 
+
+  output.push(`write pc+5 ~data+${global_frame}`)
   output.push(`call ~func__main ~data+${global_frame}`)
   output.push("stop")
   output.push("")

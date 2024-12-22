@@ -174,6 +174,8 @@ function init_state() {
   user_input = [0,0]
   user_output = [0,0,0]
 
+  old_total_cycles = 0
+  old_total_instructions = 0
   // emulator values
   debug = false
   total_cycles = 0
@@ -243,25 +245,6 @@ const load_fetch_microcode = [
   [1,1,0,0,0,0,0,0],
   [1,1,0,0,0,0,0,0],
   [1,1,0,0,0,0,0,0]
-]
-
-const execute_microcode = [
-  [1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,0,0],
-  [1,1,0,1,0,1,0,1],
-  [1,1,1,1,1,1,0,0],
-  [1,1,0,1,1,1,0,1],
-  [1,1,1,1,1,1,0,0],
-  [1,1,1,0,1,0,0,0],
-  [1,1,0,1,0,1,0,1],
-  [0,1,1,0,1,1,0,1],
-  [1,1,1,1,1,1,0,0],
-  [1,0,1,0,1,1,0,1],
-  [1,1,1,1,1,1,0,0],
-  [1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,0,0],
-  [1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,0,0]
 ]
 
 onmessage = (event) => {
@@ -469,6 +452,18 @@ function stop() {
     clearInterval(frequency_measurement_timer)
     actual_cycles_per_second = 0
     postMessage(["stopped"])
+    postMessage(["message", {
+      "cycles": total_cycles,
+      "instructions": total_instructions
+    }])
+
+    postMessage(["message", {
+      "delta_cycles": total_cycles-old_total_cycles,
+      "deltainstructions": total_instructions-old_total_instructions
+    }])
+
+    old_total_cycles = total_cycles
+    old_total_instructions = total_instructions
   } else {
     postMessage(["stop"])
   }
@@ -501,8 +496,7 @@ function step_clock() {
     var instructions = get_load_fetch_microcode_instructions()
     run_load_fetch_microcode(instructions, true)
   } else {
-    var instructions = get_execute_microcode_instructions()
-    run_execute_microcode(instructions, true)
+    run_execute_microcode(true)
   }
 
   //simulate read bus if it has been used
@@ -518,7 +512,7 @@ function step_clock() {
   if (control_mode === 0) {
     run_load_fetch_microcode(instructions, false)
   } else {
-    run_execute_microcode(instructions, false)
+    run_execute_microcode(false)
   }
 
   if (write_bus !== 0) {
@@ -605,7 +599,6 @@ function simulate_effect_of_read_bus_change() {
         switch (address) {
           case 0: // input switches
           case 1:
-          case 2:
             data_bus = user_input[address]
             break
           case 6: // keyboard fifo
@@ -617,9 +610,6 @@ function simulate_effect_of_read_bus_change() {
             break
           default:
             break
-        }
-        if (address < 3) {
-          data_bus = user_input[address]
         }
         break
       case 3:                                                             //video adapter
@@ -728,20 +718,6 @@ function get_load_fetch_microcode_instructions() {
   return instructions
 }
 
-function get_execute_microcode_instructions() {
-  let opcode = (command_word & 0b1110000000000000) >> 13
-  let address = (opcode << 1) + (micro_program_counter & 1)
-  let instructions = execute_microcode[address]
-
-  debug && console.debug(`execute microcode[${get_padded_num(address,5,2)}]`)
-  debug && console.debug(`=${instructions}`)
-
-  if (instructions === undefined) {
-    halt_error("Invalid adddress for execute microcode")
-  }
-  return instructions
-}
-
 function run_load_fetch_microcode(instructions, control_clock) {
   if (control_clock) {
     // inverted for simpler wiring to active-low tristate buffer enable inputs
@@ -781,19 +757,38 @@ function run_load_fetch_microcode(instructions, control_clock) {
   }
 }
 
-function run_execute_microcode(instructions, control_clock) {
+function run_execute_microcode(control_clock) {
   if (control_clock) {
-    // inverted for simpler wiring to active-low tristate buffer enable inputs
-    if (!instructions[0]) micro_instructions.execute.arg1_to_data_bus()
-    if (!instructions[1]) micro_instructions.execute.arg1_to_read_bus()
-    if (!instructions[2]) micro_instructions.execute.arg1_to_pc_conditional()
-    if (!instructions[3]) micro_instructions.execute.arg2_to_write_bus()
-    if (!instructions[4]) micro_instructions.execute.arg2_to_sp()
-    if (!instructions[5]) micro_instructions.execute.pc_to_data_bus()
+    let opcode = (command_word & 0b1110000000000000) >> 13
 
-    if (instructions[6]) micro_instructions.execute.stop_clock()
+    switch (opcode) {
+      case 0:
+      case 1:
+      case 2:
+      case 3: // stop
+        micro_instructions.execute.stop_clock()
+        break
+      case 4: // write
+        micro_instructions.execute.arg1_to_data_bus()
+        micro_instructions.execute.arg2_to_write_bus()
+        break
+      case 5: // copy
+        micro_instructions.execute.arg1_to_read_bus()
+        micro_instructions.execute.arg2_to_write_bus()
+        break
+      case 6: // call/return
+        micro_instructions.execute.arg1_to_pc_conditional()
+        micro_instructions.execute.arg2_to_sp()
+        break
+      case 7: // goto
+        micro_instructions.execute.arg1_to_pc_conditional()
+        break
+    }
+
+    total_instructions += 1
+
   } else {
-    if (instructions[7]) micro_instructions.both.increment_mode()
+    micro_instructions.both.increment_mode()
   }
 }
 
@@ -816,9 +811,6 @@ const micro_instructions = {
     },
     arg2_to_sp: () => {
       stack_pointer = arg_regs[1]
-    },
-    pc_to_data_bus: () => {
-      data_bus = program_counter
     },
     stop_clock: () => {
       stop()
@@ -846,7 +838,6 @@ const micro_instructions = {
   both: {
     increment_mode: () => {
       control_mode = (control_mode + 1) & 1
-      total_instructions += 0.5
       micro_program_counter = 0
     }
   }

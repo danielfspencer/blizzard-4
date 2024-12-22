@@ -110,12 +110,6 @@ while true
     old_ball_x = ball_x
     old_ball_y = ball_y
 
-    if ball_x > 127
-      ball_dx = 0 - ball_dx
-
-    if ball_x < 1
-      ball_dx = 0 - ball_dx
-
     if ball_y > 126
       top_score++
       sys.print_u16(top_score,0,6)
@@ -146,6 +140,14 @@ while true
 
     ball_x += ball_dx
     ball_y += ball_dy
+
+    if ball_x > 127
+      ball_dx = 0 - ball_dx
+      ball_x = 127
+
+    if ball_x < 0
+      ball_dx = 0 - ball_dx
+      ball_x = 0
 
     draw_ball(ball_x,ball_y,old_ball_x,old_ball_y)
     {write 0x000f vram.512}
