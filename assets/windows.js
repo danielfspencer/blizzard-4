@@ -52,5 +52,10 @@ const windows = {
         console.warn('Not supported')
         return
     }
+  },
+  emulator_ready: () => {
+    if (tools.platform() == "electron") {
+      electron.ipcRenderer.send('window-management','emulator_ready')
+    }
   }
 }

@@ -34,14 +34,14 @@ function run(name, clock_speed) {
     tools.headless.compile(b4)
     .catch(() => {
       tools.pages.switch("compiler", b4)
-      throw new SyntaxError()
+      return Promise.reject()
     })
   )
   .then((asm) =>
     tools.headless.assemble(asm)
     .catch(() => {
       tools.pages.switch("assembler", asm)
-      throw new SyntaxError()
+      return Promise.reject()
     })
   )
   .then((bin) =>
