@@ -18,6 +18,7 @@ app.on('ready', () => {
     minWidth: 350,
     minHeight: 200,
     frame: false,
+    show: false,
     icon: path.join(__dirname, 'assets/icon.png'),
     webPreferences: {
       nativeWindowOpen: true,
@@ -26,6 +27,11 @@ app.on('ready', () => {
     }
   })
   mainWindow.loadFile('index.html')
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show()
+  })
+
   mainWindow.on('closed', () => {
     mainWindow = null
   })
