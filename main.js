@@ -39,6 +39,7 @@ program
   .option('--freq <number>', 'emulator frequency, integer kHz', parse_freq)
   .option('--no-autostart', 'don\'t automatically start emulator')
   .option('--fullscreen', 'make emulator display fullscreen')
+  .option('--dev-tools', 'open Chrome DevTools')
   .parse(process.argv)
 
 let queued_message
@@ -96,6 +97,10 @@ app.on('ready', () => {
 
   // centre any popup windows
   mainWindow.webContents.on('new-window', centre_window)
+
+  if (program.devTools) {
+    mainWindow.webContents.openDevTools()
+  }
 })
 
 function centre_window(event, url, frameName, disposition, options) {
