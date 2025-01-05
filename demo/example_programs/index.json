@@ -24,6 +24,11 @@
     "desc":"A space-invaders style game. Use the ← left and right → arrow keys to move the cannon. Press the ↑ up arrow key to fire. This game currently has no victory condition or shields for the player.",
     "clock_speed": 100000
   },
+  "snow": {
+    "name":"Snow",
+    "desc":"Falling snow effect.",
+    "clock_speed": 5000000
+  },
   "small_font": {
     "name":"Smaller Font",
     "desc":"A comparison between a small 4px font and the standard library's 8px font.",
