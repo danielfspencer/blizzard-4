@@ -1,6 +1,6 @@
 {
   "name": "blizzard-4",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "license": "GPL-3.0",
   "productName": "Blizzard 4",
   "description": "Emulator & toolchain for Blizzard 4, a 16-bit computer.",
@@ -33,10 +33,11 @@
     }
   },
   "dependencies": {
-    "electron-context-menu": "^2.3.0"
+    "electron-context-menu": "^2.3.0",
+    "commander": "5.1.0"
   },
   "devDependencies": {
     "electron": "^9.0.5",
-    "electron-builder": "^22.7.0"
+    "electron-builder": "26.0.0"
   }
 }

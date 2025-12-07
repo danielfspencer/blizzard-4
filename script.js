@@ -1,3 +1,8 @@
+if (tools.platform() === "electron") {
+  window.$ = window.jQuery = module.exports;
+  electron = require('electron')
+}
+
 const DEFAULT_PAGE = "manual"
 
 var interface = {
@@ -143,4 +148,32 @@ function toggle_overflow_menu() {
 function toggle_menu() {
   $("#menu").toggleClass("active")
   $("#dim").toggleClass("active")
+}
+
+if (tools.platform() === "electron") {
+  electron.ipcRenderer.on('run-file', (_, message) => {
+    console.log(message)
+
+    b4 = message.file
+
+    tools.headless.compile(b4)
+    .catch(() => {
+      tools.pages.switch("compiler", b4)
+      return Promise.reject()
+    })
+    .then((asm) =>
+      tools.headless.assemble(asm)
+      .catch(() => {
+        tools.pages.switch("assembler", asm)
+        return Promise.reject()
+      })
+    )
+    .then((bin) =>
+      tools.pages.switch("emulator", {
+        binary: bin,
+        clock_speed: message.freq,
+        autostart: message.autostart
+      })
+    )
+  })
 }

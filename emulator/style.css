@@ -46,6 +46,10 @@ h1 {
   image-rendering: pixelated;
 }
 
+#screen:fullscreen {
+  cursor: none;
+}
+
 #front_panel > .card {
   padding-top: 2px;
   width: 100%;

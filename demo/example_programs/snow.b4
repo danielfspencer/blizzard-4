@@ -1,0 +1,39 @@
+const u16 PARTICLE_COUNT = 100
+let array particle_x = (u16, PARTICLE_COUNT)[]
+let array particle_y = (u16, PARTICLE_COUNT)[]
+
+for let u16 i = 0; i < PARTICLE_COUNT; i++
+  particle_x[i] = sys.random() & 0x7f
+  particle_y[i] = sys.random() & 0x7f
+
+while true
+  for i = 0; i < PARTICLE_COUNT; i++
+    let u16 x = particle_x[i]
+    let u16 y = particle_y[i]
+
+    let u16 new_x = x
+    let u16 new_y = y
+
+    let u16 rand = sys.random() & 0x1
+    let u16 rand2 = sys.random() & 0x3
+
+    if rand == 0
+      new_y++
+
+    if rand2 == 0
+      new_x--
+    else if rand2 == 1
+      new_x++
+
+    new_x = new_x & 0x7f
+    new_y = new_y & 0x7f
+
+    let bool cond = new_x != x
+    let bool cond2 = new_y != y
+
+    if cond | cond2
+      sys.vram.set_pixel(x, y, false)
+      sys.vram.set_pixel(new_x, new_y, true)
+
+      particle_x[i] = new_x
+      particle_y[i] = new_y

@@ -91,6 +91,8 @@ $(document).ready(() => {
   parent.interface.add_button(gen_button("memory.svg", "ram visualiser"), open_visualiser)
   parent.interface.add_button(gen_button("fullscreen.svg", "fullscreen"), go_fullscreen)
   // parent.interface.add_button(gen_button("stats.svg", "statistics"), open_stats)
+
+  windows.emulator_ready()
 })
 
 function do_screenshot() {

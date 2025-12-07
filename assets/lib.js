@@ -96,21 +96,21 @@ const tools = {
   headless: {
     assemble: (input) => {
       return new Promise((resolve, reject) => {
-        let worker = new Worker('../assembler/engine.js')
-        worker.onerror = () => reject(input)
-        worker.onmessage = (msg) => tools.headless.handle_msg(msg, resolve, worker.onerror)
+        let worker = new Worker(tools.headless._get_url('assembler/engine.js'))
+        worker.onerror = reject
+        worker.onmessage = (msg) => tools.headless._handle_msg(msg, resolve, reject)
         worker.postMessage(['assemble', input])
       })
     },
     compile: (input) => {
       return new Promise((resolve, reject) => {
-        let worker = new Worker('../compiler/engine.js')
-        worker.onerror = () => reject(input)
-        worker.onmessage = (msg) => tools.headless.handle_msg(msg, resolve, worker.onerror)
+        let worker = new Worker(tools.headless._get_url('compiler/engine.js'))
+        worker.onerror = reject
+        worker.onmessage = (msg) => tools.headless._handle_msg(msg, resolve, reject)
         worker.postMessage(['compile', input])
       })
     },
-    handle_msg: (msg, resolve, reject) => {
+    _handle_msg: (msg, resolve, reject) => {
       let data = msg.data
       if (data[0] === 'result') {
         if (data[1] === null) {
@@ -119,6 +119,13 @@ const tools = {
           resolve(data[1])
         }
       }
+    },
+    _get_url: (url) => {
+      // hack so that worker scripts can be loaded from top level or inside demo/ etc
+      if (this.__dirname === undefined) {
+        url = `../${url}`
+      }
+      return url
     }
   },
   text_input: {
